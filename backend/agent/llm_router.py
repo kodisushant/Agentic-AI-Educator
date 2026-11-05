@@ -52,6 +52,31 @@ class LLMRouter:
         self.timeout_per_provider = float(os.getenv("LLM_TIMEOUT", "10.0"))
         self.step_latency_cap = float(os.getenv("STEP_LATENCY_CAP", "25.0"))
 
+    def get_provider_status(self) -> Dict[str, Dict[str, Any]]:
+        """Report which provider keys exist and their reachability status."""
+        return {
+            "gemini": {
+                "key_configured": bool(self.gemini_key),
+                "model": "gemini-3.1-flash-lite",
+                "reachable": bool(self.gemini_key) and not self.mock_mode,
+            },
+            "groq": {
+                "key_configured": bool(self.groq_key),
+                "model": "qwen/qwen3.8-27b",
+                "reachable": bool(self.groq_key) and not self.mock_mode,
+            },
+            "cerebras": {
+                "key_configured": bool(self.cerebras_key),
+                "model": "llama3.1-70b",
+                "reachable": bool(self.cerebras_key) and not self.mock_mode,
+            },
+            "openrouter": {
+                "key_configured": bool(self.openrouter_key),
+                "model": "auto",
+                "reachable": bool(self.openrouter_key) and not self.mock_mode,
+            }
+        }
+
     def _get_cache_key(self, prompt: str, schema_name: str) -> Path:
         raw = f"{prompt}|{schema_name}"
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()

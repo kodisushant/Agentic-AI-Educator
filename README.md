@@ -166,6 +166,25 @@ Our hackathon demo showcases a **3-minute vertical slice on Binary Search**:
 
 ---
 
+## ☁️ Deployment (Render)
+
+The backend is configured for cloud deployment as a Render Web Service via `render.yaml`.
+
+### Ephemeral Storage Notice
+> [!NOTE]
+> Render free-tier web instances have ephemeral filesystems. The backend automatically seeds the SQLite database (`backend/learner/learner.db`) on application startup via FastAPI lifespan hooks, ensuring `demo_student` ("Alex Chen") benchmark state is always immediately available on reboot.
+
+### Environment Variable Names
+Configure the following in your Render service dashboard (or `.env` locally):
+- `MOCK_MODE`: `true` (default) or `false`
+- `BACKEND_PORT`: `8000` (Render automatically overrides `$PORT`)
+- `GEMINI_API_KEY`: (Optional) Free API key from Google AI Studio
+- `GROQ_API_KEY`: (Optional) Free API key from Groq Cloud
+- `CEREBRAS_API_KEY`: (Optional) Cerebras Cloud API key
+- `OPENROUTER_API_KEY`: (Optional) OpenRouter API key
+
+---
+
 ## 📜 Team Roles & Ownership
 
 | # | Role | Owned Directory | Key Deliverables |

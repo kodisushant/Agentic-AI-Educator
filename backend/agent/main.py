@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 import json
 import os
 from typing import AsyncGenerator, List
@@ -32,10 +33,27 @@ from backend.agent.tools import execute_tool_call
 from backend.agent.llm_router import router
 from backend.agent.client import learner_client, assess_client
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Auto-seed SQLite DB at startup if running on ephemeral disk (Render)
+    try:
+        from backend.learner.service import learner_service
+        from backend.learner.seed import seed_demo_data
+        conn = learner_service._get_conn()
+        cur = conn.execute("SELECT COUNT(*) FROM attempts WHERE user_id = 'demo_student'")
+        if cur.fetchone()[0] == 0:
+            seed_demo_data(conn)
+            print("[Lifespan] SQLite database automatically seeded for demo_student on startup.")
+    except Exception as e:
+        print(f"[Lifespan] SQLite auto-seed check skipped: {e}")
+    yield
+
+
 app = FastAPI(
     title="AI Virtual Teacher Agent Brain & Service Contracts",
     description="Backend agent powering interactive lesson planning, tool calling, whiteboard commands, and contracts for Learner Model and Assessment engines.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS for local Next.js frontend development
@@ -50,7 +68,7 @@ app.add_middleware(
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Returns agent service health, LLM routing mode, active keys, and teammate service modes."""
+    """Returns agent service health, LLM routing mode, active keys, reachability, and teammate service modes."""
     return {
         "status": "healthy",
         "service": "backend/agent",
@@ -67,12 +85,7 @@ async def health_check():
                 "in_process_available": assess_client.has_in_process(),
             }
         },
-        "configured_providers": {
-            "gemini": bool(router.gemini_key),
-            "groq": bool(router.groq_key),
-            "cerebras": bool(router.cerebras_key),
-            "openrouter": bool(router.openrouter_key),
-        }
+        "providers": router.get_provider_status()
     }
 
 

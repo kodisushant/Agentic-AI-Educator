@@ -488,6 +488,81 @@
     },
     "LessonStep": {
       "$defs": {
+        "AgentTrace": {
+          "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider.",
+          "properties": {
+            "detected_misconception": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Active or diagnosed misconception identified during reasoning",
+              "examples": [
+                "confuses_direction_when_target_greater"
+              ],
+              "title": "Detected Misconception"
+            },
+            "strategy_chosen": {
+              "default": "direct_instruction",
+              "description": "Pedagogical strategy chosen (e.g. 'direct_instruction', 'visual_remediation', 'socratic_hint', 'analogy')",
+              "examples": [
+                "visual_remediation"
+              ],
+              "title": "Strategy Chosen",
+              "type": "string"
+            },
+            "mastery_before": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Concept mastery score before this interaction",
+              "examples": [
+                0.45
+              ],
+              "title": "Mastery Before"
+            },
+            "mastery_after": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Concept mastery score after this interaction",
+              "examples": [
+                0.55
+              ],
+              "title": "Mastery After"
+            },
+            "provider_used": {
+              "default": "mock",
+              "description": "LLM or rule engine provider used for this response",
+              "examples": [
+                "mock",
+                "gemini",
+                "groq"
+              ],
+              "title": "Provider Used",
+              "type": "string"
+            }
+          },
+          "title": "AgentTrace",
+          "type": "object"
+        },
         "ArrowCommand": {
           "properties": {
             "type": {
@@ -1153,6 +1228,18 @@
           "title": "Tool Calls",
           "type": "array"
         },
+        "trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentTrace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Structured pedagogical reasoning trace exposing misconception, strategy, mastery change, and provider"
+        },
         "is_final_step": {
           "default": false,
           "description": "True if lesson ends at this step",
@@ -1261,6 +1348,81 @@
     },
     "ChatMessageResponse": {
       "$defs": {
+        "AgentTrace": {
+          "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider.",
+          "properties": {
+            "detected_misconception": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Active or diagnosed misconception identified during reasoning",
+              "examples": [
+                "confuses_direction_when_target_greater"
+              ],
+              "title": "Detected Misconception"
+            },
+            "strategy_chosen": {
+              "default": "direct_instruction",
+              "description": "Pedagogical strategy chosen (e.g. 'direct_instruction', 'visual_remediation', 'socratic_hint', 'analogy')",
+              "examples": [
+                "visual_remediation"
+              ],
+              "title": "Strategy Chosen",
+              "type": "string"
+            },
+            "mastery_before": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Concept mastery score before this interaction",
+              "examples": [
+                0.45
+              ],
+              "title": "Mastery Before"
+            },
+            "mastery_after": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Concept mastery score after this interaction",
+              "examples": [
+                0.55
+              ],
+              "title": "Mastery After"
+            },
+            "provider_used": {
+              "default": "mock",
+              "description": "LLM or rule engine provider used for this response",
+              "examples": [
+                "mock",
+                "gemini",
+                "groq"
+              ],
+              "title": "Provider Used",
+              "type": "string"
+            }
+          },
+          "title": "AgentTrace",
+          "type": "object"
+        },
         "ArrowCommand": {
           "properties": {
             "type": {
@@ -1709,6 +1871,18 @@
           "default": null,
           "description": "Reasoning trace for how the teacher formulated the answer",
           "title": "Agent Thoughts"
+        },
+        "trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentTrace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Structured cognitive trace of the chat reply reasoning"
         }
       },
       "required": [
@@ -2147,6 +2321,81 @@
     },
     "lesson_step": {
       "$defs": {
+        "AgentTrace": {
+          "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider.",
+          "properties": {
+            "detected_misconception": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Active or diagnosed misconception identified during reasoning",
+              "examples": [
+                "confuses_direction_when_target_greater"
+              ],
+              "title": "Detected Misconception"
+            },
+            "strategy_chosen": {
+              "default": "direct_instruction",
+              "description": "Pedagogical strategy chosen (e.g. 'direct_instruction', 'visual_remediation', 'socratic_hint', 'analogy')",
+              "examples": [
+                "visual_remediation"
+              ],
+              "title": "Strategy Chosen",
+              "type": "string"
+            },
+            "mastery_before": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Concept mastery score before this interaction",
+              "examples": [
+                0.45
+              ],
+              "title": "Mastery Before"
+            },
+            "mastery_after": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Concept mastery score after this interaction",
+              "examples": [
+                0.55
+              ],
+              "title": "Mastery After"
+            },
+            "provider_used": {
+              "default": "mock",
+              "description": "LLM or rule engine provider used for this response",
+              "examples": [
+                "mock",
+                "gemini",
+                "groq"
+              ],
+              "title": "Provider Used",
+              "type": "string"
+            }
+          },
+          "title": "AgentTrace",
+          "type": "object"
+        },
         "ArrowCommand": {
           "properties": {
             "type": {
@@ -2811,6 +3060,18 @@
           },
           "title": "Tool Calls",
           "type": "array"
+        },
+        "trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentTrace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Structured pedagogical reasoning trace exposing misconception, strategy, mastery change, and provider"
         },
         "is_final_step": {
           "default": false,

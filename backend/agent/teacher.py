@@ -19,6 +19,7 @@ from backend.agent.schemas import (
     CheckAnswerResponse,
     ToolCallRecord,
     AttemptRecordRequest,
+    AgentTrace,
 )
 from backend.agent.llm_router import router
 from backend.agent.tools import execute_tool_call
@@ -823,6 +824,13 @@ class TeacherAgent:
                         })
                     ],
                     is_final_step=base_step.is_final_step,
+                    trace=AgentTrace(
+                        detected_misconception=eval_res.detected_misconception,
+                        strategy_chosen="visual_remediation",
+                        mastery_before=0.55,
+                        mastery_after=eval_res.updated_mastery_score,
+                        provider_used="mock"
+                    ),
                 )
 
         # If student provided "I don't understand" feedback
@@ -849,6 +857,13 @@ class TeacherAgent:
                 check_question=base_step.check_question,
                 tool_calls=base_step.tool_calls,
                 is_final_step=base_step.is_final_step,
+                trace=AgentTrace(
+                    detected_misconception="general_conceptual_confusion",
+                    strategy_chosen="physical_analogy_simplification",
+                    mastery_before=0.50,
+                    mastery_after=0.50,
+                    provider_used="mock"
+                ),
             )
 
         # Fallback factory for LLM router
@@ -879,11 +894,22 @@ class TeacherAgent:
             f"- is_final_step: {req.step_index == 4}"
         )
 
-        return router.generate_structured_sync(
+        res = router.generate_structured_sync(
             prompt=prompt,
             response_model=LessonStep,
             mock_fallback_factory=fallback
         )
+        if res.trace is None:
+            c_tag = req.concept.lower().replace(" ", "_")
+            current_m = mastery_profile.concept_scores.get(c_tag, 0.5)
+            res.trace = AgentTrace(
+                detected_misconception=res.detected_misconception,
+                strategy_chosen="direct_instruction",
+                mastery_before=current_m,
+                mastery_after=current_m,
+                provider_used=(res.provider_metadata or {}).get("provider", "mock")
+            )
+        return res
 
     def get_next_step_sync(self, req: LessonStepRequest) -> LessonStep:
         active_steps = self.mock_rec_steps if "recursion" in req.concept.lower() else self.mock_bs_steps
@@ -927,6 +953,13 @@ class TeacherAgent:
                         })
                     ],
                     is_final_step=base_step.is_final_step,
+                    trace=AgentTrace(
+                        detected_misconception=eval_res.detected_misconception,
+                        strategy_chosen="visual_remediation",
+                        mastery_before=0.55,
+                        mastery_after=eval_res.updated_mastery_score,
+                        provider_used="mock"
+                    ),
                 )
 
         # If student provided "I don't understand" feedback
@@ -953,6 +986,13 @@ class TeacherAgent:
                 check_question=base_step.check_question,
                 tool_calls=base_step.tool_calls,
                 is_final_step=base_step.is_final_step,
+                trace=AgentTrace(
+                    detected_misconception="general_conceptual_confusion",
+                    strategy_chosen="physical_analogy_simplification",
+                    mastery_before=0.50,
+                    mastery_after=0.50,
+                    provider_used="mock"
+                ),
             )
 
         def fallback():
@@ -981,11 +1021,22 @@ class TeacherAgent:
             f"- is_final_step: {req.step_index == 4}"
         )
 
-        return router.generate_structured_sync(
+        res = router.generate_structured_sync(
             prompt=prompt,
             response_model=LessonStep,
             mock_fallback_factory=fallback
         )
+        if res.trace is None:
+            c_tag = req.concept.lower().replace(" ", "_")
+            current_m = mastery_profile.concept_scores.get(c_tag, 0.5)
+            res.trace = AgentTrace(
+                detected_misconception=res.detected_misconception,
+                strategy_chosen="direct_instruction",
+                mastery_before=current_m,
+                mastery_after=current_m,
+                provider_used=(res.provider_metadata or {}).get("provider", "mock")
+            )
+        return res
 
     async def get_next_step(self, req: LessonStepRequest) -> LessonStep:
         return self.get_next_step_sync(req)
@@ -1007,7 +1058,14 @@ class TeacherAgent:
                         size=16,
                         color="#b91c1c"
                     )
-                ]
+                ],
+                trace=AgentTrace(
+                    detected_misconception="precondition_unclear",
+                    strategy_chosen="socratic_explanation",
+                    mastery_before=0.50,
+                    mastery_after=0.55,
+                    provider_used="mock"
+                )
             )
 
         prompt = (
@@ -1015,11 +1073,20 @@ class TeacherAgent:
             f"Provide a clear, brief pedagogical reply and optional whiteboard board commands to clarify."
         )
 
-        return router.generate_structured_sync(
+        res = router.generate_structured_sync(
             prompt=prompt,
             response_model=ChatMessageResponse,
             mock_fallback_factory=fallback
         )
+        if res.trace is None:
+            res.trace = AgentTrace(
+                detected_misconception=None,
+                strategy_chosen="conversational_guidance",
+                mastery_before=0.50,
+                mastery_after=0.50,
+                provider_used="mock"
+            )
+        return res
 
     async def handle_chat(self, req: ChatMessageRequest) -> ChatMessageResponse:
         return self.handle_chat_sync(req)

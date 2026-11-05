@@ -12,7 +12,7 @@
           "System"
         ],
         "summary": "Health Check",
-        "description": "Returns agent service health, LLM routing mode, and active keys status.",
+        "description": "Returns agent service health, LLM routing mode, active keys, and teammate service modes.",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
@@ -172,20 +172,84 @@
           "Mock"
         ],
         "summary": "Get Mock Lesson",
-        "description": "Returns the complete pre-baked 5-step Binary Search lesson.\nTeammates can use this to build and test their UI/assessments offline.",
+        "description": "Returns the complete pre-baked 5-step lesson for Binary Search or Recursion.\nTeammates can use this to build and test their UI/assessments offline.",
         "operationId": "get_mock_lesson_mock_lesson_get",
+        "parameters": [
+          {
+            "name": "concept",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Lesson topic ('Binary Search' or 'Recursion')",
+              "default": "Binary Search",
+              "title": "Concept"
+            },
+            "description": "Lesson topic ('Binary Search' or 'Recursion')"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/LessonStep"
                   },
-                  "type": "array",
                   "title": "Response Get Mock Lesson Mock Lesson Get"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/seed": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "summary": "Seed Demo",
+        "description": "Seed initial benchmark student persona (Alex Chen) and demo topics.\nReuses Person 4's existing learner seed engine.",
+        "operationId": "seed_demo_demo_seed_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/reset": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "summary": "Reset Demo",
+        "description": "Reset demo student state back to clean benchmark scenario.\nReuses Person 4's existing learner seed engine.",
+        "operationId": "reset_demo_demo_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -591,6 +655,78 @@
   },
   "components": {
     "schemas": {
+      "AgentTrace": {
+        "properties": {
+          "detected_misconception": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detected Misconception",
+            "description": "Active or diagnosed misconception identified during reasoning",
+            "examples": [
+              "confuses_direction_when_target_greater"
+            ]
+          },
+          "strategy_chosen": {
+            "type": "string",
+            "title": "Strategy Chosen",
+            "description": "Pedagogical strategy chosen (e.g. 'direct_instruction', 'visual_remediation', 'socratic_hint', 'analogy')",
+            "default": "direct_instruction",
+            "examples": [
+              "visual_remediation"
+            ]
+          },
+          "mastery_before": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mastery Before",
+            "description": "Concept mastery score before this interaction",
+            "examples": [
+              0.45
+            ]
+          },
+          "mastery_after": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mastery After",
+            "description": "Concept mastery score after this interaction",
+            "examples": [
+              0.55
+            ]
+          },
+          "provider_used": {
+            "type": "string",
+            "title": "Provider Used",
+            "description": "LLM or rule engine provider used for this response",
+            "default": "mock",
+            "examples": [
+              "mock",
+              "gemini",
+              "groq"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AgentTrace",
+        "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider."
+      },
       "ArrowCommand": {
         "properties": {
           "type": {
@@ -1004,6 +1140,17 @@
             ],
             "title": "Agent Thoughts",
             "description": "Reasoning trace for how the teacher formulated the answer"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentTrace"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Structured cognitive trace of the chat reply reasoning"
           }
         },
         "type": "object",
@@ -1587,6 +1734,17 @@
             "type": "array",
             "title": "Tool Calls",
             "description": "Tools invoked by the agent to construct this step"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentTrace"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Structured pedagogical reasoning trace exposing misconception, strategy, mastery change, and provider"
           },
           "is_final_step": {
             "type": "boolean",

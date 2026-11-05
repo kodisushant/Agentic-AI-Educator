@@ -98,6 +98,35 @@ class ToolCallRecord(BaseModel):
 
 # --- Lesson Step & Interaction Schemas ---
 
+class AgentTrace(BaseModel):
+    """Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider."""
+    detected_misconception: Optional[str] = Field(
+        default=None,
+        description="Active or diagnosed misconception identified during reasoning",
+        examples=["confuses_direction_when_target_greater"]
+    )
+    strategy_chosen: str = Field(
+        default="direct_instruction",
+        description="Pedagogical strategy chosen (e.g. 'direct_instruction', 'visual_remediation', 'socratic_hint', 'analogy')",
+        examples=["visual_remediation"]
+    )
+    mastery_before: Optional[float] = Field(
+        default=None,
+        description="Concept mastery score before this interaction",
+        examples=[0.45]
+    )
+    mastery_after: Optional[float] = Field(
+        default=None,
+        description="Concept mastery score after this interaction",
+        examples=[0.55]
+    )
+    provider_used: str = Field(
+        default="mock",
+        description="LLM or rule engine provider used for this response",
+        examples=["mock", "gemini", "groq"]
+    )
+
+
 class LessonStep(BaseModel):
     step_id: str = Field(..., description="Unique ID for this teaching step")
     step_index: int = Field(..., description="0-based sequence number")
@@ -135,6 +164,10 @@ class LessonStep(BaseModel):
     tool_calls: List[ToolCallRecord] = Field(
         default_factory=list,
         description="Tools invoked by the agent to construct this step"
+    )
+    trace: Optional[AgentTrace] = Field(
+        default=None,
+        description="Structured pedagogical reasoning trace exposing misconception, strategy, mastery change, and provider"
     )
     is_final_step: bool = Field(default=False, description="True if lesson ends at this step")
 
@@ -197,6 +230,10 @@ class ChatMessageResponse(BaseModel):
     agent_thoughts: Optional[str] = Field(
         default=None,
         description="Reasoning trace for how the teacher formulated the answer"
+    )
+    trace: Optional[AgentTrace] = Field(
+        default=None,
+        description="Structured cognitive trace of the chat reply reasoning"
     )
 
 

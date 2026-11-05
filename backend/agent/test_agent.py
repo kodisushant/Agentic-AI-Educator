@@ -202,6 +202,14 @@ def run_unit_tests():
         assert "/assess/submit" in oa_data["paths"]
 
     print("✓ All contracted paths verified in openapi.json", flush=True)
+
+    # 12. Test AgentTrace Cognitive Reasoning Field
+    step_with_trace = teacher_agent.get_next_step_sync(LessonStepRequest(concept="Binary Search", step_index=0))
+    assert step_with_trace.trace is not None
+    assert step_with_trace.trace.strategy_chosen == "direct_instruction"
+    chat_with_trace = teacher_agent.handle_chat_sync(ChatMessageRequest(message="Can you help?"))
+    assert chat_with_trace.trace is not None
+    print("✓ AgentTrace cognitive reasoning fields verified on step and chat responses", flush=True)
     print("\nAll mock unit tests passed successfully!", flush=True)
 
     # 11. Conditional Real LLM Testing (Run only when REAL_LLM=1)

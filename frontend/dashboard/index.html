@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Teacher — Learner Mastery & Knowledge Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-sky-500/20">
+          VT
+        </div>
+        <div>
+          <h1 class="text-base font-semibold leading-none text-white">AI Virtual Teacher</h1>
+          <p class="text-xs text-slate-400 mt-1">Student Knowledge Graph & Mastery Model</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700/60 text-xs">
+          <span class="px-2.5 py-1 font-medium text-slate-400">Persona:</span>
+          <select id="userSelector" class="bg-slate-900 text-sky-400 font-semibold rounded px-2 py-0.5 border border-slate-700 focus:outline-none focus:border-sky-500" onchange="switchPersona(this.value)">
+            <option value="demo_student">Alex Chen (Demo Student)</option>
+            <option value="novice_learner">Maya Patel (Novice Learner)</option>
+          </select>
+        </div>
+
+        <button onclick="resetData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Reset Demo
+        </button>
+
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+          <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          Live EWMA Model
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Hero Banner / High-Priority Recommendation -->
+    <div id="recommendationBanner" class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-sky-950/80 via-indigo-950/40 to-slate-900 border border-sky-800/40 p-6 shadow-xl shadow-sky-950/30">
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="space-y-2 max-w-3xl">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+              NEXT RECOMMENDED STEP
+            </span>
+            <span id="recActionBadge" class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              QUIZ
+            </span>
+          </div>
+          <h2 id="recConceptTitle" class="text-2xl font-bold text-white tracking-tight">
+            Binary Search Bounds Update
+          </h2>
+          <p id="recReasonText" class="text-sm text-slate-300 leading-relaxed">
+            Priority practice: lowest mastery score (0.45) with active misconceptions diagnosed on right-pointer partition logic.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 shrink-0">
+          <button onclick="simulateQuickAttempt(true)" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm transition shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Simulate Correct Answer (+Score)
+          </button>
+          <button onclick="simulateQuickAttempt(false)" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 border border-rose-900/50 font-medium text-sm transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            Simulate Mistake (-Score)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Overall Topic Mastery</p>
+        <div class="flex items-baseline gap-2">
+          <span id="metricOverall" class="text-3xl font-extrabold text-white">66%</span>
+          <span class="text-xs text-slate-400">EWMA weighted</span>
+        </div>
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-3">
+          <div id="metricOverallBar" class="bg-sky-500 h-full rounded-full transition-all duration-500" style="width: 66%"></div>
+        </div>
+      </div>
+
+      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Weak Areas Diagnosed</p>
+        <div class="flex items-baseline gap-2">
+          <span id="metricWeakCount" class="text-3xl font-extrabold text-rose-400">1</span>
+          <span class="text-xs text-slate-400">score &lt; 0.60</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">Active misconception detected</p>
+      </div>
+
+      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Practice Attempts</p>
+        <div class="flex items-baseline gap-2">
+          <span id="metricAttempts" class="text-3xl font-extrabold text-white">11</span>
+          <span class="text-xs text-emerald-400 font-medium">Logged in SQLite</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">Checkpoints & exercises</p>
+      </div>
+
+      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Memory Retention Model</p>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-bold text-indigo-400">Ebbinghaus</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">Temporal decay rate: 3%/day</p>
+      </div>
+    </div>
+
+    <!-- Charts & Weak Concepts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Chart Card (2 Cols) -->
+      <div class="lg:col-span-2 bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-white">Concept Mastery Radar & Bar Analysis</h3>
+            <p class="text-xs text-slate-400">Real-time mastery index per sub-topic of Binary Search</p>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">threshold: 0.60</span>
+        </div>
+        <div class="h-64 sm:h-72">
+          <canvas id="masteryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Weak Concepts & Misconceptions (1 Col) -->
+      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white">Diagnosed Weak Areas</h3>
+            <span class="px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              Needs Attention
+            </span>
+          </div>
+          <div id="weakAreaList" class="space-y-3">
+            <!-- Dynamic items populated by JS -->
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 text-xs text-slate-400">
+          💡 <span class="font-medium text-slate-300">Agentic Loop:</span> Weak concepts and tagged misconceptions feed directly into the Teacher Agent's next lesson step prompt.
+        </div>
+      </div>
+    </div>
+
+    <!-- Attempt History Timeline & Real-time Event Simulator -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- History Timeline (2 Cols) -->
+      <div class="lg:col-span-2 bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-white">Attempt History Timeline</h3>
+            <p class="text-xs text-slate-400">Chronological checkpoint interactions and diagnosed misconceptions</p>
+          </div>
+          <span id="historyCountBadge" class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded">
+            Latest 10 attempts
+          </span>
+        </div>
+        <div id="historyTimeline" class="space-y-3 overflow-y-auto max-h-96 pr-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Live Simulator & API Status (1 Col) -->
+      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <div>
+          <h3 class="text-lg font-bold text-white">Live Attempt Simulator</h3>
+          <p class="text-xs text-slate-400">Test how the EWMA model updates in real-time</p>
+        </div>
+
+        <form id="attemptForm" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-1">Target Concept</label>
+            <select id="formConcept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
+              <option value="binary_search_bounds_update">binary_search_bounds_update</option>
+              <option value="binary_search_intuition">binary_search_intuition</option>
+              <option value="binary_search_complexity">binary_search_complexity</option>
+              <option value="binary_search_edge_cases">binary_search_edge_cases</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 mb-1">Result</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btnCorrect" onclick="setFormCorrect(true)" class="py-2 px-3 rounded-lg border border-emerald-600 bg-emerald-950/40 text-emerald-300 font-semibold text-center">
+                ✓ Correct
+              </button>
+              <button type="button" id="btnIncorrect" onclick="setFormCorrect(false)" class="py-2 px-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-center">
+                ✗ Incorrect
+              </button>
+            </div>
+          </div>
+
+          <div id="misconceptionField" class="hidden">
+            <label class="block text-slate-400 mb-1">Diagnosed Misconception</label>
+            <select id="formMisconception" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-rose-300">
+              <option value="confuses_direction_when_target_greater">confuses_direction_when_target_greater</option>
+              <option value="confuses_low_with_high_shift">confuses_low_with_high_shift</option>
+              <option value="fails_to_exclude_checked_midpoint">fails_to_exclude_checked_midpoint</option>
+              <option value="infinite_loop_on_two_elements">infinite_loop_on_two_elements</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 mb-1">Time Spent: <span id="timeVal">15</span>s</label>
+            <input type="range" id="formTime" min="3" max="60" value="15" oninput="document.getElementById('timeVal').innerText = this.value" class="w-full accent-sky-500">
+          </div>
+
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition shadow-lg shadow-indigo-600/20">
+            Submit Attempt to Learner Model
+          </button>
+        </form>
+
+        <div class="border-t border-slate-800 pt-3 text-[11px] text-slate-500 space-y-1">
+          <p>Endpoints: <code class="text-slate-400">POST /learner/attempt</code></p>
+          <p>Database: <code class="text-slate-400">backend/learner/learner.db</code></p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // State
+    let currentUserId = "demo_student";
+    let isCorrectState = true;
+    let masteryChart = null;
+    const API_BASE = "http://localhost:8000"; // fallback or proxy to learner port 8002
+
+    // Fallback in-memory state if server is offline
+    const LOCAL_STATE = {
+      demo_student: {
+        name: "Alex Chen",
+        overall: 0.66,
+        scores: {
+          "binary_search_intuition": 0.90,
+          "binary_search_bounds_update": 0.45,
+          "binary_search_complexity": 0.80,
+          "binary_search_edge_cases": 0.55
+        },
+        weak: [
+          {
+            concept_tag: "binary_search_bounds_update",
+            mastery_score: 0.45,
+            active_misconceptions: ["confuses_direction_when_target_greater", "confuses_low_with_high_shift"],
+            recommended_action: "Review pointer movement: when target > mid, search the right partition (low = mid + 1)."
+          },
+          {
+            concept_tag: "binary_search_edge_cases",
+            mastery_score: 0.55,
+            active_misconceptions: ["infinite_loop_on_two_elements"],
+            recommended_action: "Check integer division: mid = low + (high - low) // 2 ensures proper termination."
+          }
+        ],
+        recommendation: {
+          recommended_concept: "binary_search_bounds_update",
+          reason: "Priority practice: lowest mastery (0.45) with active misconceptions.",
+          suggested_action: "quiz"
+        },
+        history: [
+          { id: 11, concept_tag: "binary_search_bounds_update", is_correct: false, time_spent_seconds: 22.0, misconceptions: ["fails_to_exclude_checked_midpoint"], created_at: "Just now" },
+          { id: 10, concept_tag: "binary_search_bounds_update", is_correct: true, time_spent_seconds: 15.0, misconceptions: [], created_at: "2 hours ago" },
+          { id: 9, concept_tag: "binary_search_bounds_update", is_correct: false, time_spent_seconds: 18.5, misconceptions: ["confuses_direction_when_target_greater"], created_at: "1 day ago" },
+          { id: 8, concept_tag: "binary_search_intuition", is_correct: true, time_spent_seconds: 6.0, misconceptions: [], created_at: "2 days ago" },
+          { id: 7, concept_tag: "binary_search_complexity", is_correct: true, time_spent_seconds: 11.0, misconceptions: [], created_at: "1 day ago" }
+        ]
+      },
+      novice_learner: {
+        name: "Maya Patel",
+        overall: 0.35,
+        scores: {
+          "binary_search_intuition": 0.40,
+          "binary_search_bounds_update": 0.25,
+          "binary_search_complexity": 0.30,
+          "binary_search_edge_cases": 0.20
+        },
+        weak: [
+          {
+            concept_tag: "binary_search_bounds_update",
+            mastery_score: 0.25,
+            active_misconceptions: ["confuses_direction_when_target_greater"],
+            recommended_action: "Begin visual lesson walkthrough on pointer fundamentals."
+          }
+        ],
+        recommendation: {
+          recommended_concept: "binary_search_intuition",
+          reason: "Foundational topic walkthrough recommended for new learner.",
+          suggested_action: "lesson"
+        },
+        history: [
+          { id: 1, concept_tag: "binary_search_intuition", is_correct: false, time_spent_seconds: 40.0, misconceptions: [], created_at: "1 day ago" }
+        ]
+      }
+    };
+
+    function setFormCorrect(val) {
+      isCorrectState = val;
+      const btnC = document.getElementById("btnCorrect");
+      const btnI = document.getElementById("btnIncorrect");
+      const misc = document.getElementById("misconceptionField");
+
+      if (val) {
+        btnC.className = "py-2 px-3 rounded-lg border border-emerald-600 bg-emerald-950/40 text-emerald-300 font-semibold text-center";
+        btnI.className = "py-2 px-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-center";
+        misc.classList.add("hidden");
+      } else {
+        btnI.className = "py-2 px-3 rounded-lg border border-rose-600 bg-rose-950/40 text-rose-300 font-semibold text-center";
+        btnC.className = "py-2 px-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-center";
+        misc.classList.remove("hidden");
+      }
+    }
+
+    async function fetchDashboardData() {
+      try {
+        // Try live backend first (port 8000 or 8002)
+        const res = await fetch(`http://localhost:8002/learner/summary/${currentUserId}`).catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json();
+          renderDashboard(data);
+          return;
+        }
+
+        // Try standard agent port 8000
+        const res8000 = await fetch(`http://localhost:8000/learner/mastery/${currentUserId}`).catch(() => null);
+        if (res8000 && res8000.ok) {
+          const mastery = await res8000.json();
+          const weakRes = await (await fetch(`http://localhost:8000/learner/weak/${currentUserId}`)).json();
+          const recRes = await (await fetch(`http://localhost:8000/learner/recommend/${currentUserId}`)).json();
+          renderDashboard({
+            user_id: currentUserId,
+            overall_score: mastery.overall_score,
+            concept_scores: mastery.concept_scores,
+            attempt_counts: mastery.attempt_counts,
+            weak_concepts: weakRes.weak_concepts,
+            recommendation: recRes,
+            history: LOCAL_STATE[currentUserId].history
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("Backend unavailable, using local mock store:", err);
+      }
+
+      // Render local fallback
+      const data = LOCAL_STATE[currentUserId];
+      renderDashboard({
+        user_id: currentUserId,
+        overall_score: data.overall,
+        concept_scores: data.scores,
+        attempt_counts: { "binary_search_intuition": 3, "binary_search_bounds_update": 4, "binary_search_complexity": 2, "binary_search_edge_cases": 2 },
+        weak_concepts: data.weak,
+        recommendation: data.recommendation,
+        history: data.history
+      });
+    }
+
+    function renderDashboard(data) {
+      // Overall Metric
+      const pct = Math.round(data.overall_score * 100);
+      document.getElementById("metricOverall").innerText = `${pct}%`;
+      document.getElementById("metricOverallBar").style.width = `${pct}%`;
+
+      // Weak Count Metric
+      const weakList = data.weak_concepts || [];
+      document.getElementById("metricWeakCount").innerText = weakList.length;
+
+      // Practice Attempts Count
+      const totalAttempts = data.history ? data.history.length : (data.total_attempts || 11);
+      document.getElementById("metricAttempts").innerText = totalAttempts;
+
+      // Recommendation Banner
+      if (data.recommendation) {
+        document.getElementById("recConceptTitle").innerText = data.recommendation.recommended_concept.replace(/_/g, " ").toUpperCase();
+        document.getElementById("recReasonText").innerText = data.recommendation.reason;
+        const actionBadge = document.getElementById("recActionBadge");
+        actionBadge.innerText = data.recommendation.suggested_action.toUpperCase();
+        if (data.recommendation.suggested_action === "lesson") {
+          actionBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30";
+        } else {
+          actionBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        }
+      }
+
+      // Render Chart
+      renderChart(data.concept_scores);
+
+      // Render Weak Areas
+      const weakContainer = document.getElementById("weakAreaList");
+      weakContainer.innerHTML = "";
+      if (weakList.length === 0) {
+        weakContainer.innerHTML = `<div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-800/40 text-emerald-400 text-xs">🎉 No weak concepts identified. Mastery exceeds benchmark across all topics!</div>`;
+      } else {
+        weakList.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "p-3.5 rounded-xl bg-slate-900 border border-rose-900/40 space-y-2";
+          
+          let miscBadges = "";
+          (item.active_misconceptions || []).forEach(m => {
+            miscBadges += `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 mr-1 mt-1">⚠️ ${m}</span>`;
+          });
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white">${item.concept_tag.replace(/_/g, " ")}</span>
+              <span class="text-xs font-mono font-bold text-rose-400">${Math.round(item.mastery_score * 100)}%</span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-tight">${item.recommended_action || "Targeted practice needed."}</p>
+            <div>${miscBadges}</div>
+          `;
+          weakContainer.appendChild(card);
+        });
+      }
+
+      // Render History Timeline
+      const histContainer = document.getElementById("historyTimeline");
+      histContainer.innerHTML = "";
+      (data.history || []).forEach(item => {
+        const row = document.createElement("div");
+        row.className = "flex items-start gap-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800";
+        const isOk = item.is_correct;
+        const badgeColor = isOk ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : "bg-rose-500/20 text-rose-400 border-rose-500/40";
+        const icon = isOk ? "✓" : "✗";
+
+        let miscHtml = "";
+        if (item.misconceptions && item.misconceptions.length > 0) {
+          miscHtml = `<div class="text-[10px] text-rose-400 mt-1">Diagnosed: ${item.misconceptions.join(", ")}</div>`;
+        }
+
+        row.innerHTML = `
+          <div class="w-6 h-6 rounded-full border ${badgeColor} flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+            ${icon}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-slate-200">${item.concept_tag.replace(/_/g, " ")}</span>
+              <span class="text-[10px] text-slate-500 font-mono">${item.created_at || "Recent"}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Time: ${item.time_spent_seconds}s ${item.question_id ? `• Q: ${item.question_id}` : ""}</div>
+            ${miscHtml}
+          </div>
+        `;
+        histContainer.appendChild(row);
+      });
+    }
+
+    function renderChart(scores) {
+      const labels = Object.keys(scores).map(k => k.replace(/binary_search_/g, "").replace(/_/g, " ").toUpperCase());
+      const values = Object.values(scores).map(v => Math.round(v * 100));
+      const colors = values.map(v => v >= 75 ? 'rgba(16, 185, 129, 0.8)' : v >= 55 ? 'rgba(2, 132, 199, 0.8)' : 'rgba(244, 63, 94, 0.8)');
+      const borders = values.map(v => v >= 75 ? '#10b981' : v >= 55 ? '#0284c7' : '#f43f5e');
+
+      const ctx = document.getElementById('masteryChart').getContext('2d');
+      if (masteryChart) {
+        masteryChart.destroy();
+      }
+
+      masteryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Mastery (%)',
+            data: values,
+            backgroundColor: colors,
+            borderColor: borders,
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => `Mastery: ${ctx.raw}%`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#cbd5e1', font: { size: 10, weight: 'bold' } }
+            }
+          }
+        }
+      });
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const concept = document.getElementById("formConcept").value;
+      const isCorrect = isCorrectState;
+      const timeSpent = parseFloat(document.getElementById("formTime").value);
+      const misc = !isCorrect ? [document.getElementById("formMisconception").value] : [];
+
+      await recordAttemptDirect(concept, isCorrect, timeSpent, misc);
+    }
+
+    async function simulateQuickAttempt(isCorrect) {
+      const concept = "binary_search_bounds_update";
+      const misc = isCorrect ? [] : ["confuses_direction_when_target_greater"];
+      await recordAttemptDirect(concept, isCorrect, 12.0, misc);
+    }
+
+    async function recordAttemptDirect(concept_tag, is_correct, time_spent, misconceptions) {
+      const payload = {
+        user_id: currentUserId,
+        concept_tag: concept_tag,
+        is_correct: is_correct,
+        time_spent_seconds: time_spent,
+        misconceptions: misconceptions,
+        question_id: "demo_dashboard_sim"
+      };
+
+      try {
+        // Send to backend
+        const res = await fetch("http://localhost:8002/learner/attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }).catch(() => null);
+
+        if (!res || !res.ok) {
+          // Also try standard port 8000
+          await fetch("http://localhost:8000/learner/attempt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }).catch(() => null);
+        }
+      } catch (err) {
+        console.warn("Could not post to backend, updating local state:", err);
+      }
+
+      // Update local state copy
+      const user = LOCAL_STATE[currentUserId];
+      const curr = user.scores[concept_tag] || 0.50;
+      const delta = is_correct ? 0.12 : -0.15;
+      user.scores[concept_tag] = Math.max(0.05, Math.min(1.0, Math.round((curr + delta) * 100) / 100));
+      user.overall = Math.round(Object.values(user.scores).reduce((a, b) => a + b, 0) / Object.values(user.scores).length * 100) / 100;
+
+      user.history.unshift({
+        id: Date.now(),
+        concept_tag: concept_tag,
+        is_correct: is_correct,
+        time_spent_seconds: time_spent,
+        misconceptions: misconceptions,
+        created_at: "Just now"
+      });
+
+      // Update weak list
+      user.weak = [];
+      for (const [k, v] of Object.entries(user.scores)) {
+        if (v < 0.60) {
+          user.weak.push({
+            concept_tag: k,
+            mastery_score: v,
+            active_misconceptions: misconceptions.length ? misconceptions : ["confuses_direction_when_target_greater"],
+            recommended_action: is_correct ? "Strengthen boundary precision with next quiz" : "Review pointer movement: when target > mid, search the right partition."
+          });
+        }
+      }
+
+      if (user.scores["binary_search_bounds_update"] >= 0.60) {
+        user.recommendation = {
+          recommended_concept: "binary_search_edge_cases",
+          reason: "Bounds mastery improved! Next step: tackle edge cases and termination conditions.",
+          suggested_action: "quiz"
+        };
+      }
+
+      fetchDashboardData();
+    }
+
+    async function resetData() {
+      try {
+        await fetch("http://localhost:8002/learner/seed", { method: "POST" }).catch(() => null);
+        await fetch("http://localhost:8000/learner/seed", { method: "POST" }).catch(() => null);
+      } catch (e) {}
+      fetchDashboardData();
+    }
+
+    function switchPersona(id) {
+      currentUserId = id;
+      fetchDashboardData();
+    }
+
+    // Initial load
+    fetchDashboardData();
+  </script>
+</body>
+</html>

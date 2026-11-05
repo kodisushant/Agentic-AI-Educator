@@ -38,6 +38,13 @@ def run_unit_tests():
     assert len(steps) == 5, f"Expected 5 steps, got {len(steps)}"
     print(f"✓ Retrieved {len(steps)} mock lesson steps", flush=True)
 
+    from backend.agent.teacher import get_mock_recursion_steps
+    rec_steps = get_mock_recursion_steps()
+    assert len(rec_steps) == 5
+    rec_step_0 = teacher_agent.get_next_step_sync(LessonStepRequest(concept="Recursion", step_index=0))
+    assert rec_step_0.step_id == "rec_step_0"
+    print("✓ Retrieved 5 mock recursion steps & dynamic dispatch verified", flush=True)
+
     for i, step in enumerate(steps):
         assert step.step_index == i
         assert step.concept == "Binary Search"

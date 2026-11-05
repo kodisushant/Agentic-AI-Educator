@@ -357,9 +357,338 @@ def get_mock_binary_search_steps() -> List[LessonStep]:
     return steps
 
 
+def get_mock_recursion_steps() -> List[LessonStep]:
+    """Generates the second canned 5-step interactive lesson on Recursion."""
+    steps = [
+        # Step 0: Intuition & Self-Similarity
+        LessonStep(
+            step_id="rec_step_0",
+            step_index=0,
+            total_steps=5,
+            concept="Recursion",
+            narration=(
+                "Welcome to Recursion! Recursion is the art of solving a computational problem "
+                "by having a function call itself on a strictly smaller subproblem. "
+                "Think of Russian nesting dolls (Matryoshka): every doll contains an identical, "
+                "smaller doll inside, until you finally reach the solid, indivisible core—the Base Case!"
+            ),
+            agent_thoughts="Goal: Introduce recursion intuition using Russian dolls and factorial call-chain diagram.",
+            board_commands=[
+                ClearCommand(id="clear_rec_0"),
+                TextCommand(
+                    id="rec_title",
+                    content="Recursion: Self-Similarity & Delegation",
+                    x=60,
+                    y=40,
+                    size=24,
+                    color="#0f172a"
+                ),
+                TextCommand(
+                    id="rec_math_label",
+                    content="Mathematical Definition: Factorial Function",
+                    x=60,
+                    y=80,
+                    size=16,
+                    color="#475569"
+                ),
+                EquationCommand(
+                    id="rec_eq_1",
+                    latex=r"n! = \begin{cases} 1 & \text{if } n \le 1 \quad \text{(Base Case)} \\ n \times (n-1)! & \text{if } n > 1 \quad \text{(Recursive Step)} \end{cases}",
+                    x=60,
+                    y=110,
+                    color="#0284c7"
+                ),
+                MermaidCommand(
+                    id="rec_chain_chart",
+                    chart="graph TD\n  F4[\"factorial(4)\"] --> F3[\"factorial(3)\"]\n  F3 --> F2[\"factorial(2)\"]\n  F2 --> F1[\"factorial(1) (BASE CASE returns 1)\"]",
+                    x=60,
+                    y=200,
+                    title="Call Chain: Winding Down to Base Case"
+                )
+            ],
+            code_action=CodeAction(
+                code=(
+                    "def factorial(n: int) -> int:\n"
+                    "    # Base case: stop the recursive descent\n"
+                    "    if n <= 1:\n"
+                    "        return 1\n"
+                    "    # Recursive case: self-delegation\n"
+                    "    return n * factorial(n - 1)\n\n"
+                    "print('4! =', factorial(4))  # Output: 24\n"
+                ),
+                language="python",
+                explanation="Notice how factorial(4) halts only when factorial(1) hits the base case and returns 1."
+            ),
+            tool_calls=[
+                execute_tool_call("draw_on_board", {"element": "recursion_call_chain", "concept": "recursion_intuition"}),
+                execute_tool_call("run_code", {"language": "python", "snippet": "factorial(4)"})
+            ]
+        ),
+        # Step 1: The Base Case Requirement
+        LessonStep(
+            step_id="rec_step_1",
+            step_index=1,
+            total_steps=5,
+            concept="Recursion",
+            narration=(
+                "The most critical rule in recursive design is the Base Case. "
+                "Every recursive path MUST have at least one condition that returns directly without a self-call. "
+                "Without a base case, or if the parameter doesn't converge toward it, "
+                "calls pile up indefinitely until Python raises RecursionError: maximum recursion depth exceeded!"
+            ),
+            agent_thoughts="Goal: Emphasize the mandatory base case to prevent stack overflow errors.",
+            board_commands=[
+                TextCommand(
+                    id="rec_base_title",
+                    content="The Golden Rule: Mandatory Terminating Base Case",
+                    x=60,
+                    y=40,
+                    size=22,
+                    color="#0f172a"
+                ),
+                BoxCommand(
+                    id="base_case_highlight",
+                    x=50,
+                    y=85,
+                    width=680,
+                    height=90,
+                    color="#dc2626",
+                    fill="#fef2f2"
+                ),
+                TextCommand(
+                    id="base_case_warning",
+                    content="WARNING: if n <= 1: return 1\nMissing this condition creates infinite recursion and crashes!",
+                    x=70,
+                    y=110,
+                    size=16,
+                    color="#991b1b"
+                ),
+                EquationCommand(
+                    id="rec_depth_eq",
+                    latex=r"\lim_{k \to \infty} \text{StackDepth}(k) \implies \text{RecursionError: Stack Overflow}",
+                    x=60,
+                    y=200,
+                    color="#dc2626"
+                )
+            ],
+            check_question=CheckQuestion(
+                question_id="rec_check_base_case",
+                concept_tag="recursion_base_case",
+                question="What happens in Python if a recursive function fails to define or reach a valid base case?",
+                options=[
+                    "The function quietly returns None",
+                    "A RecursionError / Stack Overflow occurs when memory limit is exceeded",
+                    "Python automatically transforms it into an iterative while loop",
+                    "The interpreter applies tail-call optimization automatically"
+                ],
+                correct_index=1,
+                explanation="Without a reachable base case, stack frames consume all allocated call stack memory, triggering a RecursionError."
+            ),
+            tool_calls=[
+                execute_tool_call("ask_check_question", {
+                    "question_id": "rec_check_base_case",
+                    "concept": "recursion_base_case"
+                })
+            ]
+        ),
+        # Step 2: The Call Stack & LIFO Unwinding
+        LessonStep(
+            step_id="rec_step_2",
+            step_index=2,
+            total_steps=5,
+            concept="Recursion",
+            narration=(
+                "How does the computer remember where to return? The Call Stack! "
+                "Each active call allocates an activation record (frame) holding parameters and local state. "
+                "Because the stack is Last-In, First-Out (LIFO), the deepest call completes first, "
+                "then unwinds backwards: factorial(1) -> factorial(2) -> factorial(3) -> factorial(4) = 24!"
+            ),
+            agent_thoughts="Goal: Demystify the return phase via LIFO stack unwinding visualization.",
+            board_commands=[
+                ClearCommand(id="clear_rec_2"),
+                TextCommand(
+                    id="stack_title",
+                    content="The Call Stack: Last-In, First-Out (LIFO) Unwinding",
+                    x=60,
+                    y=40,
+                    size=22,
+                    color="#0f172a"
+                ),
+                MermaidCommand(
+                    id="unwind_stack_chart",
+                    chart="graph BT\n  F1[\"factorial(1) = 1 (Bottom resolves first)\"] --> F2[\"factorial(2) = 2 * 1 = 2\"]\n  F2 --> F3[\"factorial(3) = 3 * 2 = 6\"]\n  F3 --> F4[\"factorial(4) = 4 * 6 = 24 (Top resolves last)\"]",
+                    x=60,
+                    y=90,
+                    title="Stack Unwinding Order (LIFO Return Phase)"
+                ),
+                EquationCommand(
+                    id="rec_time_eq",
+                    latex=r"T(n) = T(n-1) + O(1) = O(n) \text{ time}, \quad S(n) = O(n) \text{ auxiliary call stack space}",
+                    x=60,
+                    y=260,
+                    color="#047857"
+                )
+            ],
+            check_question=CheckQuestion(
+                question_id="rec_check_call_stack",
+                concept_tag="recursion_call_stack",
+                question="In what order do suspended recursive stack frames resolve their return values?",
+                options=[
+                    "First-In, First-Out (FIFO)",
+                    "Last-In, First-Out (LIFO)",
+                    "Random non-deterministic order",
+                    "Simultaneously across CPU threads"
+                ],
+                correct_index=1,
+                explanation="Function calls push onto a call stack (LIFO structure); the most recent frame completes and pops first."
+            ),
+            tool_calls=[
+                execute_tool_call("ask_check_question", {
+                    "question_id": "rec_check_call_stack",
+                    "concept": "recursion_call_stack"
+                })
+            ]
+        ),
+        # Step 3: Branching Tree Traversal
+        LessonStep(
+            step_id="rec_step_3",
+            step_index=3,
+            total_steps=5,
+            concept="Recursion",
+            narration=(
+                "Recursion truly shines when dealing with branching structures like trees and graphs. "
+                "In a Binary Search Tree (BST), an In-Order traversal simply says: "
+                "traverse(left), process(node), traverse(right). "
+                "Three lines of recursive code do what would require a complex explicit stack in iteration!"
+            ),
+            agent_thoughts="Goal: Show why recursion is natural for trees via in-order traversal.",
+            board_commands=[
+                ClearCommand(id="clear_rec_3"),
+                TextCommand(
+                    id="tree_title",
+                    content="Branching Recursion: Binary Tree Traversal",
+                    x=60,
+                    y=40,
+                    size=22,
+                    color="#0f172a"
+                ),
+                MermaidCommand(
+                    id="tree_diagram",
+                    chart="graph TD\n  4[\"4 (Root)\"] --> 2[\"2 (Left)\"]\n  4 --> 6[\"6 (Right)\"]\n  2 --> 1[\"1 (Left)\"]\n  2 --> 3[\"3 (Right)\"]\n  6 --> 5[\"5 (Left)\"]\n  6 --> 7[\"7 (Right)\"]",
+                    x=60,
+                    y=80,
+                    title="Binary Search Tree Structure"
+                )
+            ],
+            code_action=CodeAction(
+                code=(
+                    "class TreeNode:\n"
+                    "    def __init__(self, val=0, left=None, right=None):\n"
+                    "        self.val = val\n"
+                    "        self.left = left\n"
+                    "        self.right = right\n\n"
+                    "def inorder_traversal(root: TreeNode) -> list:\n"
+                    "    if not root:  # Base case: empty leaf\n"
+                    "        return []\n"
+                    "    # Left Subtree + Root + Right Subtree\n"
+                    "    return inorder_traversal(root.left) + [root.val] + inorder_traversal(root.right)\n\n"
+                    "# Builds sorted order: [1, 2, 3, 4, 5, 6, 7]\n"
+                ),
+                language="python",
+                explanation="In-order recursive traversal visits the left branch, records the value, then visits the right branch."
+            ),
+            tool_calls=[
+                execute_tool_call("run_code", {"language": "python", "snippet": "inorder_traversal(tree_root)"})
+            ]
+        ),
+        # Step 4: Recursion vs Iteration & Mastery Wrap-up
+        LessonStep(
+            step_id="rec_step_4",
+            step_index=4,
+            total_steps=5,
+            concept="Recursion",
+            narration=(
+                "Mastering recursion means knowing when to use it! "
+                "Recursion is elegant and intuitive for hierarchical data (trees, graphs, divide-and-conquer). "
+                "However, each call costs memory on the stack: O(h) space where h is maximum recursion depth. "
+                "Congratulations! You now understand Base Cases, Call Stacks, and Tree Traversal!"
+            ),
+            agent_thoughts="Goal: Synthesize tradeoffs between recursion and iteration, update student mastery.",
+            board_commands=[
+                ClearCommand(id="clear_rec_4"),
+                TextCommand(
+                    id="summary_title",
+                    content="Recursion Mastery: Tradeoffs & Space Complexity",
+                    x=60,
+                    y=40,
+                    size=22,
+                    color="#0f172a"
+                ),
+                BoxCommand(
+                    id="summary_box",
+                    x=50,
+                    y=80,
+                    width=680,
+                    height=130,
+                    color="#16a34a",
+                    fill="#f0fdf4"
+                ),
+                TextCommand(
+                    id="summary_checklist",
+                    content=(
+                        "✓ Base Case: Halts recursive descent, prevents stack overflow\n"
+                        "✓ Call Stack (LIFO): Suspends frames and unwinds from deepest call\n"
+                        "✓ Auxiliary Space: O(h) stack depth memory overhead\n"
+                        "✓ Ideal Applications: Trees, Divide-and-Conquer, Graph DFS"
+                    ),
+                    x=70,
+                    y=105,
+                    size=15,
+                    color="#14532d"
+                ),
+                EquationCommand(
+                    id="rec_space_eq",
+                    latex=r"\text{Call Stack Overhead} = O(\text{max depth } h) \quad \text{vs Iteration } O(1)",
+                    x=60,
+                    y=230,
+                    color="#0284c7"
+                )
+            ],
+            check_question=CheckQuestion(
+                question_id="rec_check_complexity",
+                concept_tag="recursion_space_complexity",
+                question="What is the primary auxiliary memory cost of recursion compared to iteration?",
+                options=[
+                    "Zero memory overhead",
+                    "O(h) call stack memory where h is maximum recursion depth",
+                    "O(2^n) exponential heap memory always",
+                    "CPU register spills"
+                ],
+                correct_index=1,
+                explanation="Each pending recursive invocation retains an activation frame on the call stack until returned, costing O(depth) memory."
+            ),
+            tool_calls=[
+                execute_tool_call("update_mastery", {
+                    "student_id": "demo_student",
+                    "concept": "recursion_fundamentals",
+                    "score_delta": 0.35
+                }),
+                execute_tool_call("recommend_next", {
+                    "student_id": "demo_student",
+                    "weak_concepts": ["recursion_memoization", "tail_recursion"]
+                })
+            ],
+            is_final_step=True
+        )
+    ]
+    return steps
+
+
 class TeacherAgent:
     def __init__(self):
-        self.mock_steps = get_mock_binary_search_steps()
+        self.mock_bs_steps = get_mock_binary_search_steps()
+        self.mock_rec_steps = get_mock_recursion_steps()
+        self.mock_steps = self.mock_bs_steps
 
     def evaluate_check_answer(self, req: CheckAnswerRequest) -> CheckAnswerResponse:
         """
@@ -452,7 +781,8 @@ class TeacherAgent:
         )
 
     async def get_next_step(self, req: LessonStepRequest) -> LessonStep:
-        idx = max(0, min(req.step_index, len(self.mock_steps) - 1))
+        active_steps = self.mock_rec_steps if "recursion" in req.concept.lower() else self.mock_bs_steps
+        idx = max(0, min(req.step_index, len(active_steps) - 1))
 
         # Check if student answered a previous checkpoint incorrectly
         if req.last_student_response is not None:
@@ -466,7 +796,7 @@ class TeacherAgent:
                     student_id=req.student_id
                 ))
                 # Return an adaptive remediation teaching step
-                base_step = self.mock_steps[idx]
+                base_step = active_steps[idx]
                 return LessonStep(
                     step_id=f"{base_step.step_id}_remediation",
                     step_index=base_step.step_index,
@@ -523,7 +853,7 @@ class TeacherAgent:
 
         # Fallback factory for LLM router
         def fallback():
-            return self.mock_steps[idx]
+            return active_steps[idx]
 
         # Fetch learner mastery profile to personalize prompt
         mastery_profile = learner_client.get_mastery(req.student_id)
@@ -556,7 +886,8 @@ class TeacherAgent:
         )
 
     def get_next_step_sync(self, req: LessonStepRequest) -> LessonStep:
-        idx = max(0, min(req.step_index, len(self.mock_steps) - 1))
+        active_steps = self.mock_rec_steps if "recursion" in req.concept.lower() else self.mock_bs_steps
+        idx = max(0, min(req.step_index, len(active_steps) - 1))
 
         # Check if student answered a previous checkpoint incorrectly
         if req.last_student_response is not None:
@@ -569,7 +900,7 @@ class TeacherAgent:
                     concept=req.concept,
                     student_id=req.student_id
                 ))
-                base_step = self.mock_steps[idx]
+                base_step = active_steps[idx]
                 return LessonStep(
                     step_id=f"{base_step.step_id}_remediation",
                     step_index=base_step.step_index,
@@ -625,7 +956,7 @@ class TeacherAgent:
             )
 
         def fallback():
-            return self.mock_steps[idx]
+            return active_steps[idx]
 
         mastery_profile = learner_client.get_mastery(req.student_id)
         weak_data = learner_client.get_weak_concepts(req.student_id)

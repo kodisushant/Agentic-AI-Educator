@@ -27,7 +27,7 @@ from backend.agent.schemas import (
     CheckAnswerRequest,
     CheckAnswerResponse,
 )
-from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps
+from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps, get_mock_recursion_steps
 from backend.agent.tools import execute_tool_call
 from backend.agent.llm_router import router
 from backend.agent.client import learner_client, assess_client
@@ -129,12 +129,53 @@ async def stream_lesson(
 
 
 @app.get("/mock/lesson", response_model=List[LessonStep], tags=["Mock"])
-async def get_mock_lesson():
+async def get_mock_lesson(
+    concept: str = Query(default="Binary Search", description="Lesson topic ('Binary Search' or 'Recursion')")
+):
     """
-    Returns the complete pre-baked 5-step Binary Search lesson.
+    Returns the complete pre-baked 5-step lesson for Binary Search or Recursion.
     Teammates can use this to build and test their UI/assessments offline.
     """
+    if "recursion" in concept.lower():
+        return get_mock_recursion_steps()
     return get_mock_binary_search_steps()
+
+
+@app.post("/demo/seed", tags=["Demo"])
+async def seed_demo():
+    """
+    Seed initial benchmark student persona (Alex Chen) and demo topics.
+    Reuses Person 4's existing learner seed engine.
+    """
+    try:
+        from backend.learner.seed import seed_demo_data
+        seed_demo_data()
+        return {
+            "status": "seeded",
+            "student_id": "demo_student",
+            "name": "Alex Chen",
+            "topics": ["Binary Search", "Recursion"]
+        }
+    except Exception as e:
+        return {"status": "seeded_fallback", "detail": str(e)}
+
+
+@app.post("/demo/reset", tags=["Demo"])
+async def reset_demo():
+    """
+    Reset demo student state back to clean benchmark scenario.
+    Reuses Person 4's existing learner seed engine.
+    """
+    try:
+        from backend.learner.seed import seed_demo_data
+        seed_demo_data()
+        return {
+            "status": "reset",
+            "student_id": "demo_student",
+            "message": "Demo student data reset to benchmark baseline."
+        }
+    except Exception as e:
+        return {"status": "reset_fallback", "detail": str(e)}
 
 
 @app.post("/agent/chat", response_model=ChatMessageResponse, tags=["Interaction"])

@@ -25,6 +25,25 @@ from backend.agent.schemas import (
 
 logger = logging.getLogger("thin_client")
 
+# Optional real domain service bridges
+try:
+    from backend.learner.service import learner_service
+    from backend.learner.seed import seed_demo_data
+    try:
+        conn = learner_service._get_conn()
+        cur = conn.execute("SELECT COUNT(*) FROM attempts WHERE user_id = 'demo_student'")
+        if cur.fetchone()[0] == 0:
+            seed_demo_data(conn)
+    except Exception:
+        pass
+except Exception as _e:
+    learner_service = None
+
+try:
+    from backend.assess.service import assess_service
+except Exception as _e:
+    assess_service = None
+
 # In-memory mock storage for demo / standalone operation
 MOCK_MASTERY_DB: Dict[str, Dict[str, float]] = {
     "demo_student": {
@@ -62,12 +81,20 @@ class LearnerClient:
         self.mock_mode = os.getenv("MOCK_MODE", "true").lower() in ("true", "1", "yes")
 
     def record_attempt(self, req: AttemptRecordRequest) -> AttemptRecordResponse:
+        MOCK_ATTEMPTS.append(req.model_dump())
+
         if not self.mock_mode:
             try:
                 res = _post_json(f"{self.base_url}/learner/attempt", req.model_dump())
                 return AttemptRecordResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Learner service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Learner HTTP service unreachable ({e}). Trying domain service.")
+
+        if learner_service is not None:
+            try:
+                return learner_service.record_attempt(req)
+            except Exception as e:
+                logger.warning(f"Real learner domain service failed ({e}). Falling back to mock.")
 
         # Mock implementation
         user_scores = MOCK_MASTERY_DB.setdefault(req.user_id, {})
@@ -75,7 +102,6 @@ class LearnerClient:
         delta = 0.15 if req.is_correct else -0.10
         new_score = round(max(0.05, min(1.0, curr + delta)), 2)
         user_scores[req.concept_tag] = new_score
-        MOCK_ATTEMPTS.append(req.model_dump())
 
         return AttemptRecordResponse(
             status="recorded",
@@ -91,7 +117,13 @@ class LearnerClient:
                 res = _get_json(f"{self.base_url}/learner/mastery/{user_id}")
                 return MasteryResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Learner service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Learner HTTP service unreachable ({e}). Trying domain service.")
+
+        if learner_service is not None:
+            try:
+                return learner_service.get_mastery(user_id)
+            except Exception as e:
+                logger.warning(f"Real learner domain service failed ({e}). Falling back to mock.")
 
         scores = MOCK_MASTERY_DB.get(user_id, {
             "binary_search_intuition": 0.85,
@@ -114,7 +146,13 @@ class LearnerClient:
                 res = _get_json(f"{self.base_url}/learner/weak/{user_id}")
                 return WeakConceptsResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Learner service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Learner HTTP service unreachable ({e}). Trying domain service.")
+
+        if learner_service is not None:
+            try:
+                return learner_service.get_weak_concepts(user_id)
+            except Exception as e:
+                logger.warning(f"Real learner domain service failed ({e}). Falling back to mock.")
 
         mastery = self.get_mastery(user_id)
         weak_items = []
@@ -141,7 +179,13 @@ class LearnerClient:
                 res = _get_json(f"{self.base_url}/learner/recommend/{user_id}")
                 return RecommendResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Learner service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Learner HTTP service unreachable ({e}). Trying domain service.")
+
+        if learner_service is not None:
+            try:
+                return learner_service.recommend_next(user_id)
+            except Exception as e:
+                logger.warning(f"Real learner domain service failed ({e}). Falling back to mock.")
 
         weak = self.get_weak_concepts(user_id)
         target = weak.weak_concepts[0].concept_tag if weak.weak_concepts else "binary_search_bounds_update"
@@ -166,7 +210,20 @@ class AssessClient:
                 res = _post_json(f"{self.base_url}/assess/quiz", req.model_dump())
                 return QuizGenerateResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Assess service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Assess HTTP service unreachable ({e}). Trying domain service.")
+
+        if assess_service is not None:
+            try:
+                questions = assess_service._get_fallback_questions(req.topic, req.num_questions)
+                quiz_id = f"quiz_{req.topic.lower().replace(' ', '_')}"
+                assess_service.active_quizzes[quiz_id] = {q.question_id: q for q in questions}
+                return QuizGenerateResponse(
+                    quiz_id=quiz_id,
+                    topic=req.topic,
+                    questions=questions
+                )
+            except Exception as e:
+                logger.warning(f"Real assess domain service failed ({e}). Falling back to mock.")
 
         # Canned mock quiz for Binary Search
         questions = [
@@ -222,7 +279,14 @@ class AssessClient:
                 res = _post_json(f"{self.base_url}/assess/flashcards", req.model_dump())
                 return FlashcardsGenerateResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Assess service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Assess HTTP service unreachable ({e}). Trying domain service.")
+
+        if assess_service is not None:
+            try:
+                cards = assess_service._get_fallback_flashcards(req.topic, req.count)
+                return FlashcardsGenerateResponse(topic=req.topic, cards=cards)
+            except Exception as e:
+                logger.warning(f"Real assess domain service failed ({e}). Falling back to mock.")
 
         cards = [
             FlashcardItem(
@@ -262,7 +326,13 @@ class AssessClient:
                 res = _post_json(f"{self.base_url}/assess/submit", req.model_dump())
                 return QuizSubmitResponse.model_validate(res)
             except Exception as e:
-                logger.warning(f"Assess service unreachable ({e}). Using mock implementation.")
+                logger.debug(f"Assess HTTP service unreachable ({e}). Trying domain service.")
+
+        if assess_service is not None:
+            try:
+                return assess_service.submit_quiz(req)
+            except Exception as e:
+                logger.warning(f"Real assess domain service failed ({e}). Falling back to mock.")
 
         # Evaluate against mock questions
         correct_answers = {"q_bs_1": 0, "q_bs_2": 1, "q_bs_3": 1}

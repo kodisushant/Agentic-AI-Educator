@@ -19,4 +19,4 @@ Only Person 1 may update `/contracts`.
 - **From:** Person 3 (/backend/assess)
 - **Target:** /backend/agent/main.py
 - **Details:** Assessment endpoints (`/assess/quiz`, `/assess/flashcards`, `/assess/submit`) are fully implemented in `backend.assess.router.assess_router`. Person 1 can optionally mount `app.include_router(assess_router)` in `main.py` alongside the existing client fallback.
-- **Status:** Open
+- **Status:** Accepted (Integrated via AssessClient real service bridge with resilient fallback)

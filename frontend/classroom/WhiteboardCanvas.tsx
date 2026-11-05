@@ -24,6 +24,10 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [renderedMermaid, setRenderedMermaid] = useState<Record<string, string>>({});
+  const [isPenActive, setIsPenActive] = useState<boolean>(false);
+  const freehandCanvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef<boolean>(false);
+  const lastPointRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Merge regular and remediation commands, handling clear commands
   const activeCommands = React.useMemo(() => {
@@ -156,6 +160,56 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.15, 2.5));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.15, 0.5));
+  const handleTogglePen = () => {
+    setIsPenActive((prev) => !prev);
+  };
+
+  const handleClearPen = () => {
+    const canvas = freehandCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+
+  const handlePenMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isPenActive) return;
+    isDrawingRef.current = true;
+    const canvas = freehandCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    lastPointRef.current = {
+      x: (e.clientX - rect.left) / zoom,
+      y: (e.clientY - rect.top) / zoom,
+    };
+  };
+
+  const handlePenMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !isPenActive) return;
+    const canvas = freehandCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const curX = (e.clientX - rect.left) / zoom;
+    const curY = (e.clientY - rect.top) / zoom;
+
+    ctx.strokeStyle = "#f59e0b"; // warm amber teacher marker
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+    ctx.lineTo(curX, curY);
+    ctx.stroke();
+
+    lastPointRef.current = { x: curX, y: curY };
+  };
+
+  const handlePenMouseUp = () => {
+    isDrawingRef.current = false;
+  };
+
   const handleResetView = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -217,6 +271,29 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         >
           Reset
         </button>
+        <div className="w-[1px] h-4 bg-slate-700 mx-0.5" />
+        <button
+          onClick={handleTogglePen}
+          title="Freehand Pen Tool"
+          className={`w-7 h-7 flex items-center justify-center rounded-lg transition ${
+            isPenActive
+              ? "text-amber-300 bg-amber-500/20 border border-amber-500/40 shadow-sm"
+              : "text-slate-400 hover:text-amber-300 hover:bg-slate-800"
+          }`}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
+        {isPenActive && (
+          <button
+            onClick={handleClearPen}
+            title="Clear Pen Sketches"
+            className="px-1.5 h-7 text-[10px] text-slate-400 hover:text-rose-300 hover:bg-slate-800 rounded-lg transition font-mono"
+          >
+            Clear Pen
+          </button>
+        )}
       </div>
 
       {/* Canvas Viewport (Pannable & Zoomable) */}
@@ -245,6 +322,19 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           }}
         >
+          {/* Freehand Drawing Overlay */}
+          <canvas
+            ref={freehandCanvasRef}
+            width={1400}
+            height={900}
+            onMouseDown={handlePenMouseDown}
+            onMouseMove={handlePenMouseMove}
+            onMouseUp={handlePenMouseUp}
+            onMouseLeave={handlePenMouseUp}
+            className={`absolute top-0 left-0 z-10 ${
+              isPenActive ? "pointer-events-auto cursor-crosshair" : "pointer-events-none"
+            }`}
+          />
           {/* SVG Vector Layer for Arrows & Connection Markers */}
           <svg
             className="absolute top-0 left-0 w-[1400px] h-[900px] pointer-events-none"

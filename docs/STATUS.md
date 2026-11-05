@@ -32,6 +32,7 @@
   - **Next.js & React Module (`frontend/classroom/ClassroomView.tsx`, `page.tsx`, `index.ts`):** Complete classroom orchestrator with persona selector and offline resilience.
   - **Standalone Interactive Web Application (`frontend/classroom/index.html`):** Zero-dependency single-file HTML5 app with CDN-hosted Tailwind, KaTeX, and Mermaid, opening instantly in any browser.
   - **In-Browser Interactive Live Code Runner:** Executable Python code runner inside `frontend/classroom/index.html` and `ClassroomView.tsx` powered by Pyodide WebAssembly with terminal stdout capture, execution timer, copy snippet toggle, and automatic error reporting to teacher chat (`POST /agent/chat`).
+  - **Excalidraw/Whiteboard Freehand Annotation Tool:** Real-time freehand sketching and drawing layer (`freehandCanvas`) on top of vector board elements with toggleable pen tool, warm amber teacher marker, and instant canvas clearing.
 - **Tested:**
   - Schema compliance against `/contracts/board_commands.json` for all command types.
   - Integration with `backend/agent/main.py` (`/mock/lesson`, `/lesson/step`, `/lesson/check-answer`, `/agent/chat`).

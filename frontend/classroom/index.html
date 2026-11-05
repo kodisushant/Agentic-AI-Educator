@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Virtual Teacher — Interactive Digital Whiteboard Classroom</title>
+  <!-- Google Fonts for Hand-Drawn Whiteboard Styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- KaTeX CDN -->
@@ -45,6 +49,22 @@
     .no-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
+    }
+    @keyframes elementEntrance {
+      0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .board-element-enter {
+      animation: elementEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .font-handwriting {
+      font-family: 'Architects Daughter', cursive, sans-serif;
     }
     .board-grid {
       background-image: radial-gradient(circle, #38bdf8 1px, transparent 1px), radial-gradient(circle, #64748b 0.5px, transparent 0.5px);
@@ -130,11 +150,20 @@
           <button onclick="resetCanvasTransform()" title="Reset Canvas View" class="px-2 h-7 flex items-center justify-center text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
             Reset
           </button>
+          <div class="w-[1px] h-4 bg-slate-700 mx-0.5"></div>
+          <button id="penToggleBtn" onclick="togglePenMode()" title="Freehand Pen Annotation Tool" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 rounded-lg transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+          <button id="penClearBtn" onclick="clearFreehandDrawing()" title="Clear Pen Sketches" class="hidden px-2 h-7 text-[10px] text-slate-400 hover:text-rose-300 hover:bg-slate-800 rounded-lg transition font-mono">
+            Clear Pen
+          </button>
         </div>
 
         <!-- Viewport Layer -->
         <div id="canvasViewport" class="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden board-grid">
           <div id="canvasTransformLayer" class="absolute top-0 left-0 w-full h-full origin-top-left transition-transform duration-75">
+            <!-- Freehand Drawing Canvas Overlay -->
+            <canvas id="freehandCanvas" width="1400" height="900" class="absolute top-0 left-0 pointer-events-none z-10"></canvas>
             <!-- SVG Arrow and Vector Layer -->
             <svg id="svgArrowLayer" class="absolute top-0 left-0 w-[1400px] h-[900px] pointer-events-none" style="overflow: visible;">
               <defs>
@@ -706,8 +735,12 @@
         }
       });
 
-      // Render HTML Elements (Boxes, Text, Equations, Mermaid)
+      // Render HTML Elements (Boxes, Text, Equations, Mermaid) with staggered entrance
+      let animIndex = 0;
       for (const cmd of activeCmds) {
+        animIndex++;
+        const animDelay = `${Math.min(animIndex * 40, 400)}ms`;
+
         if (cmd.type === "box") {
           const box = document.createElement("div");
           box.style.position = "absolute";
@@ -717,7 +750,8 @@
           box.style.height = `${cmd.height || 50}px`;
           box.style.borderColor = cmd.color || "#3b82f6";
           box.style.backgroundColor = cmd.fill || "#0f172a";
-          box.className = "border-2 rounded-xl flex items-center justify-center font-mono font-bold text-base transition-all duration-300 shadow-md text-slate-100 pointer-events-auto hover:scale-105 cursor-pointer";
+          box.className = "board-element-enter border-2 rounded-xl flex items-center justify-center font-mono font-bold text-base transition-all duration-300 shadow-md text-slate-100 pointer-events-auto hover:scale-105 cursor-pointer";
+          box.style.animationDelay = animDelay;
           box.innerText = cmd.label || "";
           htmlLayer.appendChild(box);
         } else if (cmd.type === "text") {
@@ -738,7 +772,8 @@
           eqCard.style.position = "absolute";
           eqCard.style.left = `${cmd.x}px`;
           eqCard.style.top = `${cmd.y}px`;
-          eqCard.className = "bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 shadow-xl backdrop-blur transition-all duration-300 max-w-md pointer-events-auto";
+          eqCard.className = "board-element-enter bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 shadow-xl backdrop-blur transition-all duration-300 max-w-md pointer-events-auto";
+          eqCard.style.animationDelay = animDelay;
 
           let labelHtml = cmd.label ? `<div class="text-[11px] font-medium text-indigo-300 uppercase tracking-wider mb-1">${cmd.label}</div>` : "";
           let renderedMath = cmd.latex;
@@ -756,7 +791,8 @@
           mCard.style.position = "absolute";
           mCard.style.left = `${cmd.x || 60}px`;
           mCard.style.top = `${cmd.y || 100}px`;
-          mCard.className = "bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur transition-all duration-300 max-w-2xl overflow-hidden pointer-events-auto";
+          mCard.className = "board-element-enter bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur transition-all duration-300 max-w-2xl overflow-hidden pointer-events-auto";
+          mCard.style.animationDelay = animDelay;
 
           const titleHtml = cmd.title ? `<div class="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-300 border-b border-slate-800 pb-1.5">
             <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>

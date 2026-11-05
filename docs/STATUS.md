@@ -1,7 +1,7 @@
 # Team Status Board
 
 ## Person 1: Tech lead + Agent brain (/backend/agent, /contracts)
-- **Status:** All 6 Sprint Tasks Complete & Pushed
+- **Status:** All Sprint Tasks Complete & Synced with Teammates (0 Conflicts)
 - **Completed Tasks:**
   1. **Honesty Check:** Re-ran e2e & tests with `REAL_LLM=1`. All 10 steps PASS using mock/rule-based engines (API keys blank in local `.env`). STATUS.md honestly marks cloud LLM calls as MOCK/FALLBACK.
   2. **Safe Imports:** Wrapped learner & assess service imports in try/except with graceful fallback chain: in-process → HTTP → mock. `/health` exposes `services.learner.mode` and `services.assess.mode`.
@@ -12,10 +12,11 @@
      - **Stable (12):** `/health`, `/lesson/step`, `/lesson/check-answer`, `/mock/lesson`, `/agent/chat`, `/learner/attempt`, `/learner/mastery/{user_id}`, `/learner/weak/{user_id}`, `/learner/recommend/{user_id}`, `/assess/quiz`, `/assess/flashcards`, `/assess/submit`
      - **May-change (4):** `/lesson/step/stream`, `/tools/execute`, `/demo/seed`, `/demo/reset`
   7. **Single-Command Full Stack Launcher:** Added `start_all.bat` (Windows) and `start_all.sh` (Mac/Linux), plus matching `stop_all.bat` and `stop_all.sh`. Automatically verifies runtimes (Python, Node, npm), creates `.env` with key instructions if missing, supports `mock`/`real` mode flags, installs missing dependencies, launches backend on port 8000 + classroom UI on port 3000 + dashboard UI on port 3001 in separate terminal windows, verifies health, and launches browser. Enhanced gateway CORS and added summary/history pass-through routes for dashboard.
+  8. **Teammate Sync & Integration Verification:** Rebased cleanly over Person 2's Pyodide live coding runner and freehand annotation tool commits (`85378e9`, `becce91`). Verified that all contracts, board commands, and endpoints remain 100% compatible.
 - **What is REAL & VERIFIED:**
   - Learner Model, Assessment Engine, Teacher Rule Engine, Whiteboard Commands, FastAPI, all test suites (100% pass), and full-stack multi-service single-command launcher verified across ports 8000, 3000, 3001.
 - **What is MOCK/FALLBACK:**
-  - Cloud LLM calls (API keys blank). Falls back safely to rule-based engine.
+  - Cloud LLM calls (API keys blank in `.env`). Falls back safely to deterministic rule-based engine.
 - **What is BROKEN:** None.
 - **Teammate Blockers:** None.
 

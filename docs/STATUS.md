@@ -11,8 +11,9 @@
   6. **Contract Freeze:** All 16 endpoints in `openapi.json` annotated with `x-stability`:
      - **Stable (12):** `/health`, `/lesson/step`, `/lesson/check-answer`, `/mock/lesson`, `/agent/chat`, `/learner/attempt`, `/learner/mastery/{user_id}`, `/learner/weak/{user_id}`, `/learner/recommend/{user_id}`, `/assess/quiz`, `/assess/flashcards`, `/assess/submit`
      - **May-change (4):** `/lesson/step/stream`, `/tools/execute`, `/demo/seed`, `/demo/reset`
+  7. **Single-Command Full Stack Launcher:** Added `start_all.bat` (Windows) and `start_all.sh` (Mac/Linux), plus matching `stop_all.bat` and `stop_all.sh`. Automatically verifies runtimes (Python, Node, npm), creates `.env` with key instructions if missing, supports `mock`/`real` mode flags, installs missing dependencies, launches backend on port 8000 + classroom UI on port 3000 + dashboard UI on port 3001 in separate terminal windows, verifies health, and launches browser. Enhanced gateway CORS and added summary/history pass-through routes for dashboard.
 - **What is REAL & VERIFIED:**
-  - Learner Model, Assessment Engine, Teacher Rule Engine, Whiteboard Commands, FastAPI, all test suites (100% pass).
+  - Learner Model, Assessment Engine, Teacher Rule Engine, Whiteboard Commands, FastAPI, all test suites (100% pass), and full-stack multi-service single-command launcher verified across ports 8000, 3000, 3001.
 - **What is MOCK/FALLBACK:**
   - Cloud LLM calls (API keys blank). Falls back safely to rule-based engine.
 - **What is BROKEN:** None.

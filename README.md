@@ -54,7 +54,41 @@ For detailed sequence diagrams, mathematical models, and SQLite ER schemas, see 
 
 ## 🚀 Quickstart
 
-### 1. Single-Command Backend (MOCK_MODE=true)
+### ⚡ Run Everything (Single Command)
+
+Start the entire system (FastAPI backend on port 8000, Classroom Frontend on port 3000, and Learner Dashboard on port 3001) with one command. Automatically checks prerequisites, installs missing dependencies, checks API keys, and launches your browser:
+
+- **Windows:**
+  ```cmd
+  start_all.bat
+  :: Or force explicit mode:
+  start_all.bat mock    :: 100% crash-proof offline mode (no keys required)
+  start_all.bat real    :: Call configured LLM providers (Gemini, Groq, Cerebras, OpenRouter)
+  ```
+- **macOS / Linux:**
+  ```bash
+  chmod +x start_all.sh stop_all.sh
+  ./start_all.sh
+  # Or force explicit mode:
+  ./start_all.sh mock
+  ./start_all.sh real
+  ```
+- **To stop all services:**
+  - Windows: `stop_all.bat`
+  - macOS / Linux: `./stop_all.sh`
+
+#### 🌐 Active Service Directory:
+| Service | URL | Description |
+|---|---|---|
+| **Classroom Frontend** | [http://localhost:3000](http://localhost:3000) | Digital whiteboard, voice narration, interactive teacher chat & formative checks |
+| **Learner Dashboard** | [http://localhost:3001](http://localhost:3001) | Real-time EWMA mastery charts, active misconceptions & live simulator |
+| **Backend Gateway API** | [http://localhost:8000](http://localhost:8000) | Unified FastAPI teacher agent brain & tool execution |
+| **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Full Swagger OpenAPI 3.1 documentation |
+| **System Health Check** | [http://localhost:8000/health](http://localhost:8000/health) | Runtime health, LLM routing mode & service bridges |
+
+---
+
+### 1. Manual Backend Only (MOCK_MODE=true)
 
 Teammates can run the full system with zero API keys required:
 

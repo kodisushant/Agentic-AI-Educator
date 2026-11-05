@@ -222,6 +222,53 @@ class LearnerClient:
             suggested_action="quiz"
         )
 
+    def get_history(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+        if not self.mock_mode:
+            try:
+                res = _get_json(f"{self.base_url}/learner/history/{user_id}?limit={limit}")
+                if isinstance(res, list):
+                    return res
+            except Exception as e:
+                logger.debug(f"Learner HTTP service unreachable ({e}). Trying domain service.")
+
+        if learner_service is not None:
+            try:
+                return learner_service.get_history(user_id, limit=limit)
+            except Exception as e:
+                logger.warning(f"Real learner domain service failed ({e}). Falling back to mock.")
+
+        return []
+
+    def get_summary(self, user_id: str) -> Dict[str, Any]:
+        if not self.mock_mode:
+            try:
+                res = _get_json(f"{self.base_url}/learner/summary/{user_id}")
+                if isinstance(res, dict):
+                    return res
+            except Exception as e:
+                logger.debug(f"Learner HTTP service unreachable ({e}). Trying domain service.")
+
+        if learner_service is not None:
+            try:
+                return learner_service.get_user_summary(user_id)
+            except Exception as e:
+                logger.warning(f"Real learner domain service failed ({e}). Falling back to mock.")
+
+        mastery = self.get_mastery(user_id)
+        weak = self.get_weak_concepts(user_id)
+        rec = self.recommend_next(user_id)
+        return {
+            "user_id": user_id,
+            "overall_mastery": mastery.overall_mastery,
+            "concept_mastery": {c.concept_tag: c.mastery_score for c in mastery.concept_mastery},
+            "weak_concepts": [w.concept_tag for w in weak.weak_concepts],
+            "active_misconceptions": [m for w in weak.weak_concepts for m in w.active_misconceptions],
+            "recommended_concept": rec.recommended_concept,
+            "recommendation_reason": rec.reason,
+            "suggested_action": rec.suggested_action,
+        }
+
+
 
 class AssessClient:
     """Thin client for Person 3's Assessment service."""

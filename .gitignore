@@ -53,3 +53,5 @@ backend/learner/*.db
 .idea/
 .DS_Store
 Thumbs.db
+*.log
+*.pid

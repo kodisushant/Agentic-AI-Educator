@@ -56,10 +56,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for local Next.js frontend development
+# Enable CORS for local Next.js and static frontends (Classroom 3000, Dashboard 3001, etc.)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:8000",
+        "http://localhost:8002",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8002",
+        "*",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -255,6 +266,40 @@ async def get_weak_concepts(user_id: str = PathParam(..., description="Student I
 async def get_recommendation(user_id: str = PathParam(..., description="Student ID", examples=["demo_student"])):
     """Returns the highest priority concept recommendation and suggested action."""
     return learner_client.recommend_next(user_id)
+
+
+@app.get(
+    "/learner/history/{user_id}",
+    tags=["Learner Model"],
+    summary="Get recent practice attempt history"
+)
+async def get_history(
+    user_id: str = PathParam(..., description="Student ID"),
+    limit: int = Query(default=20, ge=1, le=100)
+):
+    """Returns chronological attempt logs with time spent and misconception tags."""
+    return learner_client.get_history(user_id, limit=limit)
+
+
+@app.get(
+    "/learner/summary/{user_id}",
+    tags=["Learner Model"],
+    summary="Full student profile snapshot for dashboard"
+)
+async def get_summary(user_id: str = PathParam(..., description="Student ID")):
+    """Returns aggregate student analytics snapshot for real-time dashboard rendering."""
+    return learner_client.get_summary(user_id)
+
+
+@app.post(
+    "/learner/seed",
+    tags=["Learner Model"],
+    summary="Reset and reseed demo student database"
+)
+async def reset_learner_seed():
+    """Resets the demo student database to initial pitch demo state."""
+    return await reset_demo()
+
 
 
 # =====================================================================

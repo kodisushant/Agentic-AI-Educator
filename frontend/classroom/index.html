@@ -11,6 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <!-- Mermaid CDN -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <!-- Pyodide WebAssembly CDN -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -368,16 +370,50 @@
         </div>
       </div>
 
-      <!-- Tab Content: Code Snippet -->
+      <!-- Tab Content: Live Code Execution -->
       <div id="tabCodeContent" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-slate-800">
           <div class="flex items-center space-x-2">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            <h4 class="text-xs font-semibold text-slate-200">Live Code Snippet</h4>
+            <h4 class="text-xs font-semibold text-slate-200">Interactive Live Coding</h4>
           </div>
-          <span id="codeLangBadge" class="text-[10px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/60">python</span>
+          <div class="flex items-center space-x-2">
+            <button onclick="copyCodeSnippet()" id="copyCodeBtn" class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition">
+              Copy
+            </button>
+            <span id="codeLangBadge" class="text-[10px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/60">python</span>
+          </div>
         </div>
-        <pre id="codeSnippetBox" class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono text-xs text-sky-300 overflow-x-auto leading-relaxed max-h-[360px]"></pre>
+
+        <div class="relative">
+          <textarea id="codeSnippetBox" spellcheck="false" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono text-xs text-sky-300 leading-relaxed min-h-[200px] max-h-[300px] resize-y focus:outline-none focus:border-sky-500"></textarea>
+        </div>
+
+        <!-- Run Controls & Pyodide Output -->
+        <div class="flex items-center justify-between pt-1">
+          <button onclick="runPyodideCode()" id="runCodeBtn" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+            <span id="runCodeLabel">Run Python in Browser</span>
+          </button>
+          <span id="pyodideStatusBadge" class="text-[10px] font-mono text-slate-400 bg-slate-800/60 px-2 py-1 rounded border border-slate-700/60">
+            Pyodide Ready
+          </span>
+        </div>
+
+        <!-- Terminal Output -->
+        <div id="codeOutputContainer" class="bg-black/80 rounded-xl border border-slate-800 p-3 font-mono text-xs space-y-1.5">
+          <div class="flex items-center justify-between text-[10px] text-slate-500 border-b border-slate-900 pb-1">
+            <span>TERMINAL OUTPUT</span>
+            <span id="executionTimePill" class="text-slate-400">0ms</span>
+          </div>
+          <pre id="codeStdoutBox" class="text-emerald-400 text-[11px] whitespace-pre-wrap font-mono">Click "Run Python in Browser" to execute.</pre>
+          <div id="codeErrorAction" class="hidden pt-1">
+            <button onclick="askTeacherAboutError()" class="text-[10px] text-amber-300 bg-amber-950/80 hover:bg-amber-900 border border-amber-800/80 px-2 py-1 rounded transition">
+              Ask Teacher about this Error
+            </button>
+          </div>
+        </div>
+
         <p id="codeExplanationBox" class="text-[11px] text-slate-400 leading-relaxed"></p>
       </div>
 
@@ -794,7 +830,12 @@
       if (step.code_action) {
         tabCodeBtn.classList.remove("hidden");
         document.getElementById("codeLangBadge").innerText = step.code_action.language || "python";
-        document.getElementById("codeSnippetBox").innerText = step.code_action.code;
+        const codeBox = document.getElementById("codeSnippetBox");
+        if (codeBox.tagName === "TEXTAREA") {
+          codeBox.value = step.code_action.code;
+        } else {
+          codeBox.innerText = step.code_action.code;
+        }
         document.getElementById("codeExplanationBox").innerText = step.code_action.explanation || "";
       } else {
         tabCodeBtn.classList.add("hidden");

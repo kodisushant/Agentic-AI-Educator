@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI Virtual Teacher Agent Brain",
-    "description": "Backend agent powering interactive lesson planning, tool calling, whiteboard commands, and live coding orchestration.",
+    "title": "AI Virtual Teacher Agent Brain & Service Contracts",
+    "description": "Backend agent powering interactive lesson planning, tool calling, whiteboard commands, and contracts for Learner Model and Assessment engines.",
     "version": "1.0.0"
   },
   "paths": {
@@ -233,6 +233,318 @@
           }
         }
       }
+    },
+    "/learner/attempt": {
+      "post": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Record a student answer or exercise attempt",
+        "description": "Record an attempt on a question or exercise.\nUpdates the exponentially weighted mastery score and logs misconceptions.",
+        "operationId": "record_attempt_learner_attempt_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptRecordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/learner/mastery/{user_id}": {
+      "get": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Get mastery scores for all concepts",
+        "description": "Returns overall mastery and per-concept scores (0.0 to 1.0).",
+        "operationId": "get_mastery_learner_mastery__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Student ID",
+              "examples": [
+                "demo_student"
+              ],
+              "title": "User Id"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasteryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/learner/weak/{user_id}": {
+      "get": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Get weak concepts needing practice",
+        "description": "Returns list of weak concepts (mastery < 0.60) and active misconceptions.",
+        "operationId": "get_weak_concepts_learner_weak__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Student ID",
+              "examples": [
+                "demo_student"
+              ],
+              "title": "User Id"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeakConceptsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/learner/recommend/{user_id}": {
+      "get": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Get next recommended topic or lesson",
+        "description": "Returns the highest priority concept recommendation and suggested action.",
+        "operationId": "get_recommendation_learner_recommend__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Student ID",
+              "examples": [
+                "demo_student"
+              ],
+              "title": "User Id"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assess/quiz": {
+      "post": {
+        "tags": [
+          "Assessment"
+        ],
+        "summary": "Generate a topic-specific quiz",
+        "description": "Generates an MCQ quiz targeted to specified topic and weak concepts.",
+        "operationId": "generate_quiz_assess_quiz_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assess/flashcards": {
+      "post": {
+        "tags": [
+          "Assessment"
+        ],
+        "summary": "Generate flashcards for spaced repetition",
+        "description": "Generates prompt/answer flashcard pairs for memory reinforcement.",
+        "operationId": "generate_flashcards_assess_flashcards_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlashcardsGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashcardsGenerateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assess/submit": {
+      "post": {
+        "tags": [
+          "Assessment"
+        ],
+        "summary": "Submit quiz responses and evaluate",
+        "description": "Evaluates student quiz submissions, computes score, and generates question feedback.",
+        "operationId": "submit_quiz_assess_submit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -353,6 +665,132 @@
           "id"
         ],
         "title": "ArrowCommand"
+      },
+      "AttemptRecordRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Unique student ID",
+            "default": "demo_student",
+            "examples": [
+              "demo_student"
+            ]
+          },
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag",
+            "description": "Concept tag for mastery tracking",
+            "examples": [
+              "binary_search_bounds_update"
+            ]
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct",
+            "description": "Whether answer was correct",
+            "examples": [
+              false
+            ]
+          },
+          "time_spent_seconds": {
+            "type": "number",
+            "title": "Time Spent Seconds",
+            "description": "Time spent on question in seconds",
+            "default": 15.0,
+            "examples": [
+              12.5
+            ]
+          },
+          "misconceptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Misconceptions",
+            "description": "Identified misconception tags",
+            "examples": [
+              "confuses_low_with_high_shift"
+            ]
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id",
+            "description": "Associated question ID",
+            "examples": [
+              "bs_check_bounds"
+            ]
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Arbitrary event metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "concept_tag",
+          "is_correct"
+        ],
+        "title": "AttemptRecordRequest"
+      },
+      "AttemptRecordResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status code",
+            "default": "recorded",
+            "examples": [
+              "recorded"
+            ]
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Student ID",
+            "examples": [
+              "demo_student"
+            ]
+          },
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag",
+            "description": "Concept updated",
+            "examples": [
+              "binary_search_bounds_update"
+            ]
+          },
+          "new_mastery_score": {
+            "type": "number",
+            "title": "New Mastery Score",
+            "description": "Updated mastery score (0.0 to 1.0)",
+            "examples": [
+              0.65
+            ]
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At",
+            "description": "Timestamp",
+            "default": "2026-11-05T19:30:00Z"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "concept_tag",
+          "new_mastery_score"
+        ],
+        "title": "AttemptRecordResponse"
       },
       "BoxCommand": {
         "properties": {
@@ -691,6 +1129,127 @@
         ],
         "title": "EquationCommand"
       },
+      "FlashcardItem": {
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "title": "Card Id",
+            "description": "Unique flashcard ID",
+            "examples": [
+              "fc_bs_1"
+            ]
+          },
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag",
+            "description": "Associated concept tag",
+            "examples": [
+              "binary_search_complexity"
+            ]
+          },
+          "front": {
+            "type": "string",
+            "title": "Front",
+            "description": "Front of flashcard (Prompt/Question)",
+            "examples": [
+              "What is the time complexity of Binary Search?"
+            ]
+          },
+          "back": {
+            "type": "string",
+            "title": "Back",
+            "description": "Back of flashcard (Answer)",
+            "examples": [
+              "O(log n) because the search space halves every iteration."
+            ]
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint",
+            "description": "Optional hint",
+            "examples": [
+              "Think of dividing n by 2 repeatedly."
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "card_id",
+          "concept_tag",
+          "front",
+          "back"
+        ],
+        "title": "FlashcardItem"
+      },
+      "FlashcardsGenerateRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "Flashcard deck topic",
+            "default": "Binary Search",
+            "examples": [
+              "Binary Search"
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Number of cards to produce",
+            "default": 4,
+            "examples": [
+              4
+            ]
+          },
+          "concept_tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Concept Tags",
+            "description": "Specific concept tags",
+            "examples": [
+              "binary_search_complexity",
+              "binary_search_precondition"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "FlashcardsGenerateRequest"
+      },
+      "FlashcardsGenerateResponse": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "Topic of cards",
+            "examples": [
+              "Binary Search"
+            ]
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/FlashcardItem"
+            },
+            "type": "array",
+            "title": "Cards",
+            "description": "Deck of flashcards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic",
+          "cards"
+        ],
+        "title": "FlashcardsGenerateResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -804,6 +1363,43 @@
             "title": "Agent Thoughts",
             "description": "Visible reasoning trace showing agentic logic"
           },
+          "detected_misconception": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detected Misconception",
+            "description": "Misconception diagnosed from student interaction (e.g. 'confuses midpoint formula with range')"
+          },
+          "remediation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remediation",
+            "description": "Targeted corrective explanation for the identified misconception"
+          },
+          "provider_metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Metadata",
+            "description": "Metadata indicating LLM provider used, latency, and cache status"
+          },
           "tool_calls": {
             "items": {
               "$ref": "#/components/schemas/ToolCallRecord"
@@ -884,6 +1480,70 @@
         "type": "object",
         "title": "LessonStepRequest"
       },
+      "MasteryResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Student ID",
+            "examples": [
+              "demo_student"
+            ]
+          },
+          "overall_score": {
+            "type": "number",
+            "title": "Overall Score",
+            "description": "Overall weighted mastery (0.0 - 1.0)",
+            "examples": [
+              0.72
+            ]
+          },
+          "concept_scores": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Concept Scores",
+            "description": "Dictionary mapping concept tags to scores",
+            "examples": [
+              {
+                "binary_search_bounds_update": 0.45,
+                "binary_search_complexity": 0.8,
+                "binary_search_intuition": 0.9
+              }
+            ]
+          },
+          "attempt_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Attempt Counts",
+            "description": "Number of attempts per concept",
+            "examples": [
+              {
+                "binary_search_bounds_update": 2,
+                "binary_search_complexity": 1,
+                "binary_search_intuition": 3
+              }
+            ]
+          },
+          "last_active": {
+            "type": "string",
+            "title": "Last Active",
+            "description": "Last activity timestamp",
+            "default": "2026-11-05T19:30:00Z"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "overall_score",
+          "concept_scores",
+          "attempt_counts"
+        ],
+        "title": "MasteryResponse"
+      },
       "MermaidCommand": {
         "properties": {
           "type": {
@@ -933,6 +1593,351 @@
           "chart"
         ],
         "title": "MermaidCommand"
+      },
+      "QuestionResultFeedback": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          },
+          "selected_index": {
+            "type": "integer",
+            "title": "Selected Index"
+          },
+          "correct_index": {
+            "type": "integer",
+            "title": "Correct Index"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "identified_misconception": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identified Misconception"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "concept_tag",
+          "is_correct",
+          "selected_index",
+          "correct_index",
+          "explanation"
+        ],
+        "title": "QuestionResultFeedback"
+      },
+      "QuizGenerateRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "Quiz topic",
+            "default": "Binary Search",
+            "examples": [
+              "Binary Search"
+            ]
+          },
+          "num_questions": {
+            "type": "integer",
+            "title": "Num Questions",
+            "description": "Number of questions to generate",
+            "default": 3,
+            "examples": [
+              3
+            ]
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ],
+            "title": "Difficulty",
+            "description": "Difficulty level",
+            "default": "beginner",
+            "examples": [
+              "beginner"
+            ]
+          },
+          "weak_concepts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Weak Concepts",
+            "description": "Target specific weak concepts",
+            "examples": [
+              "binary_search_bounds_update"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "QuizGenerateRequest"
+      },
+      "QuizGenerateResponse": {
+        "properties": {
+          "quiz_id": {
+            "type": "string",
+            "title": "Quiz Id",
+            "description": "Quiz instance ID",
+            "examples": [
+              "quiz_bs_101"
+            ]
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "Topic name",
+            "examples": [
+              "Binary Search"
+            ]
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuizQuestionItem"
+            },
+            "type": "array",
+            "title": "Questions",
+            "description": "List of generated quiz questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quiz_id",
+          "topic",
+          "questions"
+        ],
+        "title": "QuizGenerateResponse"
+      },
+      "QuizQuestionItem": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id",
+            "description": "Unique question ID",
+            "examples": [
+              "q_bs_1"
+            ]
+          },
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag",
+            "description": "Target concept tag",
+            "examples": [
+              "binary_search_bounds_update"
+            ]
+          },
+          "question": {
+            "type": "string",
+            "title": "Question",
+            "description": "Question prompt",
+            "examples": [
+              "When target > arr[mid], how should bounds update?"
+            ]
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options",
+            "description": "Answer options",
+            "examples": [
+              [
+                "high = mid - 1",
+                "low = mid + 1",
+                "low = mid",
+                "high = mid"
+              ]
+            ]
+          },
+          "correct_index": {
+            "type": "integer",
+            "title": "Correct Index",
+            "description": "Zero-based index of correct answer",
+            "examples": [
+              1
+            ]
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Explanation of correct option",
+            "examples": [
+              "Because array is sorted and target is larger, target lies in right half: low = mid + 1."
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "concept_tag",
+          "question",
+          "options",
+          "correct_index",
+          "explanation"
+        ],
+        "title": "QuizQuestionItem"
+      },
+      "QuizSubmitRequest": {
+        "properties": {
+          "quiz_id": {
+            "type": "string",
+            "title": "Quiz Id",
+            "description": "Quiz ID",
+            "examples": [
+              "quiz_bs_101"
+            ]
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Student ID",
+            "default": "demo_student",
+            "examples": [
+              "demo_student"
+            ]
+          },
+          "answers": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Answers",
+            "description": "Map of question_id to selected option index",
+            "examples": [
+              {
+                "q_bs_1": 1,
+                "q_bs_2": 0
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "quiz_id",
+          "answers"
+        ],
+        "title": "QuizSubmitRequest"
+      },
+      "QuizSubmitResponse": {
+        "properties": {
+          "quiz_id": {
+            "type": "string",
+            "title": "Quiz Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Score fraction between 0.0 and 1.0",
+            "examples": [
+              1.0
+            ]
+          },
+          "total_questions": {
+            "type": "integer",
+            "title": "Total Questions",
+            "examples": [
+              2
+            ]
+          },
+          "correct_count": {
+            "type": "integer",
+            "title": "Correct Count",
+            "examples": [
+              2
+            ]
+          },
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionResultFeedback"
+            },
+            "type": "array",
+            "title": "Feedback",
+            "description": "Detailed feedback per question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quiz_id",
+          "user_id",
+          "score",
+          "total_questions",
+          "correct_count",
+          "feedback"
+        ],
+        "title": "QuizSubmitResponse"
+      },
+      "RecommendResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Student ID",
+            "examples": [
+              "demo_student"
+            ]
+          },
+          "recommended_concept": {
+            "type": "string",
+            "title": "Recommended Concept",
+            "description": "Concept to study next",
+            "examples": [
+              "binary_search_bounds_update"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Pedagogical rationale",
+            "examples": [
+              "Low mastery score (0.45) on recent checkpoint"
+            ]
+          },
+          "suggested_action": {
+            "type": "string",
+            "enum": [
+              "lesson",
+              "quiz",
+              "flashcard"
+            ],
+            "title": "Suggested Action",
+            "description": "Recommended mode of practice",
+            "default": "lesson",
+            "examples": [
+              "lesson"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "recommended_concept",
+          "reason"
+        ],
+        "title": "RecommendResponse"
       },
       "TextCommand": {
         "properties": {
@@ -1094,6 +2099,75 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WeakConceptItem": {
+        "properties": {
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag",
+            "description": "Concept tag",
+            "examples": [
+              "binary_search_bounds_update"
+            ]
+          },
+          "mastery_score": {
+            "type": "number",
+            "title": "Mastery Score",
+            "description": "Current mastery score",
+            "examples": [
+              0.45
+            ]
+          },
+          "active_misconceptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Active Misconceptions",
+            "description": "Observed misconceptions",
+            "examples": [
+              "confuses_low_with_high_shift"
+            ]
+          },
+          "recommended_action": {
+            "type": "string",
+            "title": "Recommended Action",
+            "description": "Remediation suggestion",
+            "default": "Review midpoint shift rules with interactive check"
+          }
+        },
+        "type": "object",
+        "required": [
+          "concept_tag",
+          "mastery_score"
+        ],
+        "title": "WeakConceptItem"
+      },
+      "WeakConceptsResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Student ID",
+            "examples": [
+              "demo_student"
+            ]
+          },
+          "weak_concepts": {
+            "items": {
+              "$ref": "#/components/schemas/WeakConceptItem"
+            },
+            "type": "array",
+            "title": "Weak Concepts",
+            "description": "List of weak concepts with score < 0.60"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "weak_concepts"
+        ],
+        "title": "WeakConceptsResponse"
       }
     }
   }

@@ -18,9 +18,14 @@ from backend.agent.schemas import (
     EquationCommand,
     MermaidCommand,
     ClearCommand,
+    AttemptRecordRequest,
+    QuizGenerateRequest,
+    FlashcardsGenerateRequest,
+    QuizSubmitRequest,
 )
 from backend.agent.teacher import get_mock_binary_search_steps
 from backend.agent.tools import execute_tool_call
+from backend.agent.client import learner_client, assess_client
 
 
 def run_unit_tests():
@@ -35,7 +40,6 @@ def run_unit_tests():
         assert step.step_index == i
         assert step.concept == "Binary Search"
         assert len(step.narration) > 10
-        # Check Pydantic serialization roundtrip
         step_json = step.model_dump_json()
         validated = LessonStep.model_validate_json(step_json)
         assert validated.step_id == step.step_id
@@ -66,30 +70,69 @@ def run_unit_tests():
     assert step3.code_action.action == "execute"
     print("✓ Step 3 CodeAction verified", flush=True)
 
-    # 5. Test Tool executions
-    tools_to_test = [
-        ("draw_on_board", {"commands": [{"type": "text", "content": "hi"}]}),
-        ("run_code", {"code": "print(123)", "language": "python"}),
-        ("ask_check_question", {
-            "question_id": "q1",
-            "question": "Sample?",
-            "options": ["A", "B"],
-            "correct_index": 0,
-            "explanation": "Exp",
-            "concept_tag": "tag1"
-        }),
-        ("generate_quiz", {"topic": "Binary Search", "num_questions": 2}),
-        ("update_mastery", {"student_id": "std_1", "concept": "bs", "score_delta": 0.2}),
-        ("recommend_next", {"student_id": "std_1", "weak_concepts": ["edge_cases"]}),
-    ]
+    # 5. Test Tools through execute_tool_call
+    rec1 = execute_tool_call("draw_on_board", {"commands": [{"type": "text", "content": "hi"}]})
+    assert rec1.result["status"] == "success"
 
-    for tool_name, params in tools_to_test:
-        rec = execute_tool_call(tool_name, params)
-        assert rec.tool_name == tool_name
-        assert "status" in rec.result or "commands_count" in rec.result
-        print(f"✓ Tool '{tool_name}' verified: {rec.result}", flush=True)
+    rec2 = execute_tool_call("run_code", {"code": "print(123)", "language": "python"})
+    assert rec2.result["status"] == "prepared_for_live_coding"
 
-    # 6. Verify Contract files exist and are valid JSON
+    rec3 = execute_tool_call("ask_check_question", {
+        "question_id": "q1",
+        "question": "Sample?",
+        "options": ["A", "B"],
+        "correct_index": 0,
+        "explanation": "Exp",
+        "concept_tag": "tag1"
+    })
+    assert rec3.result["status"] == "question_created"
+
+    rec4 = execute_tool_call("generate_quiz", {"topic": "Binary Search", "num_questions": 2})
+    assert "quiz_id" in rec4.result
+    assert len(rec4.result["questions"]) == 2
+
+    rec5 = execute_tool_call("update_mastery", {"student_id": "std_1", "concept": "bs", "score_delta": 0.2})
+    assert rec5.result["status"] == "recorded"
+
+    rec6 = execute_tool_call("recommend_next", {"student_id": "std_1"})
+    assert "recommended_concept" in rec6.result
+    print("✓ All 6 teacher tool executions verified", flush=True)
+
+    # 6. Test Learner thin client
+    att_res = learner_client.record_attempt(AttemptRecordRequest(
+        user_id="demo_student",
+        concept_tag="binary_search_bounds_update",
+        is_correct=True
+    ))
+    assert att_res.status == "recorded"
+    assert att_res.new_mastery_score >= 0.0
+
+    mastery_res = learner_client.get_mastery("demo_student")
+    assert "binary_search_bounds_update" in mastery_res.concept_scores
+
+    weak_res = learner_client.get_weak_concepts("demo_student")
+    assert len(weak_res.weak_concepts) >= 1
+
+    rec_res = learner_client.recommend_next("demo_student")
+    assert rec_res.recommended_concept is not None
+    print("✓ LearnerClient (record_attempt, get_mastery, get_weak_concepts, recommend_next) verified", flush=True)
+
+    # 7. Test Assess thin client
+    quiz_res = assess_client.generate_quiz(QuizGenerateRequest(topic="Binary Search", num_questions=2))
+    assert len(quiz_res.questions) == 2
+
+    fc_res = assess_client.generate_flashcards(FlashcardsGenerateRequest(topic="Binary Search", count=3))
+    assert len(fc_res.cards) == 3
+
+    sub_res = assess_client.submit_quiz(QuizSubmitRequest(
+        quiz_id=quiz_res.quiz_id,
+        user_id="demo_student",
+        answers={"q_bs_1": 0, "q_bs_2": 1}
+    ))
+    assert sub_res.score == 1.0
+    print("✓ AssessClient (generate_quiz, generate_flashcards, submit_quiz) verified", flush=True)
+
+    # 8. Verify Contract files exist and are valid JSON
     contracts_dir = root_dir / "contracts"
     bc_file = contracts_dir / "board_commands.json"
     openapi_file = contracts_dir / "openapi.json"
@@ -104,10 +147,17 @@ def run_unit_tests():
     with open(openapi_file, "r", encoding="utf-8") as f:
         oa_data = json.load(f)
         assert "paths" in oa_data
+        # Verify required contract endpoints
         assert "/lesson/step" in oa_data["paths"]
-        assert "/mock/lesson" in oa_data["paths"]
+        assert "/learner/attempt" in oa_data["paths"]
+        assert "/learner/mastery/{user_id}" in oa_data["paths"]
+        assert "/learner/weak/{user_id}" in oa_data["paths"]
+        assert "/learner/recommend/{user_id}" in oa_data["paths"]
+        assert "/assess/quiz" in oa_data["paths"]
+        assert "/assess/flashcards" in oa_data["paths"]
+        assert "/assess/submit" in oa_data["paths"]
 
-    print("✓ Contracts board_commands.json and openapi.json are valid", flush=True)
+    print("✓ All contracted paths verified in openapi.json", flush=True)
     print("\nAll unit tests passed successfully!", flush=True)
 
 

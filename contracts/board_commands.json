@@ -1105,6 +1105,46 @@
           "description": "Visible reasoning trace showing agentic logic",
           "title": "Agent Thoughts"
         },
+        "detected_misconception": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Misconception diagnosed from student interaction (e.g. 'confuses midpoint formula with range')",
+          "title": "Detected Misconception"
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Targeted corrective explanation for the identified misconception",
+          "title": "Remediation"
+        },
+        "provider_metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Metadata indicating LLM provider used, latency, and cache status",
+          "title": "Provider Metadata"
+        },
         "tool_calls": {
           "description": "Tools invoked by the agent to construct this step",
           "items": {
@@ -2723,6 +2763,46 @@
           "default": null,
           "description": "Visible reasoning trace showing agentic logic",
           "title": "Agent Thoughts"
+        },
+        "detected_misconception": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Misconception diagnosed from student interaction (e.g. 'confuses midpoint formula with range')",
+          "title": "Detected Misconception"
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Targeted corrective explanation for the identified misconception",
+          "title": "Remediation"
+        },
+        "provider_metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Metadata indicating LLM provider used, latency, and cache status",
+          "title": "Provider Metadata"
         },
         "tool_calls": {
           "description": "Tools invoked by the agent to construct this step",

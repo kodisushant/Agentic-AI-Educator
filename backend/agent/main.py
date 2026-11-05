@@ -24,6 +24,8 @@ from backend.agent.schemas import (
     FlashcardsGenerateResponse,
     QuizSubmitRequest,
     QuizSubmitResponse,
+    CheckAnswerRequest,
+    CheckAnswerResponse,
 )
 from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps
 from backend.agent.tools import execute_tool_call
@@ -77,6 +79,16 @@ async def get_lesson_step(req: LessonStepRequest):
         return step
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate step: {str(e)}")
+
+
+@app.post("/lesson/check-answer", response_model=CheckAnswerResponse, tags=["Lesson"])
+async def check_answer(req: CheckAnswerRequest):
+    """
+    Directly evaluate a checkpoint question answer.
+    Diagnoses misconceptions, returns targeted remediation, updates learner mastery,
+    and returns corrective whiteboard commands.
+    """
+    return teacher_agent.evaluate_check_answer(req)
 
 
 async def stream_lesson_generator(concept: str, student_id: str) -> AsyncGenerator[str, None]:

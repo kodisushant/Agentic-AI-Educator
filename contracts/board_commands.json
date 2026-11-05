@@ -1199,7 +1199,7 @@
             }
           ],
           "default": null,
-          "description": "Answer from previous check",
+          "description": "Answer from previous check (e.g. chosen index or text)",
           "title": "Last Student Response"
         },
         "student_misconceptions": {

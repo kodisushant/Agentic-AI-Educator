@@ -22,8 +22,10 @@ from backend.agent.schemas import (
     QuizGenerateRequest,
     FlashcardsGenerateRequest,
     QuizSubmitRequest,
+    CheckAnswerRequest,
+    CheckAnswerResponse,
 )
-from backend.agent.teacher import get_mock_binary_search_steps
+from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps
 from backend.agent.tools import execute_tool_call
 from backend.agent.client import learner_client, assess_client
 
@@ -132,7 +134,41 @@ def run_unit_tests():
     assert sub_res.score == 1.0
     print("✓ AssessClient (generate_quiz, generate_flashcards, submit_quiz) verified", flush=True)
 
-    # 8. Verify Contract files exist and are valid JSON
+    # 8. Test Checkpoint Answer Diagnosis and Misconception Classification
+    wrong_chk = teacher_agent.evaluate_check_answer(CheckAnswerRequest(
+        question_id="bs_check_bounds",
+        selected_index=0,
+        concept="Binary Search",
+        student_id="demo_student"
+    ))
+    assert not wrong_chk.is_correct
+    assert wrong_chk.detected_misconception == "confuses_direction_when_target_greater"
+    assert wrong_chk.remediation is not None
+    assert len(wrong_chk.remediation) > 10
+    print(f"✓ Checkpoint wrong answer diagnosed: {wrong_chk.detected_misconception}", flush=True)
+
+    correct_chk = teacher_agent.evaluate_check_answer(CheckAnswerRequest(
+        question_id="bs_check_bounds",
+        selected_index=1,
+        concept="Binary Search",
+        student_id="demo_student"
+    ))
+    assert correct_chk.is_correct
+    print("✓ Checkpoint correct answer verified", flush=True)
+
+    # 9. Test Adaptive Step Generation upon Wrong Student Answer
+    step_remed = teacher_agent.get_next_step_sync(LessonStepRequest(
+        concept="Binary Search",
+        student_id="demo_student",
+        step_index=2,
+        last_student_response="0"
+    ))
+    assert step_remed.detected_misconception is not None
+    assert step_remed.remediation is not None
+    assert "search direction" in step_remed.narration.lower() or "noticed" in step_remed.narration.lower()
+    print(f"✓ Adaptive remediation step generated with exposed misconception: '{step_remed.detected_misconception}'", flush=True)
+
+    # 10. Verify Contract files exist and are valid JSON
     contracts_dir = root_dir / "contracts"
     bc_file = contracts_dir / "board_commands.json"
     openapi_file = contracts_dir / "openapi.json"

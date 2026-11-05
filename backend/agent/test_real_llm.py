@@ -8,7 +8,7 @@ root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(root_dir))
 
 from backend.agent.schemas import CheckQuestion
-from backend.agent.llm_router import LLMRouter, load_env_file
+from backend.agent.llm_router import LLMRouter, router, load_env_file
 
 load_env_file()
 
@@ -75,6 +75,33 @@ def run_provider_tests():
         print(f"Fallback test failed: {e}")
     finally:
         router_inst.gemini_key = saved_gemini
+
+    print("\n-------------------------------------------------------")
+    print("Testing Full Dynamic Lesson Step Generation with Real LLM")
+    print("-------------------------------------------------------")
+    from backend.agent.teacher import teacher_agent
+    from backend.agent.schemas import LessonStepRequest
+
+    # Set router mock_mode to False
+    saved_mode = router.mock_mode
+    router.mock_mode = False
+    try:
+        t0 = time.time()
+        step = teacher_agent.get_next_step_sync(LessonStepRequest(
+            concept="Binary Search",
+            student_id="demo_student",
+            step_index=0
+        ))
+        elapsed = int((time.time() - t0) * 1000)
+        print(f"✓ Dynamic Lesson Step 0 generated in {elapsed}ms!")
+        print(f"✓ Step ID: {step.step_id}")
+        print(f"✓ Narration: '{step.narration[:60]}...'")
+        print(f"✓ Board commands count: {len(step.board_commands)}")
+        print(f"✓ Provider metadata: {step.provider_metadata}")
+    except Exception as e:
+        print(f"Dynamic lesson generation test failed: {e}")
+    finally:
+        router.mock_mode = saved_mode
 
 
 if __name__ == "__main__":

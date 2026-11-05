@@ -143,7 +143,7 @@ class LessonStepRequest(BaseModel):
     concept: str = Field(default="Binary Search", description="Concept name to teach")
     student_id: str = Field(default="demo_student", description="ID of active learner")
     step_index: int = Field(default=0, description="Step requested")
-    last_student_response: Optional[str] = Field(default=None, description="Answer from previous check")
+    last_student_response: Optional[str] = Field(default=None, description="Answer from previous check (e.g. chosen index or text)")
     student_misconceptions: List[str] = Field(
         default_factory=list,
         description="Active misconception tags from learner model"
@@ -151,6 +151,33 @@ class LessonStepRequest(BaseModel):
     feedback: Optional[str] = Field(
         default=None,
         description="Feedback from student, e.g. 'I don\\'t understand'"
+    )
+
+
+class CheckAnswerRequest(BaseModel):
+    question_id: str = Field(..., description="ID of question being answered", examples=["bs_check_bounds"])
+    selected_index: int = Field(..., description="Option index selected by student (0-3)", examples=[0])
+    concept: str = Field(default="Binary Search", description="Concept topic")
+    student_id: str = Field(default="demo_student", description="Student ID")
+
+
+class CheckAnswerResponse(BaseModel):
+    is_correct: bool = Field(..., description="Whether selection was correct")
+    correct_index: int = Field(..., description="The actual correct index")
+    explanation: str = Field(..., description="Explanation of the correct answer")
+    detected_misconception: Optional[str] = Field(
+        default=None,
+        description="Diagnosed misconception tag if student answered incorrectly",
+        examples=["confuses_search_direction_when_target_is_greater"]
+    )
+    remediation: Optional[str] = Field(
+        default=None,
+        description="Targeted corrective explanation for the UI to display"
+    )
+    updated_mastery_score: float = Field(..., description="New mastery score after attempt recording", examples=[0.55])
+    suggested_board_commands: List[BoardCommand] = Field(
+        default_factory=list,
+        description="Whiteboard corrective annotations"
     )
 
 

@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Dict, List, Optional
 from backend.agent.schemas import (
     BoardCommand,
@@ -14,10 +15,16 @@ from backend.agent.schemas import (
     LessonStepRequest,
     ChatMessageRequest,
     ChatMessageResponse,
+    CheckAnswerRequest,
+    CheckAnswerResponse,
     ToolCallRecord,
+    AttemptRecordRequest,
 )
 from backend.agent.llm_router import router
 from backend.agent.tools import execute_tool_call
+from backend.agent.client import learner_client
+
+logger = logging.getLogger("teacher_agent")
 
 
 def get_mock_binary_search_steps() -> List[LessonStep]:
@@ -55,7 +62,6 @@ def get_mock_binary_search_steps() -> List[LessonStep]:
                     size=16,
                     color="#475569"
                 ),
-                # Visual Array Boxes
                 BoxCommand(id="box_0", label="2", x=60, y=130, width=55, height=50, color="#3b82f6", fill="#eff6ff"),
                 BoxCommand(id="box_1", label="5", x=125, y=130, width=55, height=50, color="#3b82f6", fill="#eff6ff"),
                 BoxCommand(id="box_2", label="8", x=190, y=130, width=55, height=50, color="#3b82f6", fill="#eff6ff"),
@@ -66,7 +72,6 @@ def get_mock_binary_search_steps() -> List[LessonStep]:
                 BoxCommand(id="box_7", label="56", x=515, y=130, width=55, height=50, color="#3b82f6", fill="#eff6ff"),
                 BoxCommand(id="box_8", label="72", x=580, y=130, width=55, height=50, color="#3b82f6", fill="#eff6ff"),
                 BoxCommand(id="box_9", label="91", x=645, y=130, width=55, height=50, color="#3b82f6", fill="#eff6ff"),
-                # Low and High pointers
                 ArrowCommand(id="arr_low", start_x=87, start_y=230, end_x=87, end_y=190, label="low = 0", color="#16a34a"),
                 ArrowCommand(id="arr_high", start_x=672, start_y=230, end_x=672, end_y=190, label="high = 9", color="#dc2626"),
                 EquationCommand(
@@ -104,14 +109,11 @@ def get_mock_binary_search_steps() -> List[LessonStep]:
             ),
             agent_thoughts="Highlighting index 4 (mid). Target is 23. Explaining why elements <= 16 can be discarded.",
             board_commands=[
-                # Dim the left half
                 BoxCommand(id="box_0", label="2", x=60, y=130, width=55, height=50, color="#cbd5e1", fill="#f1f5f9"),
                 BoxCommand(id="box_1", label="5", x=125, y=130, width=55, height=50, color="#cbd5e1", fill="#f1f5f9"),
                 BoxCommand(id="box_2", label="8", x=190, y=130, width=55, height=50, color="#cbd5e1", fill="#f1f5f9"),
                 BoxCommand(id="box_3", label="12", x=255, y=130, width=55, height=50, color="#cbd5e1", fill="#f1f5f9"),
-                # Mid element highlighted in gold
                 BoxCommand(id="box_4", label="16", x=320, y=130, width=55, height=50, color="#d97706", fill="#fef3c7"),
-                # Active remaining elements
                 BoxCommand(id="box_5", label="23", x=385, y=130, width=55, height=50, color="#2563eb", fill="#eff6ff"),
                 BoxCommand(id="box_6", label="38", x=450, y=130, width=55, height=50, color="#2563eb", fill="#eff6ff"),
                 BoxCommand(id="box_7", label="56", x=515, y=130, width=55, height=50, color="#2563eb", fill="#eff6ff"),
@@ -359,16 +361,148 @@ class TeacherAgent:
     def __init__(self):
         self.mock_steps = get_mock_binary_search_steps()
 
+    def evaluate_check_answer(self, req: CheckAnswerRequest) -> CheckAnswerResponse:
+        """
+        Evaluate checkpoint answer, diagnose misconceptions, update learner model,
+        and generate corrective remediation.
+        """
+        # Question bs_check_bounds: correct index is 1 (low = mid + 1)
+        is_corr = (req.selected_index == 1)
+
+        if is_corr:
+            learner_client.record_attempt(AttemptRecordRequest(
+                user_id=req.student_id,
+                concept_tag="binary_search_bounds_update",
+                is_correct=True,
+                question_id=req.question_id
+            ))
+            return CheckAnswerResponse(
+                is_correct=True,
+                correct_index=1,
+                explanation="Correct! Because array[mid] is smaller than our target, the target must lie strictly to the right, so low = mid + 1.",
+                detected_misconception=None,
+                remediation=None,
+                updated_mastery_score=0.85,
+                suggested_board_commands=[
+                    TextCommand(
+                        id="correct_badge",
+                        content="Correct: low = mid + 1 selected!",
+                        x=60,
+                        y=350,
+                        size=18,
+                        color="#16a34a"
+                    )
+                ]
+            )
+
+        # Misconception taxonomy for checkpoint question
+        misconception_map = {
+            0: (
+                "confuses_direction_when_target_greater",
+                "You selected 'high = mid - 1'. This shrinks the right bound, but because target (23) > array[mid] (16), the target is to the RIGHT. You must advance 'low = mid + 1' instead."
+            ),
+            2: (
+                "fails_to_exclude_checked_midpoint",
+                "You selected 'low = mid'. We have already checked array[mid] and confirmed it is NOT the target. You must advance past it to 'low = mid + 1' to avoid an infinite loop."
+            ),
+            3: (
+                "confuses_bounds_and_fails_exclusion",
+                "You selected 'high = mid'. Setting high = mid searches the left half and fails to exclude mid. The correct update is low = mid + 1."
+            )
+        }
+        mis_tag, remediation_msg = misconception_map.get(
+            req.selected_index,
+            ("confuses_boundary_adjustment", "Incorrect bound update. If target > array[mid], advance low = mid + 1.")
+        )
+
+        # Update learner model with failed attempt and misconception tag
+        att = learner_client.record_attempt(AttemptRecordRequest(
+            user_id=req.student_id,
+            concept_tag="binary_search_bounds_update",
+            is_correct=False,
+            misconceptions=[mis_tag],
+            question_id=req.question_id
+        ))
+
+        return CheckAnswerResponse(
+            is_correct=False,
+            correct_index=1,
+            explanation="When target > array[mid], target is in the right half: low = mid + 1.",
+            detected_misconception=mis_tag,
+            remediation=remediation_msg,
+            updated_mastery_score=att.new_mastery_score,
+            suggested_board_commands=[
+                TextCommand(
+                    id="misconception_alert",
+                    content=f"Diagnosed Misconception: {mis_tag}",
+                    x=60,
+                    y=350,
+                    size=16,
+                    color="#dc2626"
+                ),
+                TextCommand(
+                    id="remediation_note",
+                    content=remediation_msg,
+                    x=60,
+                    y=385,
+                    size=14,
+                    color="#b91c1c"
+                )
+            ]
+        )
+
     async def get_next_step(self, req: LessonStepRequest) -> LessonStep:
         idx = max(0, min(req.step_index, len(self.mock_steps) - 1))
 
-        # If student provided feedback like "I don't understand", customize the explanation
+        # Check if student answered a previous checkpoint incorrectly
+        if req.last_student_response is not None:
+            ans = str(req.last_student_response).strip()
+            # If answer is wrong (not '1' or 'low = mid + 1')
+            if ans not in ("1", "low = mid + 1", "correct"):
+                eval_res = self.evaluate_check_answer(CheckAnswerRequest(
+                    question_id="bs_check_bounds",
+                    selected_index=int(ans) if ans.isdigit() else 0,
+                    concept=req.concept,
+                    student_id=req.student_id
+                ))
+                # Return an adaptive remediation teaching step
+                base_step = self.mock_steps[idx]
+                return LessonStep(
+                    step_id=f"{base_step.step_id}_remediation",
+                    step_index=base_step.step_index,
+                    total_steps=base_step.total_steps,
+                    concept=base_step.concept,
+                    narration=(
+                        f"I noticed you selected an update that doesn't match the search direction. "
+                        f"{eval_res.remediation} Let's look at the board again: since our target 23 is larger "
+                        f"than 16, everything at index 4 and below is discarded. We set low = 4 + 1 = 5."
+                    ),
+                    agent_thoughts=f"Student selected option '{ans}'. Diagnosed misconception: {eval_res.detected_misconception}. Providing corrective visual remediation.",
+                    detected_misconception=eval_res.detected_misconception,
+                    remediation=eval_res.remediation,
+                    board_commands=base_step.board_commands + eval_res.suggested_board_commands,
+                    code_action=base_step.code_action,
+                    check_question=base_step.check_question,
+                    tool_calls=[
+                        execute_tool_call("update_mastery", {
+                            "student_id": req.student_id,
+                            "concept": "binary_search_bounds_update",
+                            "score_delta": -0.10,
+                            "is_correct": False,
+                            "misconceptions": [eval_res.detected_misconception]
+                        })
+                    ],
+                    is_final_step=base_step.is_final_step,
+                )
+
+        # If student provided "I don't understand" feedback
         if req.feedback and "understand" in req.feedback.lower():
             base_step = self.mock_steps[idx]
             adapted_narration = (
                 f"No worries, let me break this down even simpler! "
-                f"Instead of thinking about code, imagine you have a list of sorted numbers. "
-                f"Every time we look at the middle number, we instantly cross out half of the list. "
+                f"Instead of thinking about formulas, imagine a dictionary. "
+                f"When looking for a word starting with 'M', opening to 'D' tells you immediately "
+                f"that all pages before 'D' are useless. "
                 f"{base_step.narration}"
             )
             return LessonStep(
@@ -377,7 +511,9 @@ class TeacherAgent:
                 total_steps=base_step.total_steps,
                 concept=base_step.concept,
                 narration=adapted_narration,
-                agent_thoughts="Student expressed confusion: decomposing step into simpler physical intuition.",
+                agent_thoughts="Student expressed confusion: decomposing step into simpler physical dictionary intuition.",
+                detected_misconception="general_conceptual_confusion",
+                remediation="Simplified conceptual analogy provided.",
                 board_commands=base_step.board_commands,
                 code_action=base_step.code_action,
                 check_question=base_step.check_question,
@@ -389,25 +525,141 @@ class TeacherAgent:
         def fallback():
             return self.mock_steps[idx]
 
+        # Fetch learner mastery profile to personalize prompt
+        mastery_profile = learner_client.get_mastery(req.student_id)
+        weak_data = learner_client.get_weak_concepts(req.student_id)
+        weak_list = [w.concept_tag for w in weak_data.weak_concepts]
+
         prompt = (
-            f"You are an encouraging, expert AI virtual teacher.\n"
-            f"Topic: {req.concept}\n"
+            f"You are an expert, encouraging AI virtual teacher.\n"
+            f"Teaching Topic: {req.concept}\n"
             f"Step requested: {req.step_index} of {len(self.mock_steps)}\n"
             f"Learner ID: {req.student_id}\n"
-            f"Previous response: {req.last_student_response}\n"
-            f"Student misconceptions: {req.student_misconceptions}\n"
-            f"Generate a structured LessonStep with narration, whiteboard commands (text, box, arrow, equation, mermaid), "
-            f"optional code_action for live coding, optional check_question, agent_thoughts, and tool_calls."
+            f"Current Mastery Profile: {mastery_profile.concept_scores}\n"
+            f"Weak Concepts: {weak_list}\n"
+            f"Student misconceptions: {req.student_misconceptions}\n\n"
+            f"Generate a structured LessonStep object adhering strictly to the JSON schema:\n"
+            f"- step_id, step_index ({req.step_index}), total_steps (5), concept ('{req.concept}')\n"
+            f"- narration: spoken explanation\n"
+            f"- board_commands: list of whiteboard commands (text, box, arrow, equation, mermaid)\n"
+            f"- optional code_action (python snippet)\n"
+            f"- optional check_question (4 options, correct_index, explanation, concept_tag)\n"
+            f"- agent_thoughts (visible reasoning)\n"
+            f"- tool_calls: list of tool calls made (e.g. draw_on_board, ask_check_question)\n"
+            f"- is_final_step: {req.step_index == 4}"
         )
 
-        return await router.generate_structured(
+        return router.generate_structured_sync(
             prompt=prompt,
             response_model=LessonStep,
             mock_fallback_factory=fallback
         )
 
-    async def handle_chat(self, req: ChatMessageRequest) -> ChatMessageResponse:
-        """Handle ad-hoc student question during the lesson."""
+    def get_next_step_sync(self, req: LessonStepRequest) -> LessonStep:
+        idx = max(0, min(req.step_index, len(self.mock_steps) - 1))
+
+        # Check if student answered a previous checkpoint incorrectly
+        if req.last_student_response is not None:
+            ans = str(req.last_student_response).strip()
+            # If answer is wrong (not '1' or 'low = mid + 1')
+            if ans not in ("1", "low = mid + 1", "correct"):
+                eval_res = self.evaluate_check_answer(CheckAnswerRequest(
+                    question_id="bs_check_bounds",
+                    selected_index=int(ans) if ans.isdigit() else 0,
+                    concept=req.concept,
+                    student_id=req.student_id
+                ))
+                base_step = self.mock_steps[idx]
+                return LessonStep(
+                    step_id=f"{base_step.step_id}_remediation",
+                    step_index=base_step.step_index,
+                    total_steps=base_step.total_steps,
+                    concept=base_step.concept,
+                    narration=(
+                        f"I noticed you selected an update that doesn't match the search direction. "
+                        f"{eval_res.remediation} Let's look at the board again: since our target 23 is larger "
+                        f"than 16, everything at index 4 and below is discarded. We set low = 4 + 1 = 5."
+                    ),
+                    agent_thoughts=f"Student selected option '{ans}'. Diagnosed misconception: {eval_res.detected_misconception}. Providing corrective visual remediation.",
+                    detected_misconception=eval_res.detected_misconception,
+                    remediation=eval_res.remediation,
+                    board_commands=base_step.board_commands + eval_res.suggested_board_commands,
+                    code_action=base_step.code_action,
+                    check_question=base_step.check_question,
+                    tool_calls=[
+                        execute_tool_call("update_mastery", {
+                            "student_id": req.student_id,
+                            "concept": "binary_search_bounds_update",
+                            "score_delta": -0.10,
+                            "is_correct": False,
+                            "misconceptions": [eval_res.detected_misconception]
+                        })
+                    ],
+                    is_final_step=base_step.is_final_step,
+                )
+
+        # If student provided "I don't understand" feedback
+        if req.feedback and "understand" in req.feedback.lower():
+            base_step = self.mock_steps[idx]
+            adapted_narration = (
+                f"No worries, let me break this down even simpler! "
+                f"Instead of thinking about formulas, imagine a dictionary. "
+                f"When looking for a word starting with 'M', opening to 'D' tells you immediately "
+                f"that all pages before 'D' are useless. "
+                f"{base_step.narration}"
+            )
+            return LessonStep(
+                step_id=f"{base_step.step_id}_adapted",
+                step_index=base_step.step_index,
+                total_steps=base_step.total_steps,
+                concept=base_step.concept,
+                narration=adapted_narration,
+                agent_thoughts="Student expressed confusion: decomposing step into simpler physical dictionary intuition.",
+                detected_misconception="general_conceptual_confusion",
+                remediation="Simplified conceptual analogy provided.",
+                board_commands=base_step.board_commands,
+                code_action=base_step.code_action,
+                check_question=base_step.check_question,
+                tool_calls=base_step.tool_calls,
+                is_final_step=base_step.is_final_step,
+            )
+
+        def fallback():
+            return self.mock_steps[idx]
+
+        mastery_profile = learner_client.get_mastery(req.student_id)
+        weak_data = learner_client.get_weak_concepts(req.student_id)
+        weak_list = [w.concept_tag for w in weak_data.weak_concepts]
+
+        prompt = (
+            f"You are an expert, encouraging AI virtual teacher.\n"
+            f"Teaching Topic: {req.concept}\n"
+            f"Step requested: {req.step_index} of {len(self.mock_steps)}\n"
+            f"Learner ID: {req.student_id}\n"
+            f"Current Mastery Profile: {mastery_profile.concept_scores}\n"
+            f"Weak Concepts: {weak_list}\n"
+            f"Student misconceptions: {req.student_misconceptions}\n\n"
+            f"Generate a structured LessonStep object adhering strictly to the JSON schema:\n"
+            f"- step_id, step_index ({req.step_index}), total_steps (5), concept ('{req.concept}')\n"
+            f"- narration: spoken explanation\n"
+            f"- board_commands: list of whiteboard commands (text, box, arrow, equation, mermaid)\n"
+            f"- optional code_action (python snippet)\n"
+            f"- optional check_question (4 options, correct_index, explanation, concept_tag)\n"
+            f"- agent_thoughts (visible reasoning)\n"
+            f"- tool_calls: list of tool calls made (e.g. draw_on_board, ask_check_question)\n"
+            f"- is_final_step: {req.step_index == 4}"
+        )
+
+        return router.generate_structured_sync(
+            prompt=prompt,
+            response_model=LessonStep,
+            mock_fallback_factory=fallback
+        )
+
+    async def get_next_step(self, req: LessonStepRequest) -> LessonStep:
+        return self.get_next_step_sync(req)
+
+    def handle_chat_sync(self, req: ChatMessageRequest) -> ChatMessageResponse:
         def fallback():
             return ChatMessageResponse(
                 reply=(
@@ -432,11 +684,14 @@ class TeacherAgent:
             f"Provide a clear, brief pedagogical reply and optional whiteboard board commands to clarify."
         )
 
-        return await router.generate_structured(
+        return router.generate_structured_sync(
             prompt=prompt,
             response_model=ChatMessageResponse,
             mock_fallback_factory=fallback
         )
+
+    async def handle_chat(self, req: ChatMessageRequest) -> ChatMessageResponse:
+        return self.handle_chat_sync(req)
 
 
 teacher_agent = TeacherAgent()

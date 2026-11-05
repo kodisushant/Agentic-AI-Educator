@@ -68,6 +68,48 @@
         }
       }
     },
+    "/lesson/check-answer": {
+      "post": {
+        "tags": [
+          "Lesson"
+        ],
+        "summary": "Check Answer",
+        "description": "Directly evaluate a checkpoint question answer.\nDiagnoses misconceptions, returns targeted remediation, updates learner mastery,\nand returns corrective whiteboard commands.",
+        "operationId": "check_answer_lesson_check_answer_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckAnswerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/lesson/step/stream": {
       "get": {
         "tags": [
@@ -970,6 +1012,144 @@
         ],
         "title": "ChatMessageResponse"
       },
+      "CheckAnswerRequest": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id",
+            "description": "ID of question being answered",
+            "examples": [
+              "bs_check_bounds"
+            ]
+          },
+          "selected_index": {
+            "type": "integer",
+            "title": "Selected Index",
+            "description": "Option index selected by student (0-3)",
+            "examples": [
+              0
+            ]
+          },
+          "concept": {
+            "type": "string",
+            "title": "Concept",
+            "description": "Concept topic",
+            "default": "Binary Search"
+          },
+          "student_id": {
+            "type": "string",
+            "title": "Student Id",
+            "description": "Student ID",
+            "default": "demo_student"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "selected_index"
+        ],
+        "title": "CheckAnswerRequest"
+      },
+      "CheckAnswerResponse": {
+        "properties": {
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct",
+            "description": "Whether selection was correct"
+          },
+          "correct_index": {
+            "type": "integer",
+            "title": "Correct Index",
+            "description": "The actual correct index"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Explanation of the correct answer"
+          },
+          "detected_misconception": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detected Misconception",
+            "description": "Diagnosed misconception tag if student answered incorrectly",
+            "examples": [
+              "confuses_search_direction_when_target_is_greater"
+            ]
+          },
+          "remediation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remediation",
+            "description": "Targeted corrective explanation for the UI to display"
+          },
+          "updated_mastery_score": {
+            "type": "number",
+            "title": "Updated Mastery Score",
+            "description": "New mastery score after attempt recording",
+            "examples": [
+              0.55
+            ]
+          },
+          "suggested_board_commands": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/TextCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/BoxCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/ArrowCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/EquationCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/MermaidCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/ClearCommand"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "arrow": "#/components/schemas/ArrowCommand",
+                  "box": "#/components/schemas/BoxCommand",
+                  "clear": "#/components/schemas/ClearCommand",
+                  "equation": "#/components/schemas/EquationCommand",
+                  "mermaid": "#/components/schemas/MermaidCommand",
+                  "text": "#/components/schemas/TextCommand"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Suggested Board Commands",
+            "description": "Whiteboard corrective annotations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_correct",
+          "correct_index",
+          "explanation",
+          "updated_mastery_score"
+        ],
+        "title": "CheckAnswerResponse"
+      },
       "CheckQuestion": {
         "properties": {
           "question_id": {
@@ -1454,7 +1634,7 @@
               }
             ],
             "title": "Last Student Response",
-            "description": "Answer from previous check"
+            "description": "Answer from previous check (e.g. chosen index or text)"
           },
           "student_misconceptions": {
             "items": {

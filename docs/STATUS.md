@@ -19,10 +19,26 @@
 ---
 
 ## Person 2: Classroom frontend (/frontend/classroom)
-- **Status:** Unblocked & Ready to build
-- **Completed:** None
-- **In Progress:** Whiteboard canvas (Excalidraw/tldraw), step playback, chat UI against `/contracts/board_commands.json` or `/mock/lesson`
-- **Blocked:** None
+- **Status:** Complete, Tested & Integrated
+- **Implemented:**
+  - **Digital Whiteboard Canvas (`frontend/classroom/WhiteboardCanvas.tsx`):** Animated SVG vector and HTML layer rendering polymorphic board commands (`box`, `arrow`, `text`, `equation` via KaTeX, `mermaid` charts, and `clear`) with interactive zoom/pan controls, reset view, and reactive visual remediation highlights.
+  - **Spoken Narration Panel (`frontend/classroom/NarrationPanel.tsx`):** Spoken teacher audio via browser Web Speech API (`SpeechSynthesisUtterance`) with live sound-wave visualizer, replay button, speed rate adjustment (0.85x, 1.0x, 1.25x), and audio mute/unmute toggle.
+  - **Classroom Playback Controls (`frontend/classroom/ControlsBar.tsx`):** Play, Pause, Next, Previous, and step-jump stepper with prominent "I don't understand" adaptive trigger button calling `POST /lesson/step` to adapt explanations on the fly.
+  - **Agent Reasoning & Misconception Banner (`frontend/classroom/AgentThoughtsBanner.tsx`):** Visible cognitive reasoning traces (`agent_thoughts`), LLM provider/latency metadata pills, and active misconception diagnosis alerts with pedagogical remediation plans.
+  - **Formative Checkpoint Card (`frontend/classroom/CheckQuestionCard.tsx`):** Interactive MCQs syncing with `POST /lesson/check-answer`, providing instant formative feedback, diagnosed misconception tags (`confuses_direction_when_target_greater`), mastery score updates, and direct whiteboard corrective overlays.
+  - **Live Teacher Chat Box (`frontend/classroom/TeacherChat.tsx`):** Conversational chat interface querying `POST /agent/chat`, displaying agent reasoning traces, and applying suggested board annotations directly to the whiteboard canvas.
+  - **Next.js & React Module (`frontend/classroom/ClassroomView.tsx`, `page.tsx`, `index.ts`):** Complete classroom orchestrator with persona selector and offline resilience.
+  - **Standalone Interactive Web Application (`frontend/classroom/index.html`):** Zero-dependency single-file HTML5 app with CDN-hosted Tailwind, KaTeX, and Mermaid, opening instantly in any browser.
+- **Tested:**
+  - Schema compliance against `/contracts/board_commands.json` for all command types.
+  - Integration with `backend/agent/main.py` (`/mock/lesson`, `/lesson/step`, `/lesson/check-answer`, `/agent/chat`).
+  - Offline fallback verification when backend is in standby mode.
+- **Integrated:**
+  - Person 1: `/mock/lesson`, `/lesson/step`, `/lesson/check-answer`, `/agent/chat`.
+  - Person 3: Ready to render `code_action` payloads and link into Pyodide live coding runner.
+  - Person 4: Real-time mastery score display and persona switching.
+- **Blocked:**
+  - None! Classroom frontend is complete and ready for integration.
 
 ---
 

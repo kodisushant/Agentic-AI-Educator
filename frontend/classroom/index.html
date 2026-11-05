@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Virtual Teacher — Interactive Digital Whiteboard Classroom</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <!-- Mermaid CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .board-grid {
+      background-image: radial-gradient(circle, #38bdf8 1px, transparent 1px), radial-gradient(circle, #64748b 0.5px, transparent 0.5px);
+      background-size: 40px 40px, 10px 10px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white flex flex-col">
+
+  <!-- Top Classroom Header -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-sky-500/20">
+          VT
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm font-semibold text-white">AI Virtual Teacher</h1>
+            <span id="headerConceptBadge" class="text-[11px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/60">
+              Binary Search
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Digital Whiteboard & Live Adaptive Classroom</p>
+        </div>
+      </div>
+
+      <!-- Controls & Persona -->
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700/60 text-xs">
+          <span class="px-2 py-0.5 text-slate-400">Student:</span>
+          <select id="personaSelector" class="bg-slate-900 text-sky-400 font-semibold rounded px-2 py-0.5 border border-slate-700 focus:outline-none focus:border-sky-500 text-xs">
+            <option value="demo_student">Alex Chen (Demo Student)</option>
+            <option value="novice_learner">Maya Patel (Novice Learner)</option>
+          </select>
+        </div>
+
+        <span id="backendStatusPill" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-sky-950/80 text-sky-400 border-sky-800/60">
+          <span id="backendStatusDot" class="w-1.5 h-1.5 mr-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+          <span id="backendStatusText">Standby Mode</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Classroom Grid -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Left Column: Whiteboard, Controls, Narration, Agent Thoughts (8 Cols) -->
+    <div class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- Whiteboard Canvas Card -->
+      <div class="relative w-full h-[580px] bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col select-none" id="canvasContainer">
+        
+        <!-- Whiteboard Top Left Status -->
+        <div class="absolute top-3 left-4 z-20 flex items-center gap-2">
+          <div class="flex items-center gap-2 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700/80 shadow-md">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-semibold text-slate-200">Interactive Canvas</span>
+            <span id="canvasStepBadge" class="text-[10px] text-sky-400 font-mono bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-800/60">
+              Step 1 of 5
+            </span>
+          </div>
+
+          <div id="remediationPill" class="hidden flex items-center gap-1.5 bg-rose-950/90 text-rose-300 text-xs px-2.5 py-1.5 rounded-lg border border-rose-800/80 animate-pulse">
+            <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span class="font-medium">Visual Remediation Active</span>
+          </div>
+        </div>
+
+        <!-- Canvas Controls (Zoom / Pan / Reset) -->
+        <div class="absolute top-3 right-4 z-20 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur p-1 rounded-xl border border-slate-700/80 shadow-lg">
+          <button onclick="handleZoom(0.15)" title="Zoom In" class="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </button>
+          <span id="zoomLevelDisplay" class="text-[11px] font-mono text-slate-400 px-1">100%</span>
+          <button onclick="handleZoom(-0.15)" title="Zoom Out" class="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+          </button>
+          <div class="w-[1px] h-4 bg-slate-700 mx-0.5"></div>
+          <button onclick="resetCanvasTransform()" title="Reset Canvas View" class="px-2 h-7 flex items-center justify-center text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
+            Reset
+          </button>
+        </div>
+
+        <!-- Viewport Layer -->
+        <div id="canvasViewport" class="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden board-grid">
+          <div id="canvasTransformLayer" class="absolute top-0 left-0 w-full h-full origin-top-left transition-transform duration-75">
+            <!-- SVG Arrow and Vector Layer -->
+            <svg id="svgArrowLayer" class="absolute top-0 left-0 w-[1400px] h-[900px] pointer-events-none" style="overflow: visible;">
+              <defs>
+                <marker id="arrowhead-blue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#0284c7" />
+                </marker>
+                <marker id="arrowhead-green" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#16a34a" />
+                </marker>
+                <marker id="arrowhead-red" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#dc2626" />
+                </marker>
+                <marker id="arrowhead-amber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#d97706" />
+                </marker>
+              </defs>
+            </svg>
+
+            <!-- HTML Dynamic DOM Elements Layer (boxes, text, equations, mermaid) -->
+            <div id="htmlElementsLayer" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playback Controls Bar -->
+      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Stepper Indicators -->
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-semibold text-slate-400 mr-2">Steps:</span>
+          <div id="stepperContainer" class="flex items-center space-x-1.5"></div>
+        </div>
+
+        <!-- Play / Pause / Step Controls -->
+        <div class="flex items-center space-x-3">
+          <button id="prevStepBtn" onclick="prevStep()" class="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl border border-slate-700 transition" title="Previous Step">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+
+          <button id="playPauseBtn" onclick="togglePlayPause()" class="px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-sky-500/25 flex items-center gap-2 transition">
+            <svg id="playPauseIcon" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+            <span id="playPauseText" class="text-xs">Play</span>
+          </button>
+
+          <button id="nextStepBtn" onclick="nextStep()" class="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl border border-slate-700 transition" title="Next Step">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Adaptive "I don't understand" Button -->
+        <div>
+          <button id="dontUnderstandBtn" onclick="triggerDontUnderstand()" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm group" title="Request teacher to explain more simply">
+            <span class="w-2 h-2 rounded-full bg-amber-400 group-hover:animate-ping"></span>
+            <span id="dontUnderstandLabel">I don't understand</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Spoken Narration Panel -->
+      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur transition-all duration-300">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+          <div class="flex items-center space-x-3">
+            <div class="relative">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/20">
+                AI
+              </div>
+              <span id="speakingDot" class="hidden absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 animate-ping"></span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-slate-100">Virtual Teacher</span>
+                <span id="narrationTopicBadge" class="text-[11px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/50">Binary Search</span>
+              </div>
+              <p id="narrationStepSubtitle" class="text-[11px] text-slate-400">Step 1 Spoken Explanation</p>
+            </div>
+          </div>
+
+          <!-- Audio Controls -->
+          <div class="flex items-center space-x-2">
+            <!-- Animated Sound Wave Indicator -->
+            <div id="soundWaveIndicator" class="hidden flex items-center gap-0.5 h-4 px-2 bg-emerald-950/60 rounded border border-emerald-800/50">
+              <span class="w-0.5 h-2 bg-emerald-400 animate-pulse"></span>
+              <span class="w-0.5 h-3.5 bg-emerald-400 animate-bounce"></span>
+              <span class="w-0.5 h-1.5 bg-emerald-400 animate-pulse"></span>
+              <span class="w-0.5 h-3 bg-emerald-400 animate-bounce"></span>
+            </div>
+
+            <!-- Speed Button -->
+            <button onclick="cycleSpeechRate()" id="speechRateBtn" title="Speech Speed" class="text-xs font-mono px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">
+              1x
+            </button>
+
+            <!-- Replay Button -->
+            <button onclick="replaySpeech()" title="Replay Voice Narration" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+
+            <!-- Voice Toggle Button -->
+            <button onclick="toggleVoiceEnabled()" id="voiceToggleBtn" title="Voice Toggle" class="p-1.5 rounded-lg border bg-sky-950/80 text-sky-400 border-sky-800 hover:bg-sky-900 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <p id="narrationText" class="text-sm text-slate-200 leading-relaxed font-normal selection:bg-sky-500 selection:text-white">
+          Loading lesson narration...
+        </p>
+      </div>
+
+      <!-- Agent Cognitive Reasoning & Misconception Banner -->
+      <div id="agentBanner" class="rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg bg-slate-900/90 border-slate-800/80">
+        <div onclick="toggleAgentBanner()" class="px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/40 transition select-none">
+          <div class="flex items-center space-x-2.5">
+            <div id="agentBannerIconBox" class="w-6 h-6 rounded-lg flex items-center justify-center bg-indigo-600/30 text-indigo-300">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            </div>
+            <div>
+              <span id="agentBannerTitle" class="text-xs font-semibold text-slate-200">Agent Reasoning Trace</span>
+              <span id="agentProviderBadge" class="text-[10px] font-mono bg-slate-800 text-sky-400 px-1.5 py-0.5 rounded border border-slate-700 ml-2">groq (710ms)</span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <span id="misconceptionBadge" class="hidden text-[11px] font-mono text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800"></span>
+            <svg id="agentBannerChevron" class="w-4 h-4 text-slate-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+
+        <div id="agentBannerBody" class="px-4 pb-3.5 pt-1 space-y-2.5 text-xs text-slate-300 border-t border-slate-800/60">
+          <div id="agentThoughtsContent" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono text-[11px] leading-relaxed text-indigo-300">
+            <span class="text-slate-500 font-semibold uppercase tracking-wider block mb-1 text-[10px]">Agent Cognitive Thought:</span>
+            <span id="agentThoughtsText">Analyzing student bounds intuition...</span>
+          </div>
+
+          <div id="remediationContent" class="hidden bg-rose-950/40 p-2.5 rounded-xl border border-rose-800/60 text-[11px] leading-relaxed text-rose-200">
+            <span class="text-rose-400 font-semibold uppercase tracking-wider block mb-1 text-[10px]">Pedagogical Remediation Plan:</span>
+            <span id="remediationText">Targeted corrective visual annotations displayed.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Sidebar (Chat / Checkpoint / Code) (4 Cols) -->
+    <div class="lg:col-span-4 flex flex-col space-y-4">
+      
+      <!-- Tab Header -->
+      <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+        <button id="tabChatBtn" onclick="switchTab('chat')" class="flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20">
+          Teacher Chat
+        </button>
+        <button id="tabCheckpointBtn" onclick="switchTab('checkpoint')" class="flex-1 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200 relative">
+          Checkpoint
+          <span id="checkpointNoticeDot" class="hidden w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-2 animate-ping"></span>
+        </button>
+        <button id="tabCodeBtn" onclick="switchTab('code')" class="hidden flex-1 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200">
+          Code
+        </button>
+      </div>
+
+      <!-- Tab Content: Live Teacher Chat -->
+      <div id="tabChatContent" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-2xl backdrop-blur flex flex-col h-[520px]">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold text-slate-100">Live Teacher Chat</h3>
+              <p class="text-[10px] text-slate-400">Ask clarifying questions anytime</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        </div>
+
+        <!-- Quick Questions -->
+        <div class="flex gap-1.5 py-2 overflow-x-auto no-scrollbar border-b border-slate-800/60">
+          <button onclick="sendChatMessage('Why must the array be sorted?')" class="text-[10px] whitespace-nowrap bg-slate-800/80 hover:bg-slate-700/80 text-sky-300 px-2.5 py-1 rounded-full border border-slate-700/60 transition flex-shrink-0">
+            Why must the array be sorted?
+          </button>
+          <button onclick="sendChatMessage('Why low + (high - low) // 2?')" class="text-[10px] whitespace-nowrap bg-slate-800/80 hover:bg-slate-700/80 text-sky-300 px-2.5 py-1 rounded-full border border-slate-700/60 transition flex-shrink-0">
+            Why low + (high - low) // 2?
+          </button>
+          <button onclick="sendChatMessage('What is time complexity?')" class="text-[10px] whitespace-nowrap bg-slate-800/80 hover:bg-slate-700/80 text-sky-300 px-2.5 py-1 rounded-full border border-slate-700/60 transition flex-shrink-0">
+            What is time complexity?
+          </button>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs">
+          <div class="flex flex-col items-start">
+            <div class="max-w-[85%] rounded-2xl p-3 shadow-md bg-slate-800 text-slate-200 border border-slate-700/80 rounded-bl-sm leading-relaxed">
+              <p>Hello! I'm your AI Teacher for Binary Search. Ask me anything about the intuition, formulas, or code!</p>
+            </div>
+            <span class="text-[9px] text-slate-500 mt-1 px-1">Just now</span>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form onsubmit="handleChatSubmit(event)" class="pt-2 border-t border-slate-800 flex items-center gap-2">
+          <input type="text" id="chatInput" placeholder="Ask your teacher a question..." class="flex-1 bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+          <button type="submit" id="chatSendBtn" class="p-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl transition shadow-md shadow-sky-500/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Tab Content: Formative Checkpoint -->
+      <div id="tabCheckpointContent" class="hidden bg-slate-900/95 border border-indigo-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur transition-all duration-300">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <h3 class="text-sm font-semibold text-slate-100">Understanding Checkpoint</h3>
+          </div>
+          <span id="checkpointConceptBadge" class="text-[11px] font-mono text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/60">
+            bounds_update
+          </span>
+        </div>
+
+        <p id="checkpointQuestionText" class="text-sm font-medium text-slate-100 mb-4 leading-relaxed">
+          Loading question...
+        </p>
+
+        <div id="checkpointOptionsList" class="space-y-2 mb-4"></div>
+
+        <button id="checkpointSubmitBtn" onclick="submitCheckpointAnswer()" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 disabled:opacity-40 text-white font-medium text-xs rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2">
+          Check My Answer
+        </button>
+
+        <div id="checkpointFeedbackBox" class="hidden space-y-3 pt-2">
+          <div id="checkpointFeedbackAlert" class="p-3 rounded-xl border text-xs leading-relaxed"></div>
+          <button onclick="resetCheckpoint()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl border border-slate-700 transition">
+            Try Again
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content: Code Snippet -->
+      <div id="tabCodeContent" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <h4 class="text-xs font-semibold text-slate-200">Live Code Snippet</h4>
+          </div>
+          <span id="codeLangBadge" class="text-[10px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/60">python</span>
+        </div>
+        <pre id="codeSnippetBox" class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono text-xs text-sky-300 overflow-x-auto leading-relaxed max-h-[360px]"></pre>
+        <p id="codeExplanationBox" class="text-[11px] text-slate-400 leading-relaxed"></p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Embedded Lesson Data & Client Logic -->
+  <script>
+    // Embedded 5-step lesson matching /contracts/board_commands.json
+    const FALLBACK_LESSON = [
+      {
+        step_id: "bs_step_0",
+        step_index: 0,
+        total_steps: 5,
+        concept: "Binary Search",
+        narration: "Welcome to Binary Search! Imagine searching for a contact in a phonebook of 1,000 pages. Instead of checking every page one by one, you open to the exact middle. If the target name is alphabetically greater, you discard the entire first half! This divide-and-conquer strategy slashes time complexity from linear to logarithmic.",
+        board_commands: [
+          { type: "clear", id: "clear_0" },
+          { type: "text", id: "title_text", content: "Binary Search: Divide & Conquer", x: 60.0, y: 40.0, size: 24, color: "#f8fafc" },
+          { type: "text", id: "array_label", content: "Sorted Array (n = 10):", x: 60.0, y: 95.0, size: 15, color: "#94a3b8" },
+          { type: "box", id: "box_0", label: "2", x: 60.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_1", label: "5", x: 125.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_2", label: "8", x: 190.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_3", label: "12", x: 255.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_4", label: "16", x: 320.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_5", label: "23", x: 385.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_6", label: "38", x: 450.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_7", label: "56", x: 515.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_8", label: "72", x: 580.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_9", label: "91", x: 645.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "arrow", id: "arr_low", start_x: 87.0, start_y: 215.0, end_x: 87.0, end_y: 180.0, label: "low = 0", color: "#16a34a" },
+          { type: "arrow", id: "arr_high", start_x: 672.0, start_y: 215.0, end_x: 672.0, end_y: 180.0, label: "high = 9", color: "#dc2626" },
+          { type: "equation", id: "eq_complexity", latex: "\\mathcal{O}(\\log_2 n) \\ll \\mathcal{O}(n)", x: 60.0, y: 245.0, label: "Logarithmic vs Linear Efficiency" },
+          { type: "mermaid", id: "flow_overview", chart: "graph LR\n  A[Sorted Array] --> B[Check Midpoint]\n  B -->|Target == Mid| C[Found!]\n  B -->|Target < Mid| D[Search Left Half]\n  B -->|Target > Mid| E[Search Right Half]", x: 60.0, y: 340.0, title: "Decision Logic Flowchart" }
+        ],
+        agent_thoughts: "Student mastery state: bounds=0.45, intuition=0.90. Initiating high-level divide-and-conquer visual.",
+        provider_metadata: { provider: "groq", latency_ms: 710, cached: true }
+      },
+      {
+        step_id: "bs_step_1",
+        step_index: 1,
+        total_steps: 5,
+        concept: "Binary Search",
+        narration: "Now we calculate our first midpoint: mid = low + (high - low) // 2. Here, 0 + (9 - 0) // 2 = 4. Element at index 4 is 16. Our target is 23! Because 23 is greater than 16, every item from index 0 through index 4 is strictly less than 23. We safely discard the entire left half!",
+        board_commands: [
+          { type: "box", id: "box_0", label: "2", x: 60.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
+          { type: "box", id: "box_1", label: "5", x: 125.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
+          { type: "box", id: "box_2", label: "8", x: 190.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
+          { type: "box", id: "box_3", label: "12", x: 255.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
+          { type: "box", id: "box_4", label: "16", x: 320.0, y: 125.0, width: 55.0, height: 48.0, color: "#f59e0b", fill: "#451a03" },
+          { type: "box", id: "box_5", label: "23", x: 385.0, y: 125.0, width: 55.0, height: 48.0, color: "#10b981", fill: "#064e3b" },
+          { type: "box", id: "box_6", label: "38", x: 450.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_7", label: "56", x: 515.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_8", label: "72", x: 580.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "box", id: "box_9", label: "91", x: 645.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
+          { type: "arrow", id: "arr_mid", start_x: 347.0, start_y: 215.0, end_x: 347.0, end_y: 180.0, label: "mid = 4 (value: 16)", color: "#f59e0b" },
+          { type: "equation", id: "eq_mid", latex: "mid = low + \\left\\lfloor \\frac{high - low}{2} \\right\\rfloor = 0 + 4 = 4", x: 60.0, y: 245.0, label: "Safe Overflow Midpoint Calculation" },
+          { type: "text", id: "probe_text", content: "Target = 23. Since 23 > array[4] (16), discard indices [0 .. 4].", x: 60.0, y: 335.0, size: 15, color: "#38bdf8" }
+        ],
+        agent_thoughts: "Emphasizing safe midpoint calculation to prevent integer overflow.",
+        provider_metadata: { provider: "gemini", latency_ms: 1250, cached: false }
+      },
+      {
+        step_id: "bs_step_2",
+        step_index: 2,
+        total_steps: 5,
+        concept: "Binary Search",
+        narration: "Time for a quick check! When target 23 is greater than array[mid] 16, how should we update our pointers? Think carefully about which elements are already ruled out.",
+        board_commands: [
+          { type: "text", id: "checkpoint_banner", content: "Checkpoint: Bounds Pointer Update", x: 60.0, y: 60.0, size: 20, color: "#fbbf24" },
+          { type: "equation", id: "eq_bounds", latex: "target > array[mid] \\implies \\text{Search space is } [mid + 1, high]", x: 60.0, y: 110.0, label: "Invariant Rule" }
+        ],
+        check_question: {
+          question_id: "bs_check_bounds",
+          question: "When target (23) is greater than array[mid] (16), what is the correct update?",
+          options: ["high = mid - 1", "low = mid + 1", "low = mid", "high = mid"],
+          correct_index: 1,
+          explanation: "Because array[mid] was already checked and is too small, we set low = mid + 1 to inspect only elements to its right.",
+          concept_tag: "binary_search_bounds_update"
+        },
+        agent_thoughts: "Checking bounds update logic. Student previously had bounds misconception.",
+        provider_metadata: { provider: "groq", latency_ms: 680, cached: true }
+      },
+      {
+        step_id: "bs_step_3",
+        step_index: 3,
+        total_steps: 5,
+        concept: "Binary Search",
+        narration: "Let's inspect the clean Python implementation. Notice while low <= high: the less-than-or-equal condition is essential for 1-element arrays. And we use mid + 1 and mid - 1 to guarantee the loop terminates.",
+        board_commands: [
+          { type: "text", id: "code_banner", content: "Python Implementation & Invariants", x: 60.0, y: 50.0, size: 20, color: "#38bdf8" },
+          { type: "equation", id: "eq_termination", latex: "high - low \\text{ strictly decreases each iteration } \\implies \\mathcal{O}(\\log n)", x: 60.0, y: 100.0, label: "Loop Termination Invariant" },
+          { type: "mermaid", id: "complexity_tree", chart: "graph TD\n  N[Array of size N] --> N2a[N/2]\n  N --> N2b[N/2]\n  N2a --> N4a[N/4]\n  N2a --> N4b[N/4]\n  N2b --> N4c[N/4]\n  N2b --> N4d[N/4]", x: 60.0, y: 180.0, title: "Subproblem Halving Tree" }
+        ],
+        code_action: {
+          code: "def binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n    while low <= high:\n        mid = low + (high - low) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\nnums = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]\nidx = binary_search(nums, 23)\nprint(f'Target 23 found at index {idx}!')",
+          language: "python",
+          action: "execute",
+          explanation: "Full Python implementation executing in-browser via Pyodide."
+        },
+        agent_thoughts: "Transitioning from visual whiteboard to concrete runnable code.",
+        provider_metadata: { provider: "gemini", latency_ms: 1100, cached: false }
+      },
+      {
+        step_id: "bs_step_4",
+        step_index: 4,
+        total_steps: 5,
+        concept: "Binary Search",
+        narration: "Fantastic job completing the Binary Search module! You've mastered pointer convergence, logarithmic halving, and overflow-safe midpoint calculation. Continue to the Live Coding runner or take the targeted assessment quiz to reinforce your mastery score!",
+        board_commands: [
+          { type: "clear", id: "clear_end" },
+          { type: "text", id: "summary_title", content: "Module Complete: Binary Search Mastery Achieved!", x: 60.0, y: 50.0, size: 22, color: "#34d399" },
+          { type: "box", id: "box_summary", label: "Mastery: 85%", x: 60.0, y: 110.0, width: 180.0, height: 60.0, color: "#10b981", fill: "#064e3b" },
+          { type: "text", id: "next_recommendation", content: "Recommended Next Concept: 'Two Pointers & Sliding Window'", x: 60.0, y: 200.0, size: 16, color: "#38bdf8" },
+          { type: "mermaid", id: "learning_path", chart: "graph LR\n  A[Binary Search (Mastered)] --> B[Two Pointers]\n  B --> C[Sliding Window]\n  C --> D[Binary Search on Answer]", x: 60.0, y: 250.0, title: "Recommended Learning Trajectory" }
+        ],
+        agent_thoughts: "Final step completed. Updating student mastery profile in learner model.",
+        is_final_step: true,
+        provider_metadata: { provider: "groq", latency_ms: 690, cached: true }
+      }
+    ];
+
+    // State Variables
+    let currentSteps = [...FALLBACK_LESSON];
+    let currentStepIdx = 0;
+    let isPlaying = false;
+    let autoAdvanceTimer = null;
+    let zoomLevel = 1.0;
+    let panOffset = { x: 0, y: 0 };
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let activeRemediationCommands = [];
+    let voiceEnabled = true;
+    let speechRate = 1.0;
+    let selectedOptionIdx = null;
+
+    // Initialize Mermaid
+    if (window.mermaid) {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'dark',
+        themeVariables: {
+          primaryColor: '#0284c7',
+          primaryTextColor: '#f8fafc',
+          primaryBorderColor: '#38bdf8',
+          lineColor: '#64748b'
+        }
+      });
+    }
+
+    // Try fetching live mock lesson from backend on load
+    async function initClassroom() {
+      try {
+        const res = await fetch("http://localhost:8000/mock/lesson");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            currentSteps = data;
+            document.getElementById("backendStatusPill").className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-emerald-950/80 text-emerald-400 border-emerald-800/60";
+            document.getElementById("backendStatusDot").className = "w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse";
+            document.getElementById("backendStatusText").innerText = "Live Backend";
+          }
+        }
+      } catch (e) {
+        console.log("Classroom running in stand-alone offline mode.");
+      }
+      renderStepper();
+      loadStep(currentStepIdx);
+      setupPanning();
+    }
+
+    function renderStepper() {
+      const container = document.getElementById("stepperContainer");
+      container.innerHTML = "";
+      currentSteps.forEach((_, idx) => {
+        const btn = document.createElement("button");
+        btn.innerText = idx + 1;
+        btn.onclick = () => jumpToStep(idx);
+        btn.className = `w-7 h-7 rounded-lg text-xs font-semibold font-mono flex items-center justify-center transition-all ${
+          idx === currentStepIdx
+            ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30 scale-105 border border-sky-400"
+            : idx < currentStepIdx
+            ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 hover:bg-emerald-900"
+            : "bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-750 hover:text-slate-200"
+        }`;
+        container.appendChild(btn);
+      });
+    }
+
+    async function loadStep(index) {
+      currentStepIdx = index;
+      activeRemediationCommands = [];
+      document.getElementById("remediationPill").classList.add("hidden");
+      renderStepper();
+
+      const step = currentSteps[currentStepIdx];
+      document.getElementById("canvasStepBadge").innerText = `Step ${currentStepIdx + 1} of ${currentSteps.length}`;
+      document.getElementById("narrationTopicBadge").innerText = step.concept;
+      document.getElementById("headerConceptBadge").innerText = step.concept;
+      document.getElementById("narrationStepSubtitle").innerText = `Step ${currentStepIdx + 1} Spoken Explanation`;
+      document.getElementById("narrationText").innerText = step.narration;
+
+      // Update Controls
+      document.getElementById("prevStepBtn").disabled = (currentStepIdx === 0);
+      document.getElementById("nextStepBtn").disabled = (currentStepIdx === currentSteps.length - 1);
+
+      // Render Whiteboard Canvas
+      renderWhiteboard(step.board_commands);
+
+      // Render Agent Thoughts
+      renderAgentThoughts(step);
+
+      // Checkpoint or Code Tabs
+      setupTabs(step);
+
+      // Speak narration
+      speakNarration(step.narration);
+    }
+
+    async function renderWhiteboard(commands) {
+      const svgLayer = document.getElementById("svgArrowLayer");
+      const htmlLayer = document.getElementById("htmlElementsLayer");
+
+      // Keep defs in SVG
+      const defs = svgLayer.querySelector("defs");
+      svgLayer.innerHTML = "";
+      if (defs) svgLayer.appendChild(defs);
+      htmlLayer.innerHTML = "";
+
+      const allCmds = [...commands, ...activeRemediationCommands];
+      const activeCmds = [];
+      for (const cmd of allCmds) {
+        if (cmd.type === "clear") {
+          activeCmds.length = 0;
+        } else {
+          activeCmds.push(cmd);
+        }
+      }
+
+      // Box coordinates map
+      const boxMap = {};
+      activeCmds.forEach(c => {
+        if (c.type === "box") boxMap[c.id] = c;
+      });
+
+      // Render SVG Arrows
+      activeCmds.filter(c => c.type === "arrow").forEach(cmd => {
+        let sx = cmd.start_x || 0;
+        let sy = cmd.start_y || 0;
+        let ex = cmd.end_x || 0;
+        let ey = cmd.end_y || 0;
+
+        if (cmd.from_id && boxMap[cmd.from_id]) {
+          const b = boxMap[cmd.from_id];
+          sx = b.x + (b.width || 80) / 2;
+          sy = b.y + (b.height || 50);
+        }
+        if (cmd.to_id && boxMap[cmd.to_id]) {
+          const b = boxMap[cmd.to_id];
+          ex = b.x + (b.width || 80) / 2;
+          ey = b.y;
+        }
+
+        const color = cmd.color || "#0284c7";
+        let marker = "arrowhead-blue";
+        if (color.includes("16a34a")) marker = "arrowhead-green";
+        else if (color.includes("dc2626")) marker = "arrowhead-red";
+        else if (color.includes("d97706")) marker = "arrowhead-amber";
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", sx);
+        line.setAttribute("y1", sy);
+        line.setAttribute("x2", ex);
+        line.setAttribute("y2", ey);
+        line.setAttribute("stroke", color);
+        line.setAttribute("stroke-width", "2.5");
+        line.setAttribute("marker-end", `url(#${marker})`);
+        svgLayer.appendChild(line);
+
+        if (cmd.label) {
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", (sx + ex) / 2);
+          text.setAttribute("y", (sy + ey) / 2 - 8);
+          text.setAttribute("fill", color);
+          text.setAttribute("font-size", "13");
+          text.setAttribute("font-weight", "600");
+          text.setAttribute("text-anchor", "middle");
+          text.textContent = cmd.label;
+          svgLayer.appendChild(text);
+        }
+      });
+
+      // Render HTML Elements (Boxes, Text, Equations, Mermaid)
+      for (const cmd of activeCmds) {
+        if (cmd.type === "box") {
+          const box = document.createElement("div");
+          box.style.position = "absolute";
+          box.style.left = `${cmd.x}px`;
+          box.style.top = `${cmd.y}px`;
+          box.style.width = `${cmd.width || 80}px`;
+          box.style.height = `${cmd.height || 50}px`;
+          box.style.borderColor = cmd.color || "#3b82f6";
+          box.style.backgroundColor = cmd.fill || "#0f172a";
+          box.className = "border-2 rounded-xl flex items-center justify-center font-mono font-bold text-base transition-all duration-300 shadow-md text-slate-100 pointer-events-auto hover:scale-105 cursor-pointer";
+          box.innerText = cmd.label || "";
+          htmlLayer.appendChild(box);
+        } else if (cmd.type === "text") {
+          const isRemediation = cmd.id.includes("misconception") || cmd.id.includes("remediation");
+          const txt = document.createElement("div");
+          txt.style.position = "absolute";
+          txt.style.left = `${cmd.x}px`;
+          txt.style.top = `${cmd.y}px`;
+          txt.style.fontSize = `${cmd.size || 18}px`;
+          txt.style.color = isRemediation ? "#f87171" : cmd.color || "#f8fafc";
+          txt.className = `font-sans tracking-wide transition-all duration-300 pointer-events-none max-w-2xl leading-relaxed ${
+            isRemediation ? "bg-rose-950/80 px-3 py-1.5 rounded-lg border border-rose-800/60 shadow-lg font-medium" : "font-semibold"
+          }`;
+          txt.innerText = cmd.content;
+          htmlLayer.appendChild(txt);
+        } else if (cmd.type === "equation") {
+          const eqCard = document.createElement("div");
+          eqCard.style.position = "absolute";
+          eqCard.style.left = `${cmd.x}px`;
+          eqCard.style.top = `${cmd.y}px`;
+          eqCard.className = "bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 shadow-xl backdrop-blur transition-all duration-300 max-w-md pointer-events-auto";
+
+          let labelHtml = cmd.label ? `<div class="text-[11px] font-medium text-indigo-300 uppercase tracking-wider mb-1">${cmd.label}</div>` : "";
+          let renderedMath = cmd.latex;
+          if (window.katex) {
+            try {
+              renderedMath = katex.renderToString(cmd.latex, { displayMode: true, throwOnError: false });
+            } catch (err) {
+              renderedMath = cmd.latex;
+            }
+          }
+          eqCard.innerHTML = `${labelHtml}<div class="text-sky-300 text-lg font-mono overflow-x-auto">${renderedMath}</div>`;
+          htmlLayer.appendChild(eqCard);
+        } else if (cmd.type === "mermaid") {
+          const mCard = document.createElement("div");
+          mCard.style.position = "absolute";
+          mCard.style.left = `${cmd.x || 60}px`;
+          mCard.style.top = `${cmd.y || 100}px`;
+          mCard.className = "bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur transition-all duration-300 max-w-2xl overflow-hidden pointer-events-auto";
+
+          const titleHtml = cmd.title ? `<div class="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-300 border-b border-slate-800 pb-1.5">
+            <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+            <span>${cmd.title}</span>
+          </div>` : "";
+
+          const chartContainerId = `mermaid_${cmd.id}_${Date.now()}`;
+          mCard.innerHTML = `${titleHtml}<div id="${chartContainerId}" class="overflow-x-auto text-xs"></div>`;
+          htmlLayer.appendChild(mCard);
+
+          if (window.mermaid) {
+            try {
+              const { svg } = await mermaid.render(chartContainerId + "_svg", cmd.chart);
+              document.getElementById(chartContainerId).innerHTML = svg;
+            } catch (err) {
+              document.getElementById(chartContainerId).innerHTML = `<pre class="text-[11px] font-mono text-sky-400 bg-slate-950 p-2 rounded">${cmd.chart}</pre>`;
+            }
+          }
+        }
+      }
+    }
+
+    function renderAgentThoughts(step) {
+      const banner = document.getElementById("agentBanner");
+      const iconBox = document.getElementById("agentBannerIconBox");
+      const title = document.getElementById("agentBannerTitle");
+      const providerBadge = document.getElementById("agentProviderBadge");
+      const miscBadge = document.getElementById("misconceptionBadge");
+      const thoughtsText = document.getElementById("agentThoughtsText");
+      const remedBox = document.getElementById("remediationContent");
+      const remedText = document.getElementById("remediationText");
+
+      if (step.provider_metadata) {
+        providerBadge.innerText = `${step.provider_metadata.provider} (${step.provider_metadata.latency_ms || 700}ms)`;
+        providerBadge.classList.remove("hidden");
+      } else {
+        providerBadge.classList.add("hidden");
+      }
+
+      thoughtsText.innerText = step.agent_thoughts || "Observing student pace and mastery model state.";
+
+      if (step.detected_misconception) {
+        banner.className = "rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg bg-rose-950/40 border-rose-800/60";
+        iconBox.className = "w-6 h-6 rounded-lg flex items-center justify-center bg-rose-600/30 text-rose-300";
+        title.innerText = "Misconception Diagnosed";
+        miscBadge.innerText = step.detected_misconception;
+        miscBadge.classList.remove("hidden");
+        remedBox.classList.remove("hidden");
+        remedText.innerText = step.remediation || "Targeted visual review triggered.";
+      } else {
+        banner.className = "rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg bg-slate-900/90 border-slate-800/80";
+        iconBox.className = "w-6 h-6 rounded-lg flex items-center justify-center bg-indigo-600/30 text-indigo-300";
+        title.innerText = "Agent Reasoning Trace";
+        miscBadge.classList.add("hidden");
+        remedBox.classList.add("hidden");
+      }
+    }
+
+    function setupTabs(step) {
+      const noticeDot = document.getElementById("checkpointNoticeDot");
+      const tabCodeBtn = document.getElementById("tabCodeBtn");
+
+      if (step.check_question) {
+        noticeDot.classList.remove("hidden");
+        renderCheckpoint(step.check_question);
+        switchTab("checkpoint");
+      } else {
+        noticeDot.classList.add("hidden");
+      }
+
+      if (step.code_action) {
+        tabCodeBtn.classList.remove("hidden");
+        document.getElementById("codeLangBadge").innerText = step.code_action.language || "python";
+        document.getElementById("codeSnippetBox").innerText = step.code_action.code;
+        document.getElementById("codeExplanationBox").innerText = step.code_action.explanation || "";
+      } else {
+        tabCodeBtn.classList.add("hidden");
+        if (activeTabName === "code") switchTab("chat");
+      }
+    }
+
+    let activeTabName = "chat";
+    function switchTab(tab) {
+      activeTabName = tab;
+      const chatBtn = document.getElementById("tabChatBtn");
+      const chkBtn = document.getElementById("tabCheckpointBtn");
+      const codeBtn = document.getElementById("tabCodeBtn");
+
+      const chatContent = document.getElementById("tabChatContent");
+      const chkContent = document.getElementById("tabCheckpointContent");
+      const codeContent = document.getElementById("tabCodeContent");
+
+      [chatBtn, chkBtn, codeBtn].forEach(b => {
+        b.className = "flex-1 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200 relative";
+      });
+      [chatContent, chkContent, codeContent].forEach(c => c.classList.add("hidden"));
+
+      if (tab === "chat") {
+        chatBtn.className = "flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20";
+        chatContent.classList.remove("hidden");
+      } else if (tab === "checkpoint") {
+        chkBtn.className = "flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20";
+        chkContent.classList.remove("hidden");
+      } else if (tab === "code") {
+        codeBtn.className = "flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20";
+        codeContent.classList.remove("hidden");
+      }
+    }
+
+    function renderCheckpoint(q) {
+      document.getElementById("checkpointConceptBadge").innerText = q.concept_tag;
+      document.getElementById("checkpointQuestionText").innerText = q.question;
+      const list = document.getElementById("checkpointOptionsList");
+      list.innerHTML = "";
+      selectedOptionIdx = null;
+
+      document.getElementById("checkpointSubmitBtn").classList.remove("hidden");
+      document.getElementById("checkpointFeedbackBox").classList.add("hidden");
+
+      q.options.forEach((opt, idx) => {
+        const item = document.createElement("div");
+        item.id = `opt_item_${idx}`;
+        item.onclick = () => selectOption(idx);
+        item.className = "p-3 rounded-xl border border-slate-700/80 bg-slate-800/80 text-slate-200 hover:bg-slate-800 text-xs font-mono flex items-center justify-between cursor-pointer transition-all";
+        item.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="w-5 h-5 rounded-md bg-slate-900/80 border border-slate-700 flex items-center justify-center font-bold text-[10px] text-slate-400">
+              ${String.fromCharCode(65 + idx)}
+            </span>
+            <span>${opt}</span>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function selectOption(idx) {
+      selectedOptionIdx = idx;
+      const step = currentSteps[currentStepIdx];
+      step.check_question.options.forEach((_, i) => {
+        const el = document.getElementById(`opt_item_${i}`);
+        if (el) {
+          if (i === idx) {
+            el.className = "p-3 rounded-xl border border-sky-500 bg-sky-950/80 text-sky-100 ring-2 ring-sky-500/30 text-xs font-mono flex items-center justify-between cursor-pointer transition-all";
+          } else {
+            el.className = "p-3 rounded-xl border border-slate-700/80 bg-slate-800/80 text-slate-200 hover:bg-slate-800 text-xs font-mono flex items-center justify-between cursor-pointer transition-all";
+          }
+        }
+      });
+    }
+
+    async function submitCheckpointAnswer() {
+      if (selectedOptionIdx === null) return;
+      const step = currentSteps[currentStepIdx];
+      const q = step.check_question;
+
+      document.getElementById("checkpointSubmitBtn").disabled = true;
+      document.getElementById("checkpointSubmitBtn").innerText = "Diagnosing answer...";
+
+      try {
+        const res = await fetch("http://localhost:8000/lesson/check-answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question_id: q.question_id,
+            selected_index: selectedOptionIdx,
+            concept: step.concept,
+            student_id: document.getElementById("personaSelector").value
+          })
+        });
+
+        let data;
+        if (res.ok) {
+          data = await res.json();
+        } else {
+          // Local fallback evaluation
+          const isCorrect = (selectedOptionIdx === q.correct_index);
+          data = {
+            is_correct: isCorrect,
+            correct_index: q.correct_index,
+            explanation: q.explanation,
+            detected_misconception: isCorrect ? null : "confuses_direction_when_target_greater",
+            remediation: isCorrect ? "Superb intuition!" : "You chose option A ('high = mid - 1'). Because target (23) > array[mid] (16), the target is to the RIGHT. You must set low = mid + 1.",
+            updated_mastery_score: isCorrect ? 0.85 : 0.40,
+            suggested_board_commands: isCorrect ? [] : [
+              { type: "text", id: "misconception_alert", content: "Diagnosed Misconception: Search direction confusion", x: 60.0, y: 350.0, size: 16, color: "#dc2626" },
+              { type: "text", id: "remediation_note", content: "Remember: Target > Mid means search right half (low = mid + 1)!", x: 60.0, y: 385.0, size: 14, color: "#b91c1c" }
+            ]
+          };
+        }
+
+        displayCheckpointResult(data);
+      } catch (err) {
+        const isCorrect = (selectedOptionIdx === q.correct_index);
+        displayCheckpointResult({
+          is_correct: isCorrect,
+          correct_index: q.correct_index,
+          explanation: q.explanation,
+          detected_misconception: isCorrect ? null : "confuses_direction_when_target_greater",
+          remediation: isCorrect ? "Superb intuition!" : "Because target (23) > array[mid] (16), look to the right: low = mid + 1.",
+          updated_mastery_score: isCorrect ? 0.85 : 0.40,
+          suggested_board_commands: []
+        });
+      } finally {
+        document.getElementById("checkpointSubmitBtn").disabled = false;
+        document.getElementById("checkpointSubmitBtn").innerText = "Check My Answer";
+      }
+    }
+
+    function displayCheckpointResult(data) {
+      document.getElementById("checkpointSubmitBtn").classList.add("hidden");
+      const box = document.getElementById("checkpointFeedbackBox");
+      const alert = document.getElementById("checkpointFeedbackAlert");
+      box.classList.remove("hidden");
+
+      if (data.is_correct) {
+        alert.className = "p-3 rounded-xl border text-xs leading-relaxed bg-emerald-950/60 border-emerald-800/80 text-emerald-200";
+        alert.innerHTML = `
+          <div class="font-semibold mb-1 flex items-center justify-between">
+            <span>✓ Correct Answer!</span>
+            <span class="font-mono text-[10px] bg-slate-900/80 px-2 py-0.5 rounded">Mastery: ${Math.round(data.updated_mastery_score * 100)}%</span>
+          </div>
+          <p>${data.explanation}</p>
+        `;
+      } else {
+        alert.className = "p-3 rounded-xl border text-xs leading-relaxed bg-rose-950/60 border-rose-800/80 text-rose-200";
+        alert.innerHTML = `
+          <div class="font-semibold mb-1 flex items-center justify-between">
+            <span>⚠️ Diagnosed Misconception: ${data.detected_misconception || 'Pointer Update Error'}</span>
+            <span class="font-mono text-[10px] bg-slate-900/80 px-2 py-0.5 rounded">Mastery: ${Math.round(data.updated_mastery_score * 100)}%</span>
+          </div>
+          <p>${data.remediation || data.explanation}</p>
+        `;
+
+        if (data.suggested_board_commands && data.suggested_board_commands.length > 0) {
+          activeRemediationCommands = data.suggested_board_commands;
+          document.getElementById("remediationPill").classList.remove("hidden");
+          const step = currentSteps[currentStepIdx];
+          renderWhiteboard(step.board_commands);
+        }
+      }
+    }
+
+    function resetCheckpoint() {
+      const step = currentSteps[currentStepIdx];
+      renderCheckpoint(step.check_question);
+    }
+
+    // Playback Controls
+    function nextStep() {
+      if (currentStepIdx < currentSteps.length - 1) {
+        loadStep(currentStepIdx + 1);
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        loadStep(currentStepIdx - 1);
+      }
+    }
+
+    function jumpToStep(idx) {
+      loadStep(idx);
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      const btnIcon = document.getElementById("playPauseIcon");
+      const btnText = document.getElementById("playPauseText");
+
+      if (isPlaying) {
+        btnText.innerText = "Pause";
+        btnIcon.innerHTML = '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>';
+      } else {
+        btnText.innerText = "Play";
+        btnIcon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>';
+      }
+    }
+
+    // Adaptive "I don't understand"
+    async function triggerDontUnderstand() {
+      const btn = document.getElementById("dontUnderstandBtn");
+      const label = document.getElementById("dontUnderstandLabel");
+      label.innerText = "Adapting visual...";
+      btn.disabled = true;
+
+      const step = currentSteps[currentStepIdx];
+
+      try {
+        const res = await fetch("http://localhost:8000/lesson/step", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            concept: step.concept,
+            student_id: document.getElementById("personaSelector").value,
+            step_index: currentStepIdx,
+            feedback: "I do not understand"
+          })
+        });
+
+        if (res.ok) {
+          const adapted = await res.json();
+          currentSteps[currentStepIdx] = adapted;
+        } else {
+          currentSteps[currentStepIdx] = {
+            ...step,
+            narration: "Let's simplify! Imagine holding a 100-page book. Looking for page 75, you open to page 50. Since 75 is greater, you never need to check pages 1-50 again! That is the core idea of Binary Search.",
+            agent_thoughts: "Injected intuitive physical book analogy after student confusion trigger.",
+            remediation: "Physical book page analogy applied."
+          };
+        }
+      } catch (e) {
+        currentSteps[currentStepIdx] = {
+          ...step,
+          narration: "Let's make this crystal clear: Think of the classic High-Low guessing game. When you guess 50 and the secret number is 75, you're told 'Too Low'. You never guess 1 through 50 again!",
+          agent_thoughts: "High-low guessing game intuition delivered.",
+          remediation: "High-low guessing game analogy applied."
+        };
+      }
+
+      loadStep(currentStepIdx);
+      label.innerText = "I don't understand";
+      btn.disabled = false;
+    }
+
+    // Voice Narration via Web Speech API
+    function speakNarration(text) {
+      if (!voiceEnabled || !window.speechSynthesis) return;
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = speechRate;
+
+      const voices = window.speechSynthesis.getVoices();
+      const naturalVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Google"))) || voices.find(v => v.lang.startsWith("en"));
+      if (naturalVoice) utterance.voice = naturalVoice;
+
+      const wave = document.getElementById("soundWaveIndicator");
+      const dot = document.getElementById("speakingDot");
+
+      utterance.onstart = () => {
+        wave.classList.remove("hidden");
+        dot.classList.remove("hidden");
+      };
+
+      utterance.onend = () => {
+        wave.classList.add("hidden");
+        dot.classList.add("hidden");
+        if (isPlaying && currentStepIdx < currentSteps.length - 1) {
+          setTimeout(() => nextStep(), 1500);
+        } else if (isPlaying && currentStepIdx >= currentSteps.length - 1) {
+          togglePlayPause();
+        }
+      };
+
+      utterance.onerror = () => {
+        wave.classList.add("hidden");
+        dot.classList.add("hidden");
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function replaySpeech() {
+      const step = currentSteps[currentStepIdx];
+      speakNarration(step.narration);
+    }
+
+    function toggleVoiceEnabled() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById("voiceToggleBtn");
+      if (voiceEnabled) {
+        btn.className = "p-1.5 rounded-lg border bg-sky-950/80 text-sky-400 border-sky-800 hover:bg-sky-900 transition";
+        replaySpeech();
+      } else {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        btn.className = "p-1.5 rounded-lg border bg-slate-800 text-slate-500 border-slate-700 hover:text-slate-300 transition";
+        document.getElementById("soundWaveIndicator").classList.add("hidden");
+        document.getElementById("speakingDot").classList.add("hidden");
+      }
+    }
+
+    function cycleSpeechRate() {
+      const rates = [0.85, 1.0, 1.25];
+      const curIdx = rates.indexOf(speechRate);
+      speechRate = rates[(curIdx + 1) % rates.length];
+      document.getElementById("speechRateBtn").innerText = `${speechRate}x`;
+      replaySpeech();
+    }
+
+    // Teacher Chat
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      sendChatMessage(text);
+    }
+
+    async function sendChatMessage(text) {
+      const container = document.getElementById("chatMessages");
+
+      // Append student message
+      const sDiv = document.createElement("div");
+      sDiv.className = "flex flex-col items-end";
+      sDiv.innerHTML = `
+        <div class="max-w-[85%] rounded-2xl p-3 shadow-md bg-sky-600 text-white rounded-br-sm leading-relaxed">
+          <p>${text}</p>
+        </div>
+        <span class="text-[9px] text-slate-500 mt-1 px-1">Just now</span>
+      `;
+      container.appendChild(sDiv);
+      container.scrollTop = container.scrollHeight;
+
+      // Loading bubble
+      const loadDiv = document.createElement("div");
+      loadDiv.id = "chatLoadingBubble";
+      loadDiv.className = "flex items-center space-x-2 text-slate-400 text-xs py-2";
+      loadDiv.innerHTML = `
+        <div class="w-2 h-2 rounded-full bg-sky-400 animate-bounce"></div>
+        <div class="w-2 h-2 rounded-full bg-sky-400 animate-bounce [animation-delay:0.2s]"></div>
+        <div class="w-2 h-2 rounded-full bg-sky-400 animate-bounce [animation-delay:0.4s]"></div>
+        <span class="text-[11px] text-slate-400 font-mono">Teacher is thinking...</span>
+      `;
+      container.appendChild(loadDiv);
+      container.scrollTop = container.scrollHeight;
+
+      const step = currentSteps[currentStepIdx];
+      let replyText = "";
+      let reasoning = "";
+      let suggestedCmds = [];
+
+      try {
+        const res = await fetch("http://localhost:8000/agent/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            student_id: document.getElementById("personaSelector").value,
+            concept: step.concept,
+            message: text,
+            current_step_index: currentStepIdx
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          replyText = data.reply;
+          reasoning = data.agent_thoughts || "";
+          suggestedCmds = data.suggested_board_commands || [];
+        } else {
+          replyText = `Great inquiry! In Binary Search, having sorted order allows us to compare with the middle element and immediately deduce that half the array cannot contain our target.`;
+          reasoning = "Explaining sorting invariant.";
+        }
+      } catch (err) {
+        replyText = `In Binary Search, because elements are strictly ordered, a single midpoint comparison rules out half the search space!`;
+        reasoning = "Offline conceptual explanation.";
+      }
+
+      const loadBubble = document.getElementById("chatLoadingBubble");
+      if (loadBubble) loadBubble.remove();
+
+      // Append teacher response
+      const tDiv = document.createElement("div");
+      tDiv.className = "flex flex-col items-start";
+      tDiv.innerHTML = `
+        <div class="max-w-[85%] rounded-2xl p-3 shadow-md bg-slate-800 text-slate-200 border border-slate-700/80 rounded-bl-sm leading-relaxed">
+          <p>${replyText}</p>
+          ${reasoning ? `<div class="mt-2 pt-2 border-t border-slate-700/60 text-[10px] font-mono text-indigo-300">
+            <span class="text-slate-400 font-semibold block mb-0.5">Teacher Reasoning:</span>
+            ${reasoning}
+          </div>` : ""}
+        </div>
+        <span class="text-[9px] text-slate-500 mt-1 px-1">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+      `;
+      container.appendChild(tDiv);
+      container.scrollTop = container.scrollHeight;
+
+      // Apply suggested board commands if any
+      if (suggestedCmds && suggestedCmds.length > 0) {
+        activeRemediationCommands = suggestedCmds;
+        document.getElementById("remediationPill").classList.remove("hidden");
+        renderWhiteboard(step.board_commands);
+      }
+    }
+
+    // Panning & Zooming
+    function setupPanning() {
+      const vp = document.getElementById("canvasViewport");
+      vp.addEventListener("mousedown", (e) => {
+        if (e.button === 0) {
+          isPanning = true;
+          panStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+        }
+      });
+      window.addEventListener("mousemove", (e) => {
+        if (isPanning) {
+          panOffset.x = e.clientX - panStart.x;
+          panOffset.y = e.clientY - panStart.y;
+          updateCanvasTransform();
+        }
+      });
+      window.addEventListener("mouseup", () => {
+        isPanning = false;
+      });
+    }
+
+    function handleZoom(delta) {
+      zoomLevel = Math.max(0.5, Math.min(2.5, zoomLevel + delta));
+      document.getElementById("zoomLevelDisplay").innerText = `${Math.round(zoomLevel * 100)}%`;
+      updateCanvasTransform();
+    }
+
+    function resetCanvasTransform() {
+      zoomLevel = 1.0;
+      panOffset = { x: 0, y: 0 };
+      document.getElementById("zoomLevelDisplay").innerText = "100%";
+      updateCanvasTransform();
+    }
+
+    function updateCanvasTransform() {
+      const layer = document.getElementById("canvasTransformLayer");
+      layer.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`;
+    }
+
+    function toggleAgentBanner() {
+      const body = document.getElementById("agentBannerBody");
+      const chevron = document.getElementById("agentBannerChevron");
+      body.classList.toggle("hidden");
+      chevron.classList.toggle("rotate-180");
+    }
+
+    // Start on DOM ready
+    window.addEventListener("DOMContentLoaded", initClassroom);
+  </script>
+</body>
+</html>

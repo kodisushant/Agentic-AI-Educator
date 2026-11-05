@@ -8,6 +8,7 @@
   "paths": {
     "/health": {
       "get": {
+        "x-stability": "stable",
         "tags": [
           "System"
         ],
@@ -28,6 +29,7 @@
     },
     "/lesson/step": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Lesson"
         ],
@@ -70,6 +72,7 @@
     },
     "/lesson/check-answer": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Lesson"
         ],
@@ -112,6 +115,7 @@
     },
     "/lesson/step/stream": {
       "get": {
+        "x-stability": "may-change",
         "tags": [
           "Lesson"
         ],
@@ -168,6 +172,7 @@
     },
     "/mock/lesson": {
       "get": {
+        "x-stability": "stable",
         "tags": [
           "Mock"
         ],
@@ -218,6 +223,7 @@
     },
     "/demo/seed": {
       "post": {
+        "x-stability": "may-change",
         "tags": [
           "Demo"
         ],
@@ -238,6 +244,7 @@
     },
     "/demo/reset": {
       "post": {
+        "x-stability": "may-change",
         "tags": [
           "Demo"
         ],
@@ -258,6 +265,7 @@
     },
     "/agent/chat": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Interaction"
         ],
@@ -300,6 +308,7 @@
     },
     "/tools/execute": {
       "post": {
+        "x-stability": "may-change",
         "tags": [
           "Tools"
         ],
@@ -342,6 +351,7 @@
     },
     "/learner/attempt": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -384,6 +394,7 @@
     },
     "/learner/mastery/{user_id}": {
       "get": {
+        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -432,6 +443,7 @@
     },
     "/learner/weak/{user_id}": {
       "get": {
+        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -480,6 +492,7 @@
     },
     "/learner/recommend/{user_id}": {
       "get": {
+        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -528,6 +541,7 @@
     },
     "/assess/quiz": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Assessment"
         ],
@@ -570,6 +584,7 @@
     },
     "/assess/flashcards": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Assessment"
         ],
@@ -612,6 +627,7 @@
     },
     "/assess/submit": {
       "post": {
+        "x-stability": "stable",
         "tags": [
           "Assessment"
         ],

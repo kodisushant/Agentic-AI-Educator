@@ -1,23 +1,22 @@
 # Team Status Board
 
 ## Person 1: Tech lead + Agent brain (/backend/agent, /contracts)
-- **Status:** Complete & Integrated (Honesty Audit Completed, E2E Matrix Verified)
-- **Honesty Audit & Real vs Mock Breakdown:**
-  - **What is REAL & VERIFIED in Local Runtime:**
-    - **Learner Model Service:** Live SQLite database (`backend/learner/learner.db`) with relational tables, EWMA mastery score calculations, Ebbinghaus temporal forgetting decay, and misconception linking.
-    - **Assessment Engine:** Schema-compliant quiz generation, 3D flashcard decks, quiz response grading, and automatic dispatch to student attempt history.
-    - **Teacher Rule Engine & Misconceptions:** Rule-based diagnostic evaluator matching misconception taxonomies (`confuses_direction_when_target_greater`, `fails_to_exclude_checked_midpoint`) and injecting visual whiteboard remediation steps.
-    - **Polymorphic Whiteboard Commands:** Validated JSON payloads across 6 command types (`box`, `arrow`, `text`, `equation` KaTeX, `mermaid`, `clear`).
-    - **Full API Contracts & FastAPI Engine:** 100% compliant with `/contracts/openapi.json`.
-    - **E2E & Unit Test Suites:** 100% pass across `backend/agent/test_agent.py`, `backend/assess/test_assess.py`, `backend/learner/test_learner.py`, and `scripts/e2e.py`.
-  - **What is MOCKED / FALLBACK (No Active Keys in Local .env):**
-    - **Live Cloud LLM Calls:** Since API keys in `.env` are currently blank strings, all generative LLM calls (`/lesson/step`, `/agent/chat`) automatically and safely fall back to the deterministic MOCK engine / rule-based generator.
-    - **Router Implementation:** Multi-provider fallback chain (Gemini `gemini-3.1-flash-lite`, Groq `qwen/qwen3.8-27b`, Cerebras, OpenRouter) with 429 rate limit backoff and disk caching is fully coded, but in this local environment it defaults to the crash-proof MOCK fallback.
-    - **Benchmark Free Tier Availability:** Google AI Studio (`gemini-2.0-flash` / `gemini-3.1-flash-lite`) and Groq Cloud (`qwen/qwen3.8-27b`) offer free tier developer keys.
-- **What is BROKEN:**
-  - **None.** All 4 test suites pass cleanly. Everything falls back safely when keys are missing.
-- **Teammate Blockers:**
-  - **None!** All contracts, schemas, unified routes, and services are operational and verified.
+- **Status:** All 6 Sprint Tasks Complete & Pushed
+- **Completed Tasks:**
+  1. **Honesty Check:** Re-ran e2e & tests with `REAL_LLM=1`. All 10 steps PASS using mock/rule-based engines (API keys blank in local `.env`). STATUS.md honestly marks cloud LLM calls as MOCK/FALLBACK.
+  2. **Safe Imports:** Wrapped learner & assess service imports in try/except with graceful fallback chain: in-process → HTTP → mock. `/health` exposes `services.learner.mode` and `services.assess.mode`.
+  3. **Demo Topic (Recursion):** Full 5-step cached lesson (base case, call stack, tree recursion, vs iteration). Added `/demo/seed` and `/demo/reset` endpoints reusing Person 4's `seed.py`.
+  4. **Agent Trace:** Added `AgentTrace` model (detected_misconception, strategy_chosen, mastery_before, mastery_after, provider_used) to `/lesson/step` and `/agent/chat` responses. Contracts updated.
+  5. **Deploy:** Extended `/health` with per-provider key reachability. Added `render.yaml`, `requirements.txt`, deployment section in `README.md`. Lifespan auto-seeds SQLite on ephemeral disk (Render).
+  6. **Contract Freeze:** All 16 endpoints in `openapi.json` annotated with `x-stability`:
+     - **Stable (12):** `/health`, `/lesson/step`, `/lesson/check-answer`, `/mock/lesson`, `/agent/chat`, `/learner/attempt`, `/learner/mastery/{user_id}`, `/learner/weak/{user_id}`, `/learner/recommend/{user_id}`, `/assess/quiz`, `/assess/flashcards`, `/assess/submit`
+     - **May-change (4):** `/lesson/step/stream`, `/tools/execute`, `/demo/seed`, `/demo/reset`
+- **What is REAL & VERIFIED:**
+  - Learner Model, Assessment Engine, Teacher Rule Engine, Whiteboard Commands, FastAPI, all test suites (100% pass).
+- **What is MOCK/FALLBACK:**
+  - Cloud LLM calls (API keys blank). Falls back safely to rule-based engine.
+- **What is BROKEN:** None.
+- **Teammate Blockers:** None.
 
 ---
 

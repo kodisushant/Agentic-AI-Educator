@@ -194,8 +194,15 @@ def run_unit_tests():
         assert "/assess/submit" in oa_data["paths"]
 
     print("✓ All contracted paths verified in openapi.json", flush=True)
-    print("\nAll unit tests passed successfully!", flush=True)
+    print("\nAll mock unit tests passed successfully!", flush=True)
+
+    # 11. Conditional Real LLM Testing (Run only when REAL_LLM=1)
+    if os.getenv("REAL_LLM") == "1":
+        print("\n=== Running REAL_LLM=1 Provider Tests ===", flush=True)
+        from backend.agent.test_real_llm import run_provider_tests
+        run_provider_tests()
 
 
 if __name__ == "__main__":
+    import os
     run_unit_tests()

@@ -1,0 +1,1100 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Virtual Teacher Agent Brain",
+    "description": "Backend agent powering interactive lesson planning, tool calling, whiteboard commands, and live coding orchestration.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health Check",
+        "description": "Returns agent service health, LLM routing mode, and active keys status.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lesson/step": {
+      "post": {
+        "tags": [
+          "Lesson"
+        ],
+        "summary": "Get Lesson Step",
+        "description": "Generate or retrieve the next teaching step.\nIncludes whiteboard draw commands, narration, optional code action, and checkpoint question.",
+        "operationId": "get_lesson_step_lesson_step_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonStepRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonStep"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lesson/step/stream": {
+      "get": {
+        "tags": [
+          "Lesson"
+        ],
+        "summary": "Stream Lesson",
+        "description": "Stream teaching steps sequentially via Server-Sent Events (SSE).\nTeammates on frontend can listen with EventSource or fetch reader.",
+        "operationId": "stream_lesson_lesson_step_stream_get",
+        "parameters": [
+          {
+            "name": "concept",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Concept topic",
+              "default": "Binary Search",
+              "title": "Concept"
+            },
+            "description": "Concept topic"
+          },
+          {
+            "name": "student_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Student ID",
+              "default": "demo_student",
+              "title": "Student Id"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mock/lesson": {
+      "get": {
+        "tags": [
+          "Mock"
+        ],
+        "summary": "Get Mock Lesson",
+        "description": "Returns the complete pre-baked 5-step Binary Search lesson.\nTeammates can use this to build and test their UI/assessments offline.",
+        "operationId": "get_mock_lesson_mock_lesson_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LessonStep"
+                  },
+                  "type": "array",
+                  "title": "Response Get Mock Lesson Mock Lesson Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/chat": {
+      "post": {
+        "tags": [
+          "Interaction"
+        ],
+        "summary": "Chat With Teacher",
+        "description": "Student sends a question or 'I don't understand'; teacher replies with guidance and board hints.",
+        "operationId": "chat_with_teacher_agent_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tools/execute": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Execute Tool",
+        "description": "Directly execute an agent tool (draw_on_board, run_code, ask_check_question, etc.).",
+        "operationId": "execute_tool_tools_execute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolCallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolCallRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArrowCommand": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "arrow",
+            "title": "Type",
+            "default": "arrow"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the board element"
+          },
+          "from_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Id",
+            "description": "Source element ID"
+          },
+          "to_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Id",
+            "description": "Target element ID"
+          },
+          "start_x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start X",
+            "description": "Start X if not binding to element"
+          },
+          "start_y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Y",
+            "description": "Start Y if not binding to element"
+          },
+          "end_x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End X",
+            "description": "End X if not binding to element"
+          },
+          "end_y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Y",
+            "description": "End Y if not binding to element"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Optional label along the arrow"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color",
+            "description": "Arrow stroke color",
+            "default": "#0284c7"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ArrowCommand"
+      },
+      "BoxCommand": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "box",
+            "title": "Type",
+            "default": "box"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the board element"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Label or value inside the box"
+          },
+          "x": {
+            "type": "number",
+            "title": "X",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y",
+            "description": "Y coordinate"
+          },
+          "width": {
+            "type": "number",
+            "title": "Width",
+            "description": "Width in pixels",
+            "default": 80.0
+          },
+          "height": {
+            "type": "number",
+            "title": "Height",
+            "description": "Height in pixels",
+            "default": 50.0
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color",
+            "description": "Border color",
+            "default": "#2563eb"
+          },
+          "fill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill",
+            "description": "Background fill color",
+            "default": "#eff6ff"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "x",
+          "y"
+        ],
+        "title": "BoxCommand"
+      },
+      "ChatMessageRequest": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "title": "Student Id",
+            "description": "ID of student",
+            "default": "demo_student"
+          },
+          "concept": {
+            "type": "string",
+            "title": "Concept",
+            "description": "Current lesson topic",
+            "default": "Binary Search"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Student chat message or question"
+          },
+          "current_step_index": {
+            "type": "integer",
+            "title": "Current Step Index",
+            "description": "Current step in lesson",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatMessageRequest"
+      },
+      "ChatMessageResponse": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "title": "Reply",
+            "description": "Teacher's conversational reply"
+          },
+          "suggested_board_commands": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/TextCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/BoxCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/ArrowCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/EquationCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/MermaidCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/ClearCommand"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "arrow": "#/components/schemas/ArrowCommand",
+                  "box": "#/components/schemas/BoxCommand",
+                  "clear": "#/components/schemas/ClearCommand",
+                  "equation": "#/components/schemas/EquationCommand",
+                  "mermaid": "#/components/schemas/MermaidCommand",
+                  "text": "#/components/schemas/TextCommand"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Suggested Board Commands",
+            "description": "Optional board highlights answering the query"
+          },
+          "agent_thoughts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Thoughts",
+            "description": "Reasoning trace for how the teacher formulated the answer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply"
+        ],
+        "title": "ChatMessageResponse"
+      },
+      "CheckQuestion": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id",
+            "description": "Unique question identifier"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question",
+            "description": "The multiple choice question"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options",
+            "description": "4 candidate answers"
+          },
+          "correct_index": {
+            "type": "integer",
+            "title": "Correct Index",
+            "description": "Index of correct answer (0-3)"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Explanation of why this answer is correct"
+          },
+          "concept_tag": {
+            "type": "string",
+            "title": "Concept Tag",
+            "description": "Concept tag for mastery tracking (e.g. 'midpoint_calc')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "question",
+          "options",
+          "correct_index",
+          "explanation",
+          "concept_tag"
+        ],
+        "title": "CheckQuestion"
+      },
+      "ClearCommand": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "clear",
+            "title": "Type",
+            "default": "clear"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Clear canvas marker",
+            "default": "clear_all"
+          }
+        },
+        "type": "object",
+        "title": "ClearCommand"
+      },
+      "CodeAction": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Python code block"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "Language for Monaco editor",
+            "default": "python"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "display",
+              "type",
+              "execute",
+              "explain"
+            ],
+            "title": "Action",
+            "description": "Live coding mode behavior",
+            "default": "execute"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation",
+            "description": "Code explanation or comments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "CodeAction"
+      },
+      "EquationCommand": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "equation",
+            "title": "Type",
+            "default": "equation"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the board element"
+          },
+          "latex": {
+            "type": "string",
+            "title": "Latex",
+            "description": "LaTeX formula string, rendered with KaTeX"
+          },
+          "x": {
+            "type": "number",
+            "title": "X",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y",
+            "description": "Y coordinate"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Caption or description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "latex",
+          "x",
+          "y"
+        ],
+        "title": "EquationCommand"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LessonStep": {
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "title": "Step Id",
+            "description": "Unique ID for this teaching step"
+          },
+          "step_index": {
+            "type": "integer",
+            "title": "Step Index",
+            "description": "0-based sequence number"
+          },
+          "total_steps": {
+            "type": "integer",
+            "title": "Total Steps",
+            "description": "Expected total steps in the lesson",
+            "default": 5
+          },
+          "concept": {
+            "type": "string",
+            "title": "Concept",
+            "description": "Teaching topic, e.g. 'Binary Search'"
+          },
+          "narration": {
+            "type": "string",
+            "title": "Narration",
+            "description": "Spoken/caption explanation from teacher"
+          },
+          "board_commands": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/TextCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/BoxCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/ArrowCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/EquationCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/MermaidCommand"
+                },
+                {
+                  "$ref": "#/components/schemas/ClearCommand"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "arrow": "#/components/schemas/ArrowCommand",
+                  "box": "#/components/schemas/BoxCommand",
+                  "clear": "#/components/schemas/ClearCommand",
+                  "equation": "#/components/schemas/EquationCommand",
+                  "mermaid": "#/components/schemas/MermaidCommand",
+                  "text": "#/components/schemas/TextCommand"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Board Commands",
+            "description": "Whiteboard draw commands for this step"
+          },
+          "code_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CodeAction"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Code to display or execute in Monaco/Pyodide"
+          },
+          "check_question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckQuestion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Interactive understanding check question"
+          },
+          "agent_thoughts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Thoughts",
+            "description": "Visible reasoning trace showing agentic logic"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCallRecord"
+            },
+            "type": "array",
+            "title": "Tool Calls",
+            "description": "Tools invoked by the agent to construct this step"
+          },
+          "is_final_step": {
+            "type": "boolean",
+            "title": "Is Final Step",
+            "description": "True if lesson ends at this step",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_id",
+          "step_index",
+          "concept",
+          "narration"
+        ],
+        "title": "LessonStep"
+      },
+      "LessonStepRequest": {
+        "properties": {
+          "concept": {
+            "type": "string",
+            "title": "Concept",
+            "description": "Concept name to teach",
+            "default": "Binary Search"
+          },
+          "student_id": {
+            "type": "string",
+            "title": "Student Id",
+            "description": "ID of active learner",
+            "default": "demo_student"
+          },
+          "step_index": {
+            "type": "integer",
+            "title": "Step Index",
+            "description": "Step requested",
+            "default": 0
+          },
+          "last_student_response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Student Response",
+            "description": "Answer from previous check"
+          },
+          "student_misconceptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Student Misconceptions",
+            "description": "Active misconception tags from learner model"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback",
+            "description": "Feedback from student, e.g. 'I don\\'t understand'"
+          }
+        },
+        "type": "object",
+        "title": "LessonStepRequest"
+      },
+      "MermaidCommand": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "mermaid",
+            "title": "Type",
+            "default": "mermaid"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the board element"
+          },
+          "chart": {
+            "type": "string",
+            "title": "Chart",
+            "description": "Mermaid diagram definition string"
+          },
+          "x": {
+            "type": "number",
+            "title": "X",
+            "description": "X coordinate",
+            "default": 50.0
+          },
+          "y": {
+            "type": "number",
+            "title": "Y",
+            "description": "Y coordinate",
+            "default": 100.0
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Diagram title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "chart"
+        ],
+        "title": "MermaidCommand"
+      },
+      "TextCommand": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "text",
+            "title": "Type",
+            "default": "text"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the board element"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Text content to display"
+          },
+          "x": {
+            "type": "number",
+            "title": "X",
+            "description": "X coordinate on whiteboard canvas"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y",
+            "description": "Y coordinate on whiteboard canvas"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size",
+            "description": "Font size in pixels",
+            "default": 18
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color",
+            "description": "Hex color string",
+            "default": "#1e293b"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "x",
+          "y"
+        ],
+        "title": "TextCommand"
+      },
+      "ToolCallRecord": {
+        "properties": {
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name",
+            "description": "Name of the tool called"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters",
+            "description": "Arguments supplied to the tool"
+          },
+          "result": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result",
+            "description": "Result returned from the tool"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_name"
+        ],
+        "title": "ToolCallRecord"
+      },
+      "ToolCallRequest": {
+        "properties": {
+          "tool_name": {
+            "type": "string",
+            "enum": [
+              "draw_on_board",
+              "run_code",
+              "ask_check_question",
+              "generate_quiz",
+              "update_mastery",
+              "recommend_next"
+            ],
+            "title": "Tool Name"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_name",
+          "parameters"
+        ],
+        "title": "ToolCallRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

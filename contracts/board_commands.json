@@ -1,0 +1,2752 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AITeacherWhiteboardAndLessonSchema",
+  "description": "Contracts for whiteboard drawing commands and lesson step payloads",
+  "$defs": {
+    "TextCommand": {
+      "properties": {
+        "type": {
+          "const": "text",
+          "default": "text",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier for the board element",
+          "title": "Id",
+          "type": "string"
+        },
+        "content": {
+          "description": "Text content to display",
+          "title": "Content",
+          "type": "string"
+        },
+        "x": {
+          "description": "X coordinate on whiteboard canvas",
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "description": "Y coordinate on whiteboard canvas",
+          "title": "Y",
+          "type": "number"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 18,
+          "description": "Font size in pixels",
+          "title": "Size"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "#1e293b",
+          "description": "Hex color string",
+          "title": "Color"
+        }
+      },
+      "required": [
+        "id",
+        "content",
+        "x",
+        "y"
+      ],
+      "title": "TextCommand",
+      "type": "object"
+    },
+    "BoxCommand": {
+      "properties": {
+        "type": {
+          "const": "box",
+          "default": "box",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier for the board element",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Label or value inside the box",
+          "title": "Label"
+        },
+        "x": {
+          "description": "X coordinate",
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "description": "Y coordinate",
+          "title": "Y",
+          "type": "number"
+        },
+        "width": {
+          "default": 80.0,
+          "description": "Width in pixels",
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "default": 50.0,
+          "description": "Height in pixels",
+          "title": "Height",
+          "type": "number"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "#2563eb",
+          "description": "Border color",
+          "title": "Color"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "#eff6ff",
+          "description": "Background fill color",
+          "title": "Fill"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "title": "BoxCommand",
+      "type": "object"
+    },
+    "ArrowCommand": {
+      "properties": {
+        "type": {
+          "const": "arrow",
+          "default": "arrow",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier for the board element",
+          "title": "Id",
+          "type": "string"
+        },
+        "from_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source element ID",
+          "title": "From Id"
+        },
+        "to_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Target element ID",
+          "title": "To Id"
+        },
+        "start_x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Start X if not binding to element",
+          "title": "Start X"
+        },
+        "start_y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Start Y if not binding to element",
+          "title": "Start Y"
+        },
+        "end_x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "End X if not binding to element",
+          "title": "End X"
+        },
+        "end_y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "End Y if not binding to element",
+          "title": "End Y"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional label along the arrow",
+          "title": "Label"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "#0284c7",
+          "description": "Arrow stroke color",
+          "title": "Color"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ArrowCommand",
+      "type": "object"
+    },
+    "EquationCommand": {
+      "properties": {
+        "type": {
+          "const": "equation",
+          "default": "equation",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier for the board element",
+          "title": "Id",
+          "type": "string"
+        },
+        "latex": {
+          "description": "LaTeX formula string, rendered with KaTeX",
+          "title": "Latex",
+          "type": "string"
+        },
+        "x": {
+          "description": "X coordinate",
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "description": "Y coordinate",
+          "title": "Y",
+          "type": "number"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Caption or description",
+          "title": "Label"
+        }
+      },
+      "required": [
+        "id",
+        "latex",
+        "x",
+        "y"
+      ],
+      "title": "EquationCommand",
+      "type": "object"
+    },
+    "MermaidCommand": {
+      "properties": {
+        "type": {
+          "const": "mermaid",
+          "default": "mermaid",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier for the board element",
+          "title": "Id",
+          "type": "string"
+        },
+        "chart": {
+          "description": "Mermaid diagram definition string",
+          "title": "Chart",
+          "type": "string"
+        },
+        "x": {
+          "default": 50.0,
+          "description": "X coordinate",
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "default": 100.0,
+          "description": "Y coordinate",
+          "title": "Y",
+          "type": "number"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Diagram title",
+          "title": "Title"
+        }
+      },
+      "required": [
+        "id",
+        "chart"
+      ],
+      "title": "MermaidCommand",
+      "type": "object"
+    },
+    "ClearCommand": {
+      "properties": {
+        "type": {
+          "const": "clear",
+          "default": "clear",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "default": "clear_all",
+          "description": "Clear canvas marker",
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "title": "ClearCommand",
+      "type": "object"
+    },
+    "CodeAction": {
+      "properties": {
+        "code": {
+          "description": "Python code block",
+          "title": "Code",
+          "type": "string"
+        },
+        "language": {
+          "default": "python",
+          "description": "Language for Monaco editor",
+          "title": "Language",
+          "type": "string"
+        },
+        "action": {
+          "default": "execute",
+          "description": "Live coding mode behavior",
+          "enum": [
+            "display",
+            "type",
+            "execute",
+            "explain"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Code explanation or comments",
+          "title": "Explanation"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "CodeAction",
+      "type": "object"
+    },
+    "CheckQuestion": {
+      "properties": {
+        "question_id": {
+          "description": "Unique question identifier",
+          "title": "Question Id",
+          "type": "string"
+        },
+        "question": {
+          "description": "The multiple choice question",
+          "title": "Question",
+          "type": "string"
+        },
+        "options": {
+          "description": "4 candidate answers",
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "correct_index": {
+          "description": "Index of correct answer (0-3)",
+          "title": "Correct Index",
+          "type": "integer"
+        },
+        "explanation": {
+          "description": "Explanation of why this answer is correct",
+          "title": "Explanation",
+          "type": "string"
+        },
+        "concept_tag": {
+          "description": "Concept tag for mastery tracking (e.g. 'midpoint_calc')",
+          "title": "Concept Tag",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question_id",
+        "question",
+        "options",
+        "correct_index",
+        "explanation",
+        "concept_tag"
+      ],
+      "title": "CheckQuestion",
+      "type": "object"
+    },
+    "LessonStep": {
+      "$defs": {
+        "ArrowCommand": {
+          "properties": {
+            "type": {
+              "const": "arrow",
+              "default": "arrow",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "from_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Source element ID",
+              "title": "From Id"
+            },
+            "to_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Target element ID",
+              "title": "To Id"
+            },
+            "start_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start X if not binding to element",
+              "title": "Start X"
+            },
+            "start_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start Y if not binding to element",
+              "title": "Start Y"
+            },
+            "end_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End X if not binding to element",
+              "title": "End X"
+            },
+            "end_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End Y if not binding to element",
+              "title": "End Y"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Optional label along the arrow",
+              "title": "Label"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#0284c7",
+              "description": "Arrow stroke color",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "title": "ArrowCommand",
+          "type": "object"
+        },
+        "BoxCommand": {
+          "properties": {
+            "type": {
+              "const": "box",
+              "default": "box",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Label or value inside the box",
+              "title": "Label"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "width": {
+              "default": 80.0,
+              "description": "Width in pixels",
+              "title": "Width",
+              "type": "number"
+            },
+            "height": {
+              "default": 50.0,
+              "description": "Height in pixels",
+              "title": "Height",
+              "type": "number"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#2563eb",
+              "description": "Border color",
+              "title": "Color"
+            },
+            "fill": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#eff6ff",
+              "description": "Background fill color",
+              "title": "Fill"
+            }
+          },
+          "required": [
+            "id",
+            "x",
+            "y"
+          ],
+          "title": "BoxCommand",
+          "type": "object"
+        },
+        "CheckQuestion": {
+          "properties": {
+            "question_id": {
+              "description": "Unique question identifier",
+              "title": "Question Id",
+              "type": "string"
+            },
+            "question": {
+              "description": "The multiple choice question",
+              "title": "Question",
+              "type": "string"
+            },
+            "options": {
+              "description": "4 candidate answers",
+              "items": {
+                "type": "string"
+              },
+              "title": "Options",
+              "type": "array"
+            },
+            "correct_index": {
+              "description": "Index of correct answer (0-3)",
+              "title": "Correct Index",
+              "type": "integer"
+            },
+            "explanation": {
+              "description": "Explanation of why this answer is correct",
+              "title": "Explanation",
+              "type": "string"
+            },
+            "concept_tag": {
+              "description": "Concept tag for mastery tracking (e.g. 'midpoint_calc')",
+              "title": "Concept Tag",
+              "type": "string"
+            }
+          },
+          "required": [
+            "question_id",
+            "question",
+            "options",
+            "correct_index",
+            "explanation",
+            "concept_tag"
+          ],
+          "title": "CheckQuestion",
+          "type": "object"
+        },
+        "ClearCommand": {
+          "properties": {
+            "type": {
+              "const": "clear",
+              "default": "clear",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "default": "clear_all",
+              "description": "Clear canvas marker",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "title": "ClearCommand",
+          "type": "object"
+        },
+        "CodeAction": {
+          "properties": {
+            "code": {
+              "description": "Python code block",
+              "title": "Code",
+              "type": "string"
+            },
+            "language": {
+              "default": "python",
+              "description": "Language for Monaco editor",
+              "title": "Language",
+              "type": "string"
+            },
+            "action": {
+              "default": "execute",
+              "description": "Live coding mode behavior",
+              "enum": [
+                "display",
+                "type",
+                "execute",
+                "explain"
+              ],
+              "title": "Action",
+              "type": "string"
+            },
+            "explanation": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Code explanation or comments",
+              "title": "Explanation"
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "title": "CodeAction",
+          "type": "object"
+        },
+        "EquationCommand": {
+          "properties": {
+            "type": {
+              "const": "equation",
+              "default": "equation",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "latex": {
+              "description": "LaTeX formula string, rendered with KaTeX",
+              "title": "Latex",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Caption or description",
+              "title": "Label"
+            }
+          },
+          "required": [
+            "id",
+            "latex",
+            "x",
+            "y"
+          ],
+          "title": "EquationCommand",
+          "type": "object"
+        },
+        "MermaidCommand": {
+          "properties": {
+            "type": {
+              "const": "mermaid",
+              "default": "mermaid",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "chart": {
+              "description": "Mermaid diagram definition string",
+              "title": "Chart",
+              "type": "string"
+            },
+            "x": {
+              "default": 50.0,
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "default": 100.0,
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Diagram title",
+              "title": "Title"
+            }
+          },
+          "required": [
+            "id",
+            "chart"
+          ],
+          "title": "MermaidCommand",
+          "type": "object"
+        },
+        "TextCommand": {
+          "properties": {
+            "type": {
+              "const": "text",
+              "default": "text",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "content": {
+              "description": "Text content to display",
+              "title": "Content",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate on whiteboard canvas",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate on whiteboard canvas",
+              "title": "Y",
+              "type": "number"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 18,
+              "description": "Font size in pixels",
+              "title": "Size"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#1e293b",
+              "description": "Hex color string",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id",
+            "content",
+            "x",
+            "y"
+          ],
+          "title": "TextCommand",
+          "type": "object"
+        },
+        "ToolCallRecord": {
+          "properties": {
+            "tool_name": {
+              "description": "Name of the tool called",
+              "title": "Tool Name",
+              "type": "string"
+            },
+            "parameters": {
+              "additionalProperties": true,
+              "description": "Arguments supplied to the tool",
+              "title": "Parameters",
+              "type": "object"
+            },
+            "result": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Result returned from the tool",
+              "title": "Result"
+            }
+          },
+          "required": [
+            "tool_name"
+          ],
+          "title": "ToolCallRecord",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "step_id": {
+          "description": "Unique ID for this teaching step",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "step_index": {
+          "description": "0-based sequence number",
+          "title": "Step Index",
+          "type": "integer"
+        },
+        "total_steps": {
+          "default": 5,
+          "description": "Expected total steps in the lesson",
+          "title": "Total Steps",
+          "type": "integer"
+        },
+        "concept": {
+          "description": "Teaching topic, e.g. 'Binary Search'",
+          "title": "Concept",
+          "type": "string"
+        },
+        "narration": {
+          "description": "Spoken/caption explanation from teacher",
+          "title": "Narration",
+          "type": "string"
+        },
+        "board_commands": {
+          "description": "Whiteboard draw commands for this step",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "arrow": "#/$defs/ArrowCommand",
+                "box": "#/$defs/BoxCommand",
+                "clear": "#/$defs/ClearCommand",
+                "equation": "#/$defs/EquationCommand",
+                "mermaid": "#/$defs/MermaidCommand",
+                "text": "#/$defs/TextCommand"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextCommand"
+              },
+              {
+                "$ref": "#/$defs/BoxCommand"
+              },
+              {
+                "$ref": "#/$defs/ArrowCommand"
+              },
+              {
+                "$ref": "#/$defs/EquationCommand"
+              },
+              {
+                "$ref": "#/$defs/MermaidCommand"
+              },
+              {
+                "$ref": "#/$defs/ClearCommand"
+              }
+            ]
+          },
+          "title": "Board Commands",
+          "type": "array"
+        },
+        "code_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CodeAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Code to display or execute in Monaco/Pyodide"
+        },
+        "check_question": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckQuestion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Interactive understanding check question"
+        },
+        "agent_thoughts": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Visible reasoning trace showing agentic logic",
+          "title": "Agent Thoughts"
+        },
+        "tool_calls": {
+          "description": "Tools invoked by the agent to construct this step",
+          "items": {
+            "$ref": "#/$defs/ToolCallRecord"
+          },
+          "title": "Tool Calls",
+          "type": "array"
+        },
+        "is_final_step": {
+          "default": false,
+          "description": "True if lesson ends at this step",
+          "title": "Is Final Step",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "step_id",
+        "step_index",
+        "concept",
+        "narration"
+      ],
+      "title": "LessonStep",
+      "type": "object"
+    },
+    "LessonStepRequest": {
+      "properties": {
+        "concept": {
+          "default": "Binary Search",
+          "description": "Concept name to teach",
+          "title": "Concept",
+          "type": "string"
+        },
+        "student_id": {
+          "default": "demo_student",
+          "description": "ID of active learner",
+          "title": "Student Id",
+          "type": "string"
+        },
+        "step_index": {
+          "default": 0,
+          "description": "Step requested",
+          "title": "Step Index",
+          "type": "integer"
+        },
+        "last_student_response": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Answer from previous check",
+          "title": "Last Student Response"
+        },
+        "student_misconceptions": {
+          "description": "Active misconception tags from learner model",
+          "items": {
+            "type": "string"
+          },
+          "title": "Student Misconceptions",
+          "type": "array"
+        },
+        "feedback": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Feedback from student, e.g. 'I don\\'t understand'",
+          "title": "Feedback"
+        }
+      },
+      "title": "LessonStepRequest",
+      "type": "object"
+    },
+    "ChatMessageRequest": {
+      "properties": {
+        "student_id": {
+          "default": "demo_student",
+          "description": "ID of student",
+          "title": "Student Id",
+          "type": "string"
+        },
+        "concept": {
+          "default": "Binary Search",
+          "description": "Current lesson topic",
+          "title": "Concept",
+          "type": "string"
+        },
+        "message": {
+          "description": "Student chat message or question",
+          "title": "Message",
+          "type": "string"
+        },
+        "current_step_index": {
+          "default": 0,
+          "description": "Current step in lesson",
+          "title": "Current Step Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "title": "ChatMessageRequest",
+      "type": "object"
+    },
+    "ChatMessageResponse": {
+      "$defs": {
+        "ArrowCommand": {
+          "properties": {
+            "type": {
+              "const": "arrow",
+              "default": "arrow",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "from_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Source element ID",
+              "title": "From Id"
+            },
+            "to_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Target element ID",
+              "title": "To Id"
+            },
+            "start_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start X if not binding to element",
+              "title": "Start X"
+            },
+            "start_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start Y if not binding to element",
+              "title": "Start Y"
+            },
+            "end_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End X if not binding to element",
+              "title": "End X"
+            },
+            "end_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End Y if not binding to element",
+              "title": "End Y"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Optional label along the arrow",
+              "title": "Label"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#0284c7",
+              "description": "Arrow stroke color",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "title": "ArrowCommand",
+          "type": "object"
+        },
+        "BoxCommand": {
+          "properties": {
+            "type": {
+              "const": "box",
+              "default": "box",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Label or value inside the box",
+              "title": "Label"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "width": {
+              "default": 80.0,
+              "description": "Width in pixels",
+              "title": "Width",
+              "type": "number"
+            },
+            "height": {
+              "default": 50.0,
+              "description": "Height in pixels",
+              "title": "Height",
+              "type": "number"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#2563eb",
+              "description": "Border color",
+              "title": "Color"
+            },
+            "fill": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#eff6ff",
+              "description": "Background fill color",
+              "title": "Fill"
+            }
+          },
+          "required": [
+            "id",
+            "x",
+            "y"
+          ],
+          "title": "BoxCommand",
+          "type": "object"
+        },
+        "ClearCommand": {
+          "properties": {
+            "type": {
+              "const": "clear",
+              "default": "clear",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "default": "clear_all",
+              "description": "Clear canvas marker",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "title": "ClearCommand",
+          "type": "object"
+        },
+        "EquationCommand": {
+          "properties": {
+            "type": {
+              "const": "equation",
+              "default": "equation",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "latex": {
+              "description": "LaTeX formula string, rendered with KaTeX",
+              "title": "Latex",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Caption or description",
+              "title": "Label"
+            }
+          },
+          "required": [
+            "id",
+            "latex",
+            "x",
+            "y"
+          ],
+          "title": "EquationCommand",
+          "type": "object"
+        },
+        "MermaidCommand": {
+          "properties": {
+            "type": {
+              "const": "mermaid",
+              "default": "mermaid",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "chart": {
+              "description": "Mermaid diagram definition string",
+              "title": "Chart",
+              "type": "string"
+            },
+            "x": {
+              "default": 50.0,
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "default": 100.0,
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Diagram title",
+              "title": "Title"
+            }
+          },
+          "required": [
+            "id",
+            "chart"
+          ],
+          "title": "MermaidCommand",
+          "type": "object"
+        },
+        "TextCommand": {
+          "properties": {
+            "type": {
+              "const": "text",
+              "default": "text",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "content": {
+              "description": "Text content to display",
+              "title": "Content",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate on whiteboard canvas",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate on whiteboard canvas",
+              "title": "Y",
+              "type": "number"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 18,
+              "description": "Font size in pixels",
+              "title": "Size"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#1e293b",
+              "description": "Hex color string",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id",
+            "content",
+            "x",
+            "y"
+          ],
+          "title": "TextCommand",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "reply": {
+          "description": "Teacher's conversational reply",
+          "title": "Reply",
+          "type": "string"
+        },
+        "suggested_board_commands": {
+          "description": "Optional board highlights answering the query",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "arrow": "#/$defs/ArrowCommand",
+                "box": "#/$defs/BoxCommand",
+                "clear": "#/$defs/ClearCommand",
+                "equation": "#/$defs/EquationCommand",
+                "mermaid": "#/$defs/MermaidCommand",
+                "text": "#/$defs/TextCommand"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextCommand"
+              },
+              {
+                "$ref": "#/$defs/BoxCommand"
+              },
+              {
+                "$ref": "#/$defs/ArrowCommand"
+              },
+              {
+                "$ref": "#/$defs/EquationCommand"
+              },
+              {
+                "$ref": "#/$defs/MermaidCommand"
+              },
+              {
+                "$ref": "#/$defs/ClearCommand"
+              }
+            ]
+          },
+          "title": "Suggested Board Commands",
+          "type": "array"
+        },
+        "agent_thoughts": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reasoning trace for how the teacher formulated the answer",
+          "title": "Agent Thoughts"
+        }
+      },
+      "required": [
+        "reply"
+      ],
+      "title": "ChatMessageResponse",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "board_command": {
+      "$defs": {
+        "ArrowCommand": {
+          "properties": {
+            "type": {
+              "const": "arrow",
+              "default": "arrow",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "from_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Source element ID",
+              "title": "From Id"
+            },
+            "to_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Target element ID",
+              "title": "To Id"
+            },
+            "start_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start X if not binding to element",
+              "title": "Start X"
+            },
+            "start_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start Y if not binding to element",
+              "title": "Start Y"
+            },
+            "end_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End X if not binding to element",
+              "title": "End X"
+            },
+            "end_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End Y if not binding to element",
+              "title": "End Y"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Optional label along the arrow",
+              "title": "Label"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#0284c7",
+              "description": "Arrow stroke color",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "title": "ArrowCommand",
+          "type": "object"
+        },
+        "BoxCommand": {
+          "properties": {
+            "type": {
+              "const": "box",
+              "default": "box",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Label or value inside the box",
+              "title": "Label"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "width": {
+              "default": 80.0,
+              "description": "Width in pixels",
+              "title": "Width",
+              "type": "number"
+            },
+            "height": {
+              "default": 50.0,
+              "description": "Height in pixels",
+              "title": "Height",
+              "type": "number"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#2563eb",
+              "description": "Border color",
+              "title": "Color"
+            },
+            "fill": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#eff6ff",
+              "description": "Background fill color",
+              "title": "Fill"
+            }
+          },
+          "required": [
+            "id",
+            "x",
+            "y"
+          ],
+          "title": "BoxCommand",
+          "type": "object"
+        },
+        "ClearCommand": {
+          "properties": {
+            "type": {
+              "const": "clear",
+              "default": "clear",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "default": "clear_all",
+              "description": "Clear canvas marker",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "title": "ClearCommand",
+          "type": "object"
+        },
+        "EquationCommand": {
+          "properties": {
+            "type": {
+              "const": "equation",
+              "default": "equation",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "latex": {
+              "description": "LaTeX formula string, rendered with KaTeX",
+              "title": "Latex",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Caption or description",
+              "title": "Label"
+            }
+          },
+          "required": [
+            "id",
+            "latex",
+            "x",
+            "y"
+          ],
+          "title": "EquationCommand",
+          "type": "object"
+        },
+        "MermaidCommand": {
+          "properties": {
+            "type": {
+              "const": "mermaid",
+              "default": "mermaid",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "chart": {
+              "description": "Mermaid diagram definition string",
+              "title": "Chart",
+              "type": "string"
+            },
+            "x": {
+              "default": 50.0,
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "default": 100.0,
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Diagram title",
+              "title": "Title"
+            }
+          },
+          "required": [
+            "id",
+            "chart"
+          ],
+          "title": "MermaidCommand",
+          "type": "object"
+        },
+        "TextCommand": {
+          "properties": {
+            "type": {
+              "const": "text",
+              "default": "text",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "content": {
+              "description": "Text content to display",
+              "title": "Content",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate on whiteboard canvas",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate on whiteboard canvas",
+              "title": "Y",
+              "type": "number"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 18,
+              "description": "Font size in pixels",
+              "title": "Size"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#1e293b",
+              "description": "Hex color string",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id",
+            "content",
+            "x",
+            "y"
+          ],
+          "title": "TextCommand",
+          "type": "object"
+        }
+      },
+      "discriminator": {
+        "mapping": {
+          "arrow": "#/$defs/ArrowCommand",
+          "box": "#/$defs/BoxCommand",
+          "clear": "#/$defs/ClearCommand",
+          "equation": "#/$defs/EquationCommand",
+          "mermaid": "#/$defs/MermaidCommand",
+          "text": "#/$defs/TextCommand"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TextCommand"
+        },
+        {
+          "$ref": "#/$defs/BoxCommand"
+        },
+        {
+          "$ref": "#/$defs/ArrowCommand"
+        },
+        {
+          "$ref": "#/$defs/EquationCommand"
+        },
+        {
+          "$ref": "#/$defs/MermaidCommand"
+        },
+        {
+          "$ref": "#/$defs/ClearCommand"
+        }
+      ]
+    },
+    "lesson_step": {
+      "$defs": {
+        "ArrowCommand": {
+          "properties": {
+            "type": {
+              "const": "arrow",
+              "default": "arrow",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "from_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Source element ID",
+              "title": "From Id"
+            },
+            "to_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Target element ID",
+              "title": "To Id"
+            },
+            "start_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start X if not binding to element",
+              "title": "Start X"
+            },
+            "start_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Start Y if not binding to element",
+              "title": "Start Y"
+            },
+            "end_x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End X if not binding to element",
+              "title": "End X"
+            },
+            "end_y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "End Y if not binding to element",
+              "title": "End Y"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Optional label along the arrow",
+              "title": "Label"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#0284c7",
+              "description": "Arrow stroke color",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "title": "ArrowCommand",
+          "type": "object"
+        },
+        "BoxCommand": {
+          "properties": {
+            "type": {
+              "const": "box",
+              "default": "box",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Label or value inside the box",
+              "title": "Label"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "width": {
+              "default": 80.0,
+              "description": "Width in pixels",
+              "title": "Width",
+              "type": "number"
+            },
+            "height": {
+              "default": 50.0,
+              "description": "Height in pixels",
+              "title": "Height",
+              "type": "number"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#2563eb",
+              "description": "Border color",
+              "title": "Color"
+            },
+            "fill": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#eff6ff",
+              "description": "Background fill color",
+              "title": "Fill"
+            }
+          },
+          "required": [
+            "id",
+            "x",
+            "y"
+          ],
+          "title": "BoxCommand",
+          "type": "object"
+        },
+        "CheckQuestion": {
+          "properties": {
+            "question_id": {
+              "description": "Unique question identifier",
+              "title": "Question Id",
+              "type": "string"
+            },
+            "question": {
+              "description": "The multiple choice question",
+              "title": "Question",
+              "type": "string"
+            },
+            "options": {
+              "description": "4 candidate answers",
+              "items": {
+                "type": "string"
+              },
+              "title": "Options",
+              "type": "array"
+            },
+            "correct_index": {
+              "description": "Index of correct answer (0-3)",
+              "title": "Correct Index",
+              "type": "integer"
+            },
+            "explanation": {
+              "description": "Explanation of why this answer is correct",
+              "title": "Explanation",
+              "type": "string"
+            },
+            "concept_tag": {
+              "description": "Concept tag for mastery tracking (e.g. 'midpoint_calc')",
+              "title": "Concept Tag",
+              "type": "string"
+            }
+          },
+          "required": [
+            "question_id",
+            "question",
+            "options",
+            "correct_index",
+            "explanation",
+            "concept_tag"
+          ],
+          "title": "CheckQuestion",
+          "type": "object"
+        },
+        "ClearCommand": {
+          "properties": {
+            "type": {
+              "const": "clear",
+              "default": "clear",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "default": "clear_all",
+              "description": "Clear canvas marker",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "title": "ClearCommand",
+          "type": "object"
+        },
+        "CodeAction": {
+          "properties": {
+            "code": {
+              "description": "Python code block",
+              "title": "Code",
+              "type": "string"
+            },
+            "language": {
+              "default": "python",
+              "description": "Language for Monaco editor",
+              "title": "Language",
+              "type": "string"
+            },
+            "action": {
+              "default": "execute",
+              "description": "Live coding mode behavior",
+              "enum": [
+                "display",
+                "type",
+                "execute",
+                "explain"
+              ],
+              "title": "Action",
+              "type": "string"
+            },
+            "explanation": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Code explanation or comments",
+              "title": "Explanation"
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "title": "CodeAction",
+          "type": "object"
+        },
+        "EquationCommand": {
+          "properties": {
+            "type": {
+              "const": "equation",
+              "default": "equation",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "latex": {
+              "description": "LaTeX formula string, rendered with KaTeX",
+              "title": "Latex",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Caption or description",
+              "title": "Label"
+            }
+          },
+          "required": [
+            "id",
+            "latex",
+            "x",
+            "y"
+          ],
+          "title": "EquationCommand",
+          "type": "object"
+        },
+        "MermaidCommand": {
+          "properties": {
+            "type": {
+              "const": "mermaid",
+              "default": "mermaid",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "chart": {
+              "description": "Mermaid diagram definition string",
+              "title": "Chart",
+              "type": "string"
+            },
+            "x": {
+              "default": 50.0,
+              "description": "X coordinate",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "default": 100.0,
+              "description": "Y coordinate",
+              "title": "Y",
+              "type": "number"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Diagram title",
+              "title": "Title"
+            }
+          },
+          "required": [
+            "id",
+            "chart"
+          ],
+          "title": "MermaidCommand",
+          "type": "object"
+        },
+        "TextCommand": {
+          "properties": {
+            "type": {
+              "const": "text",
+              "default": "text",
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "description": "Unique identifier for the board element",
+              "title": "Id",
+              "type": "string"
+            },
+            "content": {
+              "description": "Text content to display",
+              "title": "Content",
+              "type": "string"
+            },
+            "x": {
+              "description": "X coordinate on whiteboard canvas",
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y coordinate on whiteboard canvas",
+              "title": "Y",
+              "type": "number"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 18,
+              "description": "Font size in pixels",
+              "title": "Size"
+            },
+            "color": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "#1e293b",
+              "description": "Hex color string",
+              "title": "Color"
+            }
+          },
+          "required": [
+            "id",
+            "content",
+            "x",
+            "y"
+          ],
+          "title": "TextCommand",
+          "type": "object"
+        },
+        "ToolCallRecord": {
+          "properties": {
+            "tool_name": {
+              "description": "Name of the tool called",
+              "title": "Tool Name",
+              "type": "string"
+            },
+            "parameters": {
+              "additionalProperties": true,
+              "description": "Arguments supplied to the tool",
+              "title": "Parameters",
+              "type": "object"
+            },
+            "result": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Result returned from the tool",
+              "title": "Result"
+            }
+          },
+          "required": [
+            "tool_name"
+          ],
+          "title": "ToolCallRecord",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "step_id": {
+          "description": "Unique ID for this teaching step",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "step_index": {
+          "description": "0-based sequence number",
+          "title": "Step Index",
+          "type": "integer"
+        },
+        "total_steps": {
+          "default": 5,
+          "description": "Expected total steps in the lesson",
+          "title": "Total Steps",
+          "type": "integer"
+        },
+        "concept": {
+          "description": "Teaching topic, e.g. 'Binary Search'",
+          "title": "Concept",
+          "type": "string"
+        },
+        "narration": {
+          "description": "Spoken/caption explanation from teacher",
+          "title": "Narration",
+          "type": "string"
+        },
+        "board_commands": {
+          "description": "Whiteboard draw commands for this step",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "arrow": "#/$defs/ArrowCommand",
+                "box": "#/$defs/BoxCommand",
+                "clear": "#/$defs/ClearCommand",
+                "equation": "#/$defs/EquationCommand",
+                "mermaid": "#/$defs/MermaidCommand",
+                "text": "#/$defs/TextCommand"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextCommand"
+              },
+              {
+                "$ref": "#/$defs/BoxCommand"
+              },
+              {
+                "$ref": "#/$defs/ArrowCommand"
+              },
+              {
+                "$ref": "#/$defs/EquationCommand"
+              },
+              {
+                "$ref": "#/$defs/MermaidCommand"
+              },
+              {
+                "$ref": "#/$defs/ClearCommand"
+              }
+            ]
+          },
+          "title": "Board Commands",
+          "type": "array"
+        },
+        "code_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CodeAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Code to display or execute in Monaco/Pyodide"
+        },
+        "check_question": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckQuestion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Interactive understanding check question"
+        },
+        "agent_thoughts": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Visible reasoning trace showing agentic logic",
+          "title": "Agent Thoughts"
+        },
+        "tool_calls": {
+          "description": "Tools invoked by the agent to construct this step",
+          "items": {
+            "$ref": "#/$defs/ToolCallRecord"
+          },
+          "title": "Tool Calls",
+          "type": "array"
+        },
+        "is_final_step": {
+          "default": false,
+          "description": "True if lesson ends at this step",
+          "title": "Is Final Step",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "step_id",
+        "step_index",
+        "concept",
+        "narration"
+      ],
+      "title": "LessonStep",
+      "type": "object"
+    }
+  }
+}

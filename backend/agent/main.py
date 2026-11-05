@@ -50,11 +50,23 @@ app.add_middleware(
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Returns agent service health, LLM routing mode, and active keys status."""
+    """Returns agent service health, LLM routing mode, active keys, and teammate service modes."""
     return {
         "status": "healthy",
         "service": "backend/agent",
         "mock_mode": router.mock_mode,
+        "services": {
+            "learner": {
+                "mode": learner_client.get_mode(),
+                "base_url": learner_client.base_url,
+                "in_process_available": learner_client.has_in_process(),
+            },
+            "assess": {
+                "mode": assess_client.get_mode(),
+                "base_url": assess_client.base_url,
+                "in_process_available": assess_client.has_in_process(),
+            }
+        },
         "configured_providers": {
             "gemini": bool(router.gemini_key),
             "groq": bool(router.groq_key),

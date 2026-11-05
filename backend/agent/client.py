@@ -25,24 +25,40 @@ from backend.agent.schemas import (
 
 logger = logging.getLogger("thin_client")
 
-# Optional real domain service bridges
-try:
-    from backend.learner.service import learner_service
-    from backend.learner.seed import seed_demo_data
-    try:
-        conn = learner_service._get_conn()
-        cur = conn.execute("SELECT COUNT(*) FROM attempts WHERE user_id = 'demo_student'")
-        if cur.fetchone()[0] == 0:
-            seed_demo_data(conn)
-    except Exception:
-        pass
-except Exception as _e:
-    learner_service = None
 
-try:
-    from backend.assess.service import assess_service
-except Exception as _e:
-    assess_service = None
+def _safe_import_learner():
+    """Safely import Person 4's learner service without crashing if broken."""
+    try:
+        from backend.learner.service import learner_service
+        try:
+            from backend.learner.seed import seed_demo_data
+            conn = learner_service._get_conn()
+            cur = conn.execute("SELECT COUNT(*) FROM attempts WHERE user_id = 'demo_student'")
+            if cur.fetchone()[0] == 0:
+                seed_demo_data(conn)
+        except Exception as seed_err:
+            logger.debug(f"Learner DB auto-seed skipped: {seed_err}")
+        logger.info("Learner service loaded successfully: in_process mode active")
+        return learner_service, None
+    except Exception as e:
+        logger.warning(f"Failed to import learner service in-process ({e}). Falling back to HTTP/Mock.")
+        return None, str(e)
+
+
+def _safe_import_assess():
+    """Safely import Person 3's assessment service without crashing if broken."""
+    try:
+        from backend.assess.service import assess_service
+        logger.info("Assess service loaded successfully: in_process mode active")
+        return assess_service, None
+    except Exception as e:
+        logger.warning(f"Failed to import assess service in-process ({e}). Falling back to HTTP/Mock.")
+        return None, str(e)
+
+
+learner_service, _learner_import_error = _safe_import_learner()
+assess_service = None
+_assess_import_error = None
 
 # In-memory mock storage for demo / standalone operation
 MOCK_MASTERY_DB: Dict[str, Dict[str, float]] = {
@@ -79,6 +95,16 @@ class LearnerClient:
     def __init__(self, base_url: Optional[str] = None):
         self.base_url = (base_url or os.getenv("LEARNER_API_BASE_URL", "http://localhost:8000")).rstrip("/")
         self.mock_mode = os.getenv("MOCK_MODE", "true").lower() in ("true", "1", "yes")
+
+    def has_in_process(self) -> bool:
+        return learner_service is not None
+
+    def get_mode(self) -> str:
+        if learner_service is not None:
+            return "in_process"
+        if not self.mock_mode and self.base_url:
+            return "http"
+        return "mock"
 
     def record_attempt(self, req: AttemptRecordRequest) -> AttemptRecordResponse:
         MOCK_ATTEMPTS.append(req.model_dump())
@@ -204,6 +230,22 @@ class AssessClient:
         self.base_url = (base_url or os.getenv("ASSESS_API_BASE_URL", "http://localhost:8000")).rstrip("/")
         self.mock_mode = os.getenv("MOCK_MODE", "true").lower() in ("true", "1", "yes")
 
+    def _resolve_service(self):
+        global assess_service, _assess_import_error
+        if assess_service is None and _assess_import_error is None:
+            assess_service, _assess_import_error = _safe_import_assess()
+        return assess_service
+
+    def has_in_process(self) -> bool:
+        return self._resolve_service() is not None
+
+    def get_mode(self) -> str:
+        if self._resolve_service() is not None:
+            return "in_process"
+        if not self.mock_mode and self.base_url:
+            return "http"
+        return "mock"
+
     def generate_quiz(self, req: QuizGenerateRequest) -> QuizGenerateResponse:
         if not self.mock_mode:
             try:
@@ -212,11 +254,12 @@ class AssessClient:
             except Exception as e:
                 logger.debug(f"Assess HTTP service unreachable ({e}). Trying domain service.")
 
-        if assess_service is not None:
+        service = self._resolve_service()
+        if service is not None:
             try:
-                questions = assess_service._get_fallback_questions(req.topic, req.num_questions)
+                questions = service._get_fallback_questions(req.topic, req.num_questions)
                 quiz_id = f"quiz_{req.topic.lower().replace(' ', '_')}"
-                assess_service.active_quizzes[quiz_id] = {q.question_id: q for q in questions}
+                service.active_quizzes[quiz_id] = {q.question_id: q for q in questions}
                 return QuizGenerateResponse(
                     quiz_id=quiz_id,
                     topic=req.topic,
@@ -281,9 +324,10 @@ class AssessClient:
             except Exception as e:
                 logger.debug(f"Assess HTTP service unreachable ({e}). Trying domain service.")
 
-        if assess_service is not None:
+        service = self._resolve_service()
+        if service is not None:
             try:
-                cards = assess_service._get_fallback_flashcards(req.topic, req.count)
+                cards = service._get_fallback_flashcards(req.topic, req.count)
                 return FlashcardsGenerateResponse(topic=req.topic, cards=cards)
             except Exception as e:
                 logger.warning(f"Real assess domain service failed ({e}). Falling back to mock.")
@@ -328,9 +372,10 @@ class AssessClient:
             except Exception as e:
                 logger.debug(f"Assess HTTP service unreachable ({e}). Trying domain service.")
 
-        if assess_service is not None:
+        service = self._resolve_service()
+        if service is not None:
             try:
-                return assess_service.submit_quiz(req)
+                return service.submit_quiz(req)
             except Exception as e:
                 logger.warning(f"Real assess domain service failed ({e}). Falling back to mock.")
 

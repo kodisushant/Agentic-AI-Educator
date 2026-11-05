@@ -126,10 +126,11 @@ def run_unit_tests():
     fc_res = assess_client.generate_flashcards(FlashcardsGenerateRequest(topic="Binary Search", count=3))
     assert len(fc_res.cards) == 3
 
+    answers = {q.question_id: q.correct_index for q in quiz_res.questions}
     sub_res = assess_client.submit_quiz(QuizSubmitRequest(
         quiz_id=quiz_res.quiz_id,
         user_id="demo_student",
-        answers={"q_bs_1": 0, "q_bs_2": 1}
+        answers=answers
     ))
     assert sub_res.score == 1.0
     print("✓ AssessClient (generate_quiz, generate_flashcards, submit_quiz) verified", flush=True)

@@ -27,10 +27,23 @@
 ---
 
 ## Person 3: Live coding + assessment (/frontend/code, /frontend/quiz, /backend/assess)
-- **Status:** Unblocked & Ready to build
-- **Completed:** None
-- **In Progress:** Monaco + Pyodide runner, checkpoint quiz UI against `/assess/*` in `/contracts/openapi.json`
-- **Blocked:** None
+- **Status:** Complete, Tested & Integrated
+- **Implemented:**
+  - **In-Browser Python Editor & Pyodide:** `frontend/code/usePyodide.ts` with Pyodide WebAssembly runtime, standard I/O capture (`sys.stdout`/`sys.stderr`), and labeled simulation fallback.
+  - **Monaco & Progressive Live Coding Runner:** `frontend/code/PythonEditor.tsx` and `frontend/code/LiveCodingRunner.tsx` with progressive character typing, Pause/Resume/Skip controls, explanation panel, and runtime error reporting to `POST /agent/chat`.
+  - **MCQ Quiz Interface:** `frontend/quiz/QuizView.tsx` with concept tag badges, option selection, score calculation, pedagogical feedback, and automatic synchronization to `POST /learner/attempt`.
+  - **Spaced Repetition Flashcards:** `frontend/quiz/FlashcardDeck.tsx` with 3D flip card animations, front/back reveals, hint triggers, and confidence self-assessment ratings.
+  - **Unified Assessment Hub:** `frontend/quiz/AssessmentHub.tsx` combining topic quizzes, flashcards, and automated targeting of student weak concepts via `GET /learner/weak/{user_id}`.
+  - **Assessment Backend & Router:** `backend/assess/service.py`, `backend/assess/router.py`, and `backend/assess/main.py` matching `/contracts/openapi.json`.
+- **Tested:**
+  - `backend/assess/test_assess.py` (5 unit & integration tests covering schema compliance, scoring, misconception diagnosis, attempt recording, edge cases, and router mounting via TestClient: all 5 passed).
+  - `backend/agent/test_agent.py` (full agent suite: passed).
+- **Integrated:**
+  - Client bridge to Person 4's Learner Model (`AttemptRecordRequest` dispatched on every quiz answer).
+  - Client bridge to Person 1's Agent Brain (`ChatMessageRequest` dispatched on code execution error).
+  - Weak concept integration from Person 4 (`GET /learner/weak/{user_id}` feeding flashcards and quiz generator).
+- **Blocked:**
+  - None! All modules are operational and ready for teammate consumption.
 
 ---
 

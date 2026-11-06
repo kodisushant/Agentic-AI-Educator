@@ -86,20 +86,13 @@ def run_e2e_tests():
         assert step.step_id is not None
         assert len(step.board_commands) > 0
 
-        p_meta = step.provider_metadata or {}
-        p_name = p_meta.get("provider", "mock")
-        if p_name == "gemini":
-            model_name = "gemini-3.1-flash-lite"
-            free_avail = "Yes (Google AI Studio Free Tier)"
-        elif p_name == "groq":
-            model_name = "qwen/qwen3.8-27b"
-            free_avail = "Yes (Groq Cloud Free Tier)"
-        else:
-            model_name = "mock-generator-fallback"
-            free_avail = "Yes (Zero-cost built-in)"
+        source = step.trace.source if step.trace else "mock"
+        p_name = step.trace.provider if (step.trace and step.trace.provider) else "mock"
+        model_name = step.trace.model if (step.trace and step.trace.model) else "canned"
+        step_lat = step.trace.latency_ms if (step.trace and step.trace.latency_ms > 0) else lat
+        free_avail = "Yes (Free Tier)" if source == "llm" else "Yes (Zero-cost built-in)"
 
-        step_lat = p_meta.get("latency_ms", lat)
-        record("Teacher Step Generation", True, f"Step '{step.step_id}' ({len(step.board_commands)} cmds)", p_name, model_name, step_lat, free_avail)
+        record("Teacher Step Generation", True, f"Step '{step.step_id}' ({len(step.board_commands)} cmds, source={source})", p_name, model_name, step_lat, free_avail)
     except Exception as e:
         record("Teacher Step Generation", False, str(e), "unknown", "error", 0, "N/A")
 
@@ -117,10 +110,11 @@ def run_e2e_tests():
         assert not ans_res.is_correct
         assert ans_res.detected_misconception is not None
         assert ans_res.remediation is not None
+        source = ans_res.trace.source if ans_res.trace else "fallback_canned"
         record(
             "Misconception Diagnosis & Remediation",
             True,
-            f"Diagnosed: '{ans_res.detected_misconception}'",
+            f"Diagnosed: '{ans_res.detected_misconception}' (source={source})",
             "rule_taxonomy",
             "misconception_evaluator_v1",
             lat,
@@ -135,12 +129,16 @@ def run_e2e_tests():
         chat_req = ChatMessageRequest(
             student_id="demo_student",
             message="Why do we add 1 when setting low = mid + 1?",
-            context="Binary Search Bounds Update"
+            concept="Binary Search"
         )
         chat_res = teacher_agent.handle_chat_sync(chat_req)
         lat = int((time.time() - t0) * 1000)
         assert len(chat_res.reply) > 0
-        record("Teacher Chat Guidance", True, f"Generated {len(chat_res.reply)} chars", "rule_socratic", "chat_agent_v1", lat, "Yes (offline)")
+        source = chat_res.trace.source if chat_res.trace else "mock"
+        p_name = chat_res.trace.provider if (chat_res.trace and chat_res.trace.provider) else "internal"
+        model_name = chat_res.trace.model if (chat_res.trace and chat_res.trace.model) else "chat_agent_v1"
+        chat_lat = chat_res.trace.latency_ms if (chat_res.trace and chat_res.trace.latency_ms > 0) else lat
+        record("Teacher Chat Guidance", True, f"Generated {len(chat_res.reply)} chars (source={source})", p_name, model_name, chat_lat, "Yes (offline)")
     except Exception as e:
         record("Teacher Chat Guidance", False, str(e), "rule_socratic", "error", 0, "N/A")
 

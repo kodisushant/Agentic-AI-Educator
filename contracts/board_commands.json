@@ -489,8 +489,65 @@
     "LessonStep": {
       "$defs": {
         "AgentTrace": {
-          "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider.",
+          "description": "Execution & cognitive trace exposing origin, provider, latency, and pedagogical decisions.",
           "properties": {
+            "source": {
+              "default": "mock",
+              "description": "Response origin: 'llm' | 'cache' | 'fallback_canned' | 'mock'",
+              "examples": [
+                "llm",
+                "cache",
+                "fallback_canned",
+                "mock"
+              ],
+              "title": "Source",
+              "type": "string"
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "LLM provider: gemini | groq | cerebras | openrouter | mock | internal",
+              "examples": [
+                "gemini",
+                "groq",
+                "cerebras",
+                "openrouter"
+              ],
+              "title": "Provider"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Specific model identifier or name",
+              "examples": [
+                "gemini-2.0-flash",
+                "llama-3.3-70b-versatile"
+              ],
+              "title": "Model"
+            },
+            "latency_ms": {
+              "default": 0,
+              "description": "Latency in milliseconds",
+              "examples": [
+                184
+              ],
+              "title": "Latency Ms",
+              "type": "integer"
+            },
             "detected_misconception": {
               "anyOf": [
                 {
@@ -1322,11 +1379,37 @@
           "title": "Student Id",
           "type": "string"
         },
+        "user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alias for student_id",
+          "title": "User Id"
+        },
         "concept": {
           "default": "Binary Search",
           "description": "Current lesson topic",
           "title": "Concept",
           "type": "string"
+        },
+        "topic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alias for concept",
+          "title": "Topic"
         },
         "message": {
           "description": "Student chat message or question",
@@ -1338,6 +1421,35 @@
           "description": "Current step in lesson",
           "title": "Current Step Index",
           "type": "integer"
+        },
+        "step_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alias for current_step_index",
+          "title": "Step Index"
+        },
+        "history": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Recent conversation turns",
+          "title": "History"
         }
       },
       "required": [
@@ -1349,8 +1461,65 @@
     "ChatMessageResponse": {
       "$defs": {
         "AgentTrace": {
-          "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider.",
+          "description": "Execution & cognitive trace exposing origin, provider, latency, and pedagogical decisions.",
           "properties": {
+            "source": {
+              "default": "mock",
+              "description": "Response origin: 'llm' | 'cache' | 'fallback_canned' | 'mock'",
+              "examples": [
+                "llm",
+                "cache",
+                "fallback_canned",
+                "mock"
+              ],
+              "title": "Source",
+              "type": "string"
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "LLM provider: gemini | groq | cerebras | openrouter | mock | internal",
+              "examples": [
+                "gemini",
+                "groq",
+                "cerebras",
+                "openrouter"
+              ],
+              "title": "Provider"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Specific model identifier or name",
+              "examples": [
+                "gemini-2.0-flash",
+                "llama-3.3-70b-versatile"
+              ],
+              "title": "Model"
+            },
+            "latency_ms": {
+              "default": 0,
+              "description": "Latency in milliseconds",
+              "examples": [
+                184
+              ],
+              "title": "Latency Ms",
+              "type": "integer"
+            },
             "detected_misconception": {
               "anyOf": [
                 {
@@ -1821,6 +1990,65 @@
           "title": "Reply",
           "type": "string"
         },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional runnable code snippet relevant to explanation",
+          "title": "Code"
+        },
+        "board_commands": {
+          "anyOf": [
+            {
+              "items": {
+                "discriminator": {
+                  "mapping": {
+                    "arrow": "#/$defs/ArrowCommand",
+                    "box": "#/$defs/BoxCommand",
+                    "clear": "#/$defs/ClearCommand",
+                    "equation": "#/$defs/EquationCommand",
+                    "mermaid": "#/$defs/MermaidCommand",
+                    "text": "#/$defs/TextCommand"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/TextCommand"
+                  },
+                  {
+                    "$ref": "#/$defs/BoxCommand"
+                  },
+                  {
+                    "$ref": "#/$defs/ArrowCommand"
+                  },
+                  {
+                    "$ref": "#/$defs/EquationCommand"
+                  },
+                  {
+                    "$ref": "#/$defs/MermaidCommand"
+                  },
+                  {
+                    "$ref": "#/$defs/ClearCommand"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional board highlights answering the query (alias)",
+          "title": "Board Commands"
+        },
         "suggested_board_commands": {
           "description": "Optional board highlights answering the query",
           "items": {
@@ -1882,7 +2110,7 @@
             }
           ],
           "default": null,
-          "description": "Structured cognitive trace of the chat reply reasoning"
+          "description": "Structured execution and cognitive trace of the chat reply reasoning"
         }
       },
       "required": [
@@ -2322,8 +2550,65 @@
     "lesson_step": {
       "$defs": {
         "AgentTrace": {
-          "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider.",
+          "description": "Execution & cognitive trace exposing origin, provider, latency, and pedagogical decisions.",
           "properties": {
+            "source": {
+              "default": "mock",
+              "description": "Response origin: 'llm' | 'cache' | 'fallback_canned' | 'mock'",
+              "examples": [
+                "llm",
+                "cache",
+                "fallback_canned",
+                "mock"
+              ],
+              "title": "Source",
+              "type": "string"
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "LLM provider: gemini | groq | cerebras | openrouter | mock | internal",
+              "examples": [
+                "gemini",
+                "groq",
+                "cerebras",
+                "openrouter"
+              ],
+              "title": "Provider"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Specific model identifier or name",
+              "examples": [
+                "gemini-2.0-flash",
+                "llama-3.3-70b-versatile"
+              ],
+              "title": "Model"
+            },
+            "latency_ms": {
+              "default": 0,
+              "description": "Latency in milliseconds",
+              "examples": [
+                184
+              ],
+              "title": "Latency Ms",
+              "type": "integer"
+            },
             "detected_misconception": {
               "anyOf": [
                 {

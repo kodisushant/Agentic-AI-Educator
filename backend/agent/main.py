@@ -100,6 +100,19 @@ async def health_check():
     }
 
 
+@app.get("/debug/llm-ping", tags=["Diagnostics"])
+async def debug_llm_ping():
+    """Runs a tiny live test call against each configured LLM provider and returns latency and reachability."""
+    return router.ping_all()
+
+
+@app.get("/debug/llm-stats", tags=["Diagnostics"])
+async def debug_llm_stats():
+    """Returns aggregated operational metrics for LLM calls (calls by source, provider, latency, errors)."""
+    return router.get_stats()
+
+
+
 # =====================================================================
 # TEACHER AGENT ENDPOINTS (/backend/agent)
 # =====================================================================

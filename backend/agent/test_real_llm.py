@@ -45,7 +45,8 @@ def run_provider_tests():
 
         start = time.time()
         try:
-            raw = caller(prompt)
+            res = caller(prompt)
+            raw = res[0] if isinstance(res, tuple) else res
             latency = int((time.time() - start) * 1000)
             clean = router_inst._extract_json(raw)
             validated = CheckQuestion.model_validate_json(clean)
@@ -65,7 +66,9 @@ def run_provider_tests():
 
     test_start = time.time()
     try:
-        raw_fallback, serving_provider, latency_ms = router_inst._dispatch_providers_sync(prompt)
+        dispatch_res = router_inst._dispatch_providers_sync(prompt)
+        raw_fallback, serving_provider = dispatch_res[0], dispatch_res[1]
+        latency_ms = dispatch_res[3] if len(dispatch_res) > 3 else int((time.time() - test_start) * 1000)
         clean = router_inst._extract_json(raw_fallback)
         validated = CheckQuestion.model_validate_json(clean)
         print(f"✓ Fallback succeeded! Gemini failed and fell through to: **{serving_provider}** in {latency_ms}ms")
@@ -97,7 +100,7 @@ def run_provider_tests():
         print(f"✓ Step ID: {step.step_id}")
         print(f"✓ Narration: '{step.narration[:60]}...'")
         print(f"✓ Board commands count: {len(step.board_commands)}")
-        print(f"✓ Provider metadata: {step.provider_metadata}")
+        print(f"✓ Trace: {step.trace}")
     except Exception as e:
         print(f"Dynamic lesson generation test failed: {e}")
     finally:

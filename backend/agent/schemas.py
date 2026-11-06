@@ -99,7 +99,27 @@ class ToolCallRecord(BaseModel):
 # --- Lesson Step & Interaction Schemas ---
 
 class AgentTrace(BaseModel):
-    """Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider."""
+    """Execution & cognitive trace exposing origin, provider, latency, and pedagogical decisions."""
+    source: str = Field(
+        default="mock",
+        description="Response origin: 'llm' | 'cache' | 'fallback_canned' | 'mock'",
+        examples=["llm", "cache", "fallback_canned", "mock"]
+    )
+    provider: Optional[str] = Field(
+        default=None,
+        description="LLM provider: gemini | groq | cerebras | openrouter | mock | internal",
+        examples=["gemini", "groq", "cerebras", "openrouter"]
+    )
+    model: Optional[str] = Field(
+        default=None,
+        description="Specific model identifier or name",
+        examples=["gemini-2.0-flash", "llama-3.3-70b-versatile"]
+    )
+    latency_ms: int = Field(
+        default=0,
+        description="Latency in milliseconds",
+        examples=[184]
+    )
     detected_misconception: Optional[str] = Field(
         default=None,
         description="Active or diagnosed misconception identified during reasoning",
@@ -212,17 +232,41 @@ class CheckAnswerResponse(BaseModel):
         default_factory=list,
         description="Whiteboard corrective annotations"
     )
+    trace: Optional[AgentTrace] = Field(
+        default=None,
+        description="Diagnostic execution trace"
+    )
 
 
 class ChatMessageRequest(BaseModel):
     student_id: str = Field(default="demo_student", description="ID of student")
+    user_id: Optional[str] = Field(default=None, description="Alias for student_id")
     concept: str = Field(default="Binary Search", description="Current lesson topic")
+    topic: Optional[str] = Field(default=None, description="Alias for concept")
     message: str = Field(..., description="Student chat message or question")
     current_step_index: int = Field(default=0, description="Current step in lesson")
+    step_index: Optional[int] = Field(default=None, description="Alias for current_step_index")
+    history: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="Recent conversation turns")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.user_id and self.student_id == "demo_student":
+            self.student_id = self.user_id
+        if self.topic and self.concept == "Binary Search":
+            self.concept = self.topic
+        if self.step_index is not None and self.current_step_index == 0:
+            self.current_step_index = self.step_index
 
 
 class ChatMessageResponse(BaseModel):
     reply: str = Field(..., description="Teacher's conversational reply")
+    code: Optional[str] = Field(
+        default=None,
+        description="Optional runnable code snippet relevant to explanation"
+    )
+    board_commands: Optional[List[BoardCommand]] = Field(
+        default=None,
+        description="Optional board highlights answering the query (alias)"
+    )
     suggested_board_commands: List[BoardCommand] = Field(
         default_factory=list,
         description="Optional board highlights answering the query"
@@ -233,8 +277,16 @@ class ChatMessageResponse(BaseModel):
     )
     trace: Optional[AgentTrace] = Field(
         default=None,
-        description="Structured cognitive trace of the chat reply reasoning"
+        description="Structured execution and cognitive trace of the chat reply reasoning"
     )
+
+    def model_post_init(self, __context: Any) -> None:
+        # Keep board_commands and suggested_board_commands synchronized
+        if self.board_commands and not self.suggested_board_commands:
+            self.suggested_board_commands = self.board_commands
+        elif self.suggested_board_commands and not self.board_commands:
+            self.board_commands = self.suggested_board_commands
+
 
 
 # --- Tool Loop Direct Schemas ---

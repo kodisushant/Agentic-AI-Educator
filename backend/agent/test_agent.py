@@ -206,10 +206,44 @@ def run_unit_tests():
     # 12. Test AgentTrace Cognitive Reasoning Field
     step_with_trace = teacher_agent.get_next_step_sync(LessonStepRequest(concept="Binary Search", step_index=0))
     assert step_with_trace.trace is not None
+    assert step_with_trace.trace.source in ("mock", "cache", "fallback_canned", "llm")
     assert step_with_trace.trace.strategy_chosen == "direct_instruction"
     chat_with_trace = teacher_agent.handle_chat_sync(ChatMessageRequest(message="Can you help?"))
     assert chat_with_trace.trace is not None
+    assert chat_with_trace.trace.source in ("mock", "cache", "fallback_canned", "llm")
     print("✓ AgentTrace cognitive reasoning fields verified on step and chat responses", flush=True)
+
+    # 13. Test /debug/llm-ping and /debug/llm-stats
+    from backend.agent.llm_router import router
+    ping_res = router.ping_all()
+    assert ping_res["status"] == "complete"
+    assert "providers" in ping_res
+    assert "gemini" in ping_res["providers"]
+    assert "groq" in ping_res["providers"]
+    print("✓ router.ping_all() verified", flush=True)
+
+    stats = router.get_stats()
+    assert "total_calls" in stats
+    assert "calls_by_source" in stats
+    print("✓ router.get_stats() verified", flush=True)
+
+    # 14. Verify CheckAnswerResponse has trace
+    check_ans_trace = teacher_agent.evaluate_check_answer(CheckAnswerRequest(question_id="bs_check_bounds", selected_index=1))
+    assert check_ans_trace.trace is not None
+    assert check_ans_trace.trace.source == "fallback_canned"
+    print("✓ CheckAnswerResponse trace verified", flush=True)
+
+    # 15. Verify STRICT_REAL=true behavior
+    router.strict_real = True
+    try:
+        router.generate_structured_sync("Test strictly", LessonStep)
+        assert False, "Expected STRICT_REAL to raise error when keys missing or in mock mode"
+    except RuntimeError as re:
+        assert "STRICT_REAL" in str(re)
+        print("✓ STRICT_REAL=true correctly raises error instead of silent mock fallback", flush=True)
+    finally:
+        router.strict_real = os.getenv("STRICT_REAL", "false").lower() in ("true", "1", "yes")
+
     print("\nAll mock unit tests passed successfully!", flush=True)
 
     # 11. Conditional Real LLM Testing (Run only when REAL_LLM=1)

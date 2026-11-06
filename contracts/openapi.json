@@ -8,12 +8,11 @@
   "paths": {
     "/health": {
       "get": {
-        "x-stability": "stable",
         "tags": [
           "System"
         ],
         "summary": "Health Check",
-        "description": "Returns agent service health, LLM routing mode, active keys, and teammate service modes.",
+        "description": "Returns agent service health, LLM routing mode, active keys, reachability, and teammate service modes.",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
@@ -24,12 +23,54 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
+      }
+    },
+    "/debug/llm-ping": {
+      "get": {
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Debug Llm Ping",
+        "description": "Runs a tiny live test call against each configured LLM provider and returns latency and reachability.",
+        "operationId": "debug_llm_ping_debug_llm_ping_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
+      }
+    },
+    "/debug/llm-stats": {
+      "get": {
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Debug Llm Stats",
+        "description": "Returns aggregated operational metrics for LLM calls (calls by source, provider, latency, errors).",
+        "operationId": "debug_llm_stats_debug_llm_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
       }
     },
     "/lesson/step": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Lesson"
         ],
@@ -67,12 +108,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/lesson/check-answer": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Lesson"
         ],
@@ -110,12 +151,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/lesson/step/stream": {
       "get": {
-        "x-stability": "may-change",
         "tags": [
           "Lesson"
         ],
@@ -167,12 +208,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "may-change"
       }
     },
     "/mock/lesson": {
       "get": {
-        "x-stability": "stable",
         "tags": [
           "Mock"
         ],
@@ -218,12 +259,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/demo/seed": {
       "post": {
-        "x-stability": "may-change",
         "tags": [
           "Demo"
         ],
@@ -239,12 +280,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "may-change"
       }
     },
     "/demo/reset": {
       "post": {
-        "x-stability": "may-change",
         "tags": [
           "Demo"
         ],
@@ -260,12 +301,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "may-change"
       }
     },
     "/agent/chat": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Interaction"
         ],
@@ -303,12 +344,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/tools/execute": {
       "post": {
-        "x-stability": "may-change",
         "tags": [
           "Tools"
         ],
@@ -346,12 +387,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "may-change"
       }
     },
     "/learner/attempt": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -389,12 +430,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/learner/mastery/{user_id}": {
       "get": {
-        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -438,12 +479,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/learner/weak/{user_id}": {
       "get": {
-        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -487,12 +528,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/learner/recommend/{user_id}": {
       "get": {
-        "x-stability": "stable",
         "tags": [
           "Learner Model"
         ],
@@ -536,12 +577,133 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
+      }
+    },
+    "/learner/history/{user_id}": {
+      "get": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Get recent practice attempt history",
+        "description": "Returns chronological attempt logs with time spent and misconception tags.",
+        "operationId": "get_history_learner_history__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Student ID",
+              "title": "User Id"
+            },
+            "description": "Student ID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
+      }
+    },
+    "/learner/summary/{user_id}": {
+      "get": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Full student profile snapshot for dashboard",
+        "description": "Returns aggregate student analytics snapshot for real-time dashboard rendering.",
+        "operationId": "get_summary_learner_summary__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Student ID",
+              "title": "User Id"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
+      }
+    },
+    "/learner/seed": {
+      "post": {
+        "tags": [
+          "Learner Model"
+        ],
+        "summary": "Reset and reseed demo student database",
+        "description": "Resets the demo student database to initial pitch demo state.",
+        "operationId": "reset_learner_seed_learner_seed_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
       }
     },
     "/assess/quiz": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Assessment"
         ],
@@ -579,12 +741,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/assess/flashcards": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Assessment"
         ],
@@ -622,12 +784,12 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     },
     "/assess/submit": {
       "post": {
-        "x-stability": "stable",
         "tags": [
           "Assessment"
         ],
@@ -665,7 +827,8 @@
               }
             }
           }
-        }
+        },
+        "x-stability": "stable"
       }
     }
   },
@@ -673,6 +836,61 @@
     "schemas": {
       "AgentTrace": {
         "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Response origin: 'llm' | 'cache' | 'fallback_canned' | 'mock'",
+            "default": "mock",
+            "examples": [
+              "llm",
+              "cache",
+              "fallback_canned",
+              "mock"
+            ]
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider",
+            "description": "LLM provider: gemini | groq | cerebras | openrouter | mock | internal",
+            "examples": [
+              "gemini",
+              "groq",
+              "cerebras",
+              "openrouter"
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Specific model identifier or name",
+            "examples": [
+              "gemini-2.0-flash",
+              "llama-3.3-70b-versatile"
+            ]
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms",
+            "description": "Latency in milliseconds",
+            "default": 0,
+            "examples": [
+              184
+            ]
+          },
           "detected_misconception": {
             "anyOf": [
               {
@@ -741,7 +959,7 @@
         },
         "type": "object",
         "title": "AgentTrace",
-        "description": "Cognitive trace exposing internal pedagogical decisions, mastery changes, and provider."
+        "description": "Execution & cognitive trace exposing origin, provider, latency, and pedagogical decisions."
       },
       "ArrowCommand": {
         "properties": {
@@ -1076,11 +1294,35 @@
             "description": "ID of student",
             "default": "demo_student"
           },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id",
+            "description": "Alias for student_id"
+          },
           "concept": {
             "type": "string",
             "title": "Concept",
             "description": "Current lesson topic",
             "default": "Binary Search"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic",
+            "description": "Alias for concept"
           },
           "message": {
             "type": "string",
@@ -1092,6 +1334,34 @@
             "title": "Current Step Index",
             "description": "Current step in lesson",
             "default": 0
+          },
+          "step_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Index",
+            "description": "Alias for current_step_index"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History",
+            "description": "Recent conversation turns"
           }
         },
         "type": "object",
@@ -1106,6 +1376,63 @@
             "type": "string",
             "title": "Reply",
             "description": "Teacher's conversational reply"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code",
+            "description": "Optional runnable code snippet relevant to explanation"
+          },
+          "board_commands": {
+            "anyOf": [
+              {
+                "items": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TextCommand"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoxCommand"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ArrowCommand"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EquationCommand"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MermaidCommand"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClearCommand"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                      "arrow": "#/components/schemas/ArrowCommand",
+                      "box": "#/components/schemas/BoxCommand",
+                      "clear": "#/components/schemas/ClearCommand",
+                      "equation": "#/components/schemas/EquationCommand",
+                      "mermaid": "#/components/schemas/MermaidCommand",
+                      "text": "#/components/schemas/TextCommand"
+                    }
+                  }
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Board Commands",
+            "description": "Optional board highlights answering the query (alias)"
           },
           "suggested_board_commands": {
             "items": {
@@ -1166,7 +1493,7 @@
                 "type": "null"
               }
             ],
-            "description": "Structured cognitive trace of the chat reply reasoning"
+            "description": "Structured execution and cognitive trace of the chat reply reasoning"
           }
         },
         "type": "object",
@@ -1302,6 +1629,17 @@
             "type": "array",
             "title": "Suggested Board Commands",
             "description": "Whiteboard corrective annotations"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentTrace"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diagnostic execution trace"
           }
         },
         "type": "object",

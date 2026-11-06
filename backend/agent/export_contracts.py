@@ -65,6 +65,18 @@ def export_contracts():
 
     # 2. Export OpenAPI JSON Specification
     openapi_schema = app.openapi()
+    stable_paths = {
+        "/health", "/lesson/step", "/lesson/check-answer", "/mock/lesson",
+        "/agent/chat", "/learner/attempt", "/learner/mastery/{user_id}",
+        "/learner/weak/{user_id}", "/learner/recommend/{user_id}",
+        "/assess/quiz", "/assess/flashcards", "/assess/submit"
+    }
+    for path, methods in openapi_schema.get("paths", {}).items():
+        stability = "stable" if path in stable_paths else "may-change"
+        for method, operation in methods.items():
+            if isinstance(operation, dict):
+                operation["x-stability"] = stability
+
     openapi_file = contracts_dir / "openapi.json"
     with open(openapi_file, "w", encoding="utf-8") as f:
         json.dump(openapi_schema, f, indent=2)

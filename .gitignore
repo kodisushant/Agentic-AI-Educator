@@ -55,3 +55,4 @@ backend/learner/*.db
 Thumbs.db
 *.log
 *.pid
+logs/

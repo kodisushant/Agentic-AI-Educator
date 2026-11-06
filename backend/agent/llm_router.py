@@ -17,23 +17,53 @@ T = TypeVar("T", bound=BaseModel)
 CACHE_DIR = Path(__file__).resolve().parent / ".cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+LOGS_DIR = ROOT_DIR / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+CALLS_LOG_FILE = LOGS_DIR / "llm_calls.log"
+
 
 def load_env_file():
     """Load variables from .env if present and not already in os.environ."""
-    root = Path(__file__).resolve().parent.parent.parent
-    env_file = root / ".env"
+    env_file = ROOT_DIR / ".env"
     if env_file.exists():
-        for line in env_file.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                k = k.strip()
-                v = v.strip().strip('"').strip("'")
-                if k and k not in os.environ:
-                    os.environ[k] = v
+        try:
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+        except Exception:
+            pass
 
 
 load_env_file()
+
+
+def log_llm_call(
+    source: str,
+    provider: str,
+    model: str,
+    status: str,
+    latency_ms: int,
+    prompt_chars: int = 0,
+    error: Optional[str] = None
+):
+    """
+    Append an audit log entry for every LLM or mock operation.
+    STRICT SECURITY RULE: Never log API keys, tokens, or authorization headers.
+    """
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    err_str = f" | error=\"{error}\"" if error else ""
+    line = f"[{timestamp}] [{status}] source={source} provider={provider} model={model} latency_ms={latency_ms} chars={prompt_chars}{err_str}\n"
+    try:
+        with open(CALLS_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception as e:
+        logger.warning(f"Failed to write to {CALLS_LOG_FILE}: {e}")
 
 
 class RateLimitError(Exception):
@@ -45,36 +75,161 @@ class LLMRouter:
     def __init__(self):
         load_env_file()
         self.mock_mode = os.getenv("MOCK_MODE", "true").lower() in ("true", "1", "yes")
+        self.strict_real = os.getenv("STRICT_REAL", "false").lower() in ("true", "1", "yes")
+        
+        # Keys
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
         self.cerebras_key = os.getenv("CEREBRAS_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+        
+        # Valid active FREE tier model defaults
+        # Gemini: gemini-2.0-flash is Google AI Studio's primary free tier model
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+        # Groq: llama-3.3-70b-versatile or llama-3.1-8b-instant
+        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+        # Cerebras: llama3.1-8b
+        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "llama3.1-8b").strip()
+        # OpenRouter: free tier model
+        self.openrouter_model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free").strip()
+
         self.timeout_per_provider = float(os.getenv("LLM_TIMEOUT", "10.0"))
         self.step_latency_cap = float(os.getenv("STEP_LATENCY_CAP", "25.0"))
+
+        # In-memory stats tracker
+        self.stats = {
+            "total_calls": 0,
+            "calls_by_source": {},
+            "calls_by_provider": {},
+            "total_latency_ms": 0,
+            "error_count": 0,
+            "recent_calls": []
+        }
+
+    def _record_stat(self, source: str, provider: str, model: str, latency_ms: int, status: str):
+        self.stats["total_calls"] += 1
+        self.stats["calls_by_source"][source] = self.stats["calls_by_source"].get(source, 0) + 1
+        self.stats["calls_by_provider"][provider] = self.stats["calls_by_provider"].get(provider, 0) + 1
+        self.stats["total_latency_ms"] += latency_ms
+        if status != "ok":
+            self.stats["error_count"] += 1
+
+        recent = {
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "source": source,
+            "provider": provider,
+            "model": model,
+            "latency_ms": latency_ms,
+            "status": status
+        }
+        self.stats["recent_calls"].insert(0, recent)
+        if len(self.stats["recent_calls"]) > 50:
+            self.stats["recent_calls"].pop()
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Return diagnostic metrics for LLM router calls."""
+        total = self.stats["total_calls"]
+        avg_lat = round(self.stats["total_latency_ms"] / total, 1) if total > 0 else 0.0
+        return {
+            "total_calls": total,
+            "calls_by_source": self.stats["calls_by_source"],
+            "calls_by_provider": self.stats["calls_by_provider"],
+            "average_latency_ms": avg_lat,
+            "error_count": self.stats["error_count"],
+            "mock_mode": self.mock_mode,
+            "strict_real": self.strict_real,
+            "recent_calls": self.stats["recent_calls"][:15]
+        }
 
     def get_provider_status(self) -> Dict[str, Dict[str, Any]]:
         """Report which provider keys exist and their reachability status."""
         return {
             "gemini": {
                 "key_configured": bool(self.gemini_key),
-                "model": "gemini-3.1-flash-lite",
+                "model": self.gemini_model,
                 "reachable": bool(self.gemini_key) and not self.mock_mode,
             },
             "groq": {
                 "key_configured": bool(self.groq_key),
-                "model": "qwen/qwen3.8-27b",
+                "model": self.groq_model,
                 "reachable": bool(self.groq_key) and not self.mock_mode,
             },
             "cerebras": {
                 "key_configured": bool(self.cerebras_key),
-                "model": "llama3.1-70b",
+                "model": self.cerebras_model,
                 "reachable": bool(self.cerebras_key) and not self.mock_mode,
             },
             "openrouter": {
                 "key_configured": bool(self.openrouter_key),
-                "model": "auto",
+                "model": self.openrouter_model,
                 "reachable": bool(self.openrouter_key) and not self.mock_mode,
             }
+        }
+
+    def ping_provider(self, provider_name: str) -> Dict[str, Any]:
+        """Make a tiny real call to verify provider reachability and latency without mock fallback."""
+        t0 = time.time()
+        tiny_prompt = 'Respond strictly with valid JSON: {"status": "ok", "ping": "pong"}'
+        callers = {
+            "gemini": (self._call_gemini_sync, self.gemini_key, self.gemini_model),
+            "groq": (self._call_groq_sync, self.groq_key, self.groq_model),
+            "cerebras": (self._call_cerebras_sync, self.cerebras_key, self.cerebras_model),
+            "openrouter": (self._call_openrouter_sync, self.openrouter_key, self.openrouter_model),
+        }
+        if provider_name not in callers:
+            return {
+                "provider": provider_name,
+                "configured": False,
+                "success": False,
+                "error": "Unknown provider"
+            }
+
+        caller, key, model = callers[provider_name]
+        if not key:
+            return {
+                "provider": provider_name,
+                "configured": False,
+                "success": False,
+                "model": model,
+                "latency_ms": 0,
+                "error": "API key not set in .env"
+            }
+
+        try:
+            raw_text, used_model = caller(tiny_prompt)
+            latency_ms = int((time.time() - t0) * 1000)
+            self._record_stat("llm", provider_name, used_model, latency_ms, "ok")
+            log_llm_call("llm", provider_name, used_model, "SUCCESS", latency_ms)
+            return {
+                "provider": provider_name,
+                "configured": True,
+                "success": True,
+                "model": used_model,
+                "latency_ms": latency_ms,
+                "error": None
+            }
+        except Exception as e:
+            latency_ms = int((time.time() - t0) * 1000)
+            self._record_stat("llm", provider_name, model, latency_ms, "error")
+            log_llm_call("llm", provider_name, model, "ERROR", latency_ms, error=str(e)[:120])
+            return {
+                "provider": provider_name,
+                "configured": True,
+                "success": False,
+                "model": model,
+                "latency_ms": latency_ms,
+                "error": str(e)[:120]
+            }
+
+    def ping_all(self) -> Dict[str, Any]:
+        providers = ["gemini", "groq", "cerebras", "openrouter"]
+        results = {}
+        for p in providers:
+            results[p] = self.ping_provider(p)
+        return {
+            "status": "complete",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "providers": results
         }
 
     def _get_cache_key(self, prompt: str, schema_name: str) -> Path:
@@ -106,7 +261,6 @@ class LLMRouter:
 
     def _http_post(self, url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: float = 10.0) -> Dict[str, Any]:
         data = json.dumps(payload).encode("utf-8")
-        # Ensure default User-Agent to avoid Cloudflare/WAF block (e.g. error 1010)
         req_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Virtual-Teacher/1.0", **headers}
         req = urllib.request.Request(url, data=data, headers=req_headers, method="POST")
         try:
@@ -130,11 +284,10 @@ class LLMRouter:
 
     # --- Provider synchronous callers ---
 
-    def _call_gemini_sync(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def _call_gemini_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str]:
         if not self.gemini_key:
             raise ValueError("GEMINI_API_KEY not configured")
-        # Use active Google AI Studio model: gemini-3.1-flash-lite
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={self.gemini_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_key}"
         headers = {"Content-Type": "application/json"}
         contents = []
         if system_prompt:
@@ -147,9 +300,9 @@ class LLMRouter:
             "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"}
         }
         res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
-        return res["candidates"][0]["content"]["parts"][0]["text"]
+        return res["candidates"][0]["content"]["parts"][0]["text"], self.gemini_model
 
-    def _call_groq_sync(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def _call_groq_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str]:
         if not self.groq_key:
             raise ValueError("GROQ_API_KEY not configured")
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -163,15 +316,15 @@ class LLMRouter:
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": "qwen/qwen3.8-27b",
+            "model": self.groq_model,
             "messages": messages,
             "temperature": 0.2,
             "response_format": {"type": "json_object"}
         }
         res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
-        return res["choices"][0]["message"]["content"]
+        return res["choices"][0]["message"]["content"], self.groq_model
 
-    def _call_cerebras_sync(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def _call_cerebras_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str]:
         if not self.cerebras_key:
             raise ValueError("CEREBRAS_API_KEY not configured")
         url = "https://api.cerebras.ai/v1/chat/completions"
@@ -185,15 +338,15 @@ class LLMRouter:
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": "llama3.1-8b",
+            "model": self.cerebras_model,
             "messages": messages,
             "temperature": 0.2,
             "response_format": {"type": "json_object"}
         }
         res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
-        return res["choices"][0]["message"]["content"]
+        return res["choices"][0]["message"]["content"], self.cerebras_model
 
-    def _call_openrouter_sync(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def _call_openrouter_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str]:
         if not self.openrouter_key:
             raise ValueError("OPENROUTER_API_KEY not configured")
         url = "https://openrouter.ai/api/v1/chat/completions"
@@ -207,22 +360,23 @@ class LLMRouter:
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": "meta-llama/llama-3.2-3b-instruct:free",
+            "model": self.openrouter_model,
             "messages": messages,
             "temperature": 0.2
         }
         res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
-        return res["choices"][0]["message"]["content"]
+        return res["choices"][0]["message"]["content"], self.openrouter_model
 
-    def _dispatch_providers_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str, int]:
+    def _dispatch_providers_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str, str, int]:
         """
         Dispatches request through the provider fallback chain synchronously.
-        Fallback order: Gemini -> Groq -> Cerebras -> OpenRouter.
-        Returns: (raw_response_text, provider_name, latency_ms)
+        Fallback order: Groq (fastest) -> Gemini (largest context) -> Cerebras -> OpenRouter.
+        Returns: (raw_response_text, provider_name, model_name, latency_ms)
         """
+        # Order: Groq first for interactive speed, then Gemini, Cerebras, OpenRouter
         providers = [
-            ("gemini", self._call_gemini_sync),
             ("groq", self._call_groq_sync),
+            ("gemini", self._call_gemini_sync),
             ("cerebras", self._call_cerebras_sync),
             ("openrouter", self._call_openrouter_sync),
         ]
@@ -240,10 +394,10 @@ class LLMRouter:
             t0 = time.time()
             try:
                 logger.info(f"Trying LLM provider: {name}")
-                result = caller(prompt, system_prompt)
+                raw_text, used_model = caller(prompt, system_prompt)
                 latency_ms = int((time.time() - t0) * 1000)
-                logger.info(f"Provider {name} succeeded in {latency_ms}ms")
-                return result, name, latency_ms
+                logger.info(f"Provider {name} succeeded in {latency_ms}ms with model {used_model}")
+                return raw_text, name, used_model, latency_ms
             except RateLimitError as rle:
                 latency_ms = int((time.time() - t0) * 1000)
                 logger.warning(f"Provider {name} rate limited (429) after {latency_ms}ms: {rle}. Falling to next provider.")
@@ -255,7 +409,7 @@ class LLMRouter:
 
         raise RuntimeError(f"All LLM providers failed or timed out: {'; '.join(errors)}")
 
-    async def _dispatch_providers(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str, int]:
+    async def _dispatch_providers(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str, str, int]:
         return await asyncio.to_thread(self._dispatch_providers_sync, prompt, system_prompt)
 
     def generate_structured_sync(
@@ -274,8 +428,18 @@ class LLMRouter:
             try:
                 validated = response_model.model_validate_json(cached_content)
                 logger.info(f"LLM cache hit for {schema_name}")
-                if hasattr(validated, "provider_metadata") and validated.provider_metadata is None:
-                    validated.provider_metadata = {"provider": "cache", "latency_ms": 0, "cached": True}
+                self._record_stat("cache", "cache", "disk_cache", 0, "ok")
+                log_llm_call("cache", "cache", "disk_cache", "CACHE_HIT", 0, len(prompt))
+                if hasattr(validated, "trace"):
+                    if validated.trace is None:
+                        from backend.agent.schemas import AgentTrace
+                        validated.trace = AgentTrace(source="cache", provider="cache", model="disk_cache", latency_ms=0, provider_used="cache")
+                    else:
+                        validated.trace.source = "cache"
+                        validated.trace.provider = "cache"
+                        validated.trace.model = "disk_cache"
+                        validated.trace.latency_ms = 0
+                        validated.trace.provider_used = "cache"
                 return validated
             except ValidationError:
                 pass
@@ -283,12 +447,28 @@ class LLMRouter:
         # 2. Check if Mock Mode or no keys configured
         has_any_key = any([self.gemini_key, self.groq_key, self.cerebras_key, self.openrouter_key])
         if self.mock_mode or not has_any_key:
+            if self.strict_real:
+                err_msg = "STRICT_REAL=true is set, but MOCK_MODE is enabled or no provider API keys are configured."
+                self._record_stat("mock", "none", "none", 0, "error")
+                log_llm_call("mock", "none", "none", "STRICT_REAL_BLOCKED", 0, error=err_msg)
+                raise RuntimeError(err_msg)
+
             logger.info("Using mock fallback (MOCK_MODE=true or no keys provided)")
             if mock_fallback_factory:
                 result = mock_fallback_factory()
-                if hasattr(result, "provider_metadata") and result.provider_metadata is None:
-                    result.provider_metadata = {"provider": "mock", "latency_ms": 0, "cached": False}
-                self._write_cache(cache_file, result.model_dump_json())
+                self._record_stat("mock", "mock", "canned", 0, "ok")
+                log_llm_call("mock", "mock", "canned", "MOCK_FALLBACK", 0)
+                if hasattr(result, "trace"):
+                    if result.trace is None:
+                        from backend.agent.schemas import AgentTrace
+                        result.trace = AgentTrace(source="mock", provider="mock", model="canned", latency_ms=0, provider_used="mock")
+                    else:
+                        result.trace.source = "mock"
+                        result.trace.provider = "mock"
+                        result.trace.model = "canned"
+                        result.trace.latency_ms = 0
+                        result.trace.provider_used = "mock"
+                # DO NOT write mock fallbacks to cache
                 return result
             raise RuntimeError(f"MOCK_MODE active but no fallback factory provided for {schema_name}")
 
@@ -302,21 +482,38 @@ class LLMRouter:
         )
 
         # 4. Attempt call with 1 retry on validation failure
+        last_error = None
         for attempt in range(2):
             try:
-                raw_text, provider_name, latency_ms = self._dispatch_providers_sync(augmented_prompt, system_prompt)
+                raw_text, provider_name, model_name, latency_ms = self._dispatch_providers_sync(augmented_prompt, system_prompt)
                 clean_json = self._extract_json(raw_text)
                 validated = response_model.model_validate_json(clean_json)
-                if hasattr(validated, "provider_metadata"):
-                    validated.provider_metadata = {
-                        "provider": provider_name,
-                        "latency_ms": latency_ms,
-                        "cached": False,
-                    }
+                self._record_stat("llm", provider_name, model_name, latency_ms, "ok")
+                log_llm_call("llm", provider_name, model_name, "SUCCESS", latency_ms, len(prompt))
+                
+                if hasattr(validated, "trace"):
+                    if validated.trace is None:
+                        from backend.agent.schemas import AgentTrace
+                        validated.trace = AgentTrace(
+                            source="llm",
+                            provider=provider_name,
+                            model=model_name,
+                            latency_ms=latency_ms,
+                            provider_used=provider_name
+                        )
+                    else:
+                        validated.trace.source = "llm"
+                        validated.trace.provider = provider_name
+                        validated.trace.model = model_name
+                        validated.trace.latency_ms = latency_ms
+                        validated.trace.provider_used = provider_name
+
+                # Cache successful REAL LLM response
                 self._write_cache(cache_file, validated.model_dump_json())
                 return validated
-            except (ValidationError, Exception) as err:
-                logger.warning(f"Validation attempt {attempt + 1} failed: {err}")
+            except Exception as err:
+                last_error = err
+                logger.warning(f"LLM generation attempt {attempt + 1} failed: {err}")
                 if attempt == 0:
                     augmented_prompt = (
                         f"{prompt}\n\n"
@@ -326,11 +523,23 @@ class LLMRouter:
                         f"Return ONLY valid JSON."
                     )
                 else:
+                    self._record_stat("llm", "failed", "failed", 0, "error")
+                    log_llm_call("llm", "failed", "failed", "FAILED", 0, error=str(last_error)[:120])
+                    if self.strict_real:
+                        raise RuntimeError(f"STRICT_REAL=true is set: LLM generation failed: {last_error}")
                     if mock_fallback_factory:
                         logger.warning("Falling back to mock response after retries exhausted")
                         result = mock_fallback_factory()
-                        if hasattr(result, "provider_metadata"):
-                            result.provider_metadata = {"provider": "mock_fallback_on_error", "latency_ms": 0, "cached": False}
+                        if hasattr(result, "trace"):
+                            if result.trace is None:
+                                from backend.agent.schemas import AgentTrace
+                                result.trace = AgentTrace(source="fallback_canned", provider="mock_fallback_on_error", model="canned", latency_ms=0, provider_used="mock")
+                            else:
+                                result.trace.source = "fallback_canned"
+                                result.trace.provider = "mock_fallback_on_error"
+                                result.trace.model = "canned"
+                                result.trace.latency_ms = 0
+                                result.trace.provider_used = "mock"
                         return result
                     raise
 

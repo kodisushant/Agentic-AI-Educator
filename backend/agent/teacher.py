@@ -722,7 +722,18 @@ class TeacherAgent:
                         size=18,
                         color="#16a34a"
                     )
-                ]
+                ],
+                trace=AgentTrace(
+                    source="fallback_canned",
+                    provider="internal",
+                    model="rule_taxonomy",
+                    latency_ms=2,
+                    detected_misconception=None,
+                    strategy_chosen="positive_reinforcement",
+                    mastery_before=0.80,
+                    mastery_after=0.85,
+                    provider_used="internal"
+                )
             )
 
         # Misconception taxonomy for checkpoint question
@@ -778,7 +789,18 @@ class TeacherAgent:
                     size=14,
                     color="#b91c1c"
                 )
-            ]
+            ],
+            trace=AgentTrace(
+                source="fallback_canned",
+                provider="internal",
+                model="rule_taxonomy",
+                latency_ms=5,
+                detected_misconception=mis_tag,
+                strategy_chosen="visual_remediation",
+                mastery_before=0.55,
+                mastery_after=att.new_mastery_score,
+                provider_used="internal"
+            )
         )
 
     async def get_next_step(self, req: LessonStepRequest) -> LessonStep:
@@ -954,11 +976,15 @@ class TeacherAgent:
                     ],
                     is_final_step=base_step.is_final_step,
                     trace=AgentTrace(
+                        source="fallback_canned",
+                        provider="internal",
+                        model="rule_remediation",
+                        latency_ms=10,
                         detected_misconception=eval_res.detected_misconception,
                         strategy_chosen="visual_remediation",
                         mastery_before=0.55,
                         mastery_after=eval_res.updated_mastery_score,
-                        provider_used="mock"
+                        provider_used="internal"
                     ),
                 )
 
@@ -987,11 +1013,15 @@ class TeacherAgent:
                 tool_calls=base_step.tool_calls,
                 is_final_step=base_step.is_final_step,
                 trace=AgentTrace(
+                    source="fallback_canned",
+                    provider="internal",
+                    model="socratic_analogy",
+                    latency_ms=5,
                     detected_misconception="general_conceptual_confusion",
                     strategy_chosen="physical_analogy_simplification",
                     mastery_before=0.50,
                     mastery_after=0.50,
-                    provider_used="mock"
+                    provider_used="internal"
                 ),
             )
 
@@ -1026,29 +1056,59 @@ class TeacherAgent:
             response_model=LessonStep,
             mock_fallback_factory=fallback
         )
+        c_tag = req.concept.lower().replace(" ", "_")
+        current_m = mastery_profile.concept_scores.get(c_tag, 0.5)
         if res.trace is None:
-            c_tag = req.concept.lower().replace(" ", "_")
-            current_m = mastery_profile.concept_scores.get(c_tag, 0.5)
             res.trace = AgentTrace(
+                source="mock",
+                provider="mock",
+                model="canned",
+                latency_ms=0,
                 detected_misconception=res.detected_misconception,
                 strategy_chosen="direct_instruction",
                 mastery_before=current_m,
                 mastery_after=current_m,
-                provider_used=(res.provider_metadata or {}).get("provider", "mock")
+                provider_used="mock"
             )
+        else:
+            res.trace.detected_misconception = res.trace.detected_misconception or res.detected_misconception
+            res.trace.strategy_chosen = res.trace.strategy_chosen or "direct_instruction"
+            if res.trace.mastery_before is None:
+                res.trace.mastery_before = current_m
+            if res.trace.mastery_after is None:
+                res.trace.mastery_after = current_m
         return res
 
     async def get_next_step(self, req: LessonStepRequest) -> LessonStep:
         return self.get_next_step_sync(req)
 
     def handle_chat_sync(self, req: ChatMessageRequest) -> ChatMessageResponse:
+        concept = req.topic or req.concept or "Binary Search"
+        student_id = req.user_id or req.student_id or "demo_student"
+        step_idx = req.step_index if req.step_index is not None else req.current_step_index
+
         def fallback():
             return ChatMessageResponse(
                 reply=(
-                    f"Great question about {req.concept}! Remember that Binary Search requires the array to be sorted first. "
+                    f"Great question about {concept}! Remember that Binary Search requires the array to be sorted first. "
                     f"If the array is unsorted, we cannot know which half contains the target without checking every element."
                 ),
-                agent_thoughts="Explaining sorting precondition for binary search.",
+                code=(
+                    "# Binary Search Implementation in Python:\n"
+                    "def binary_search(arr, target):\n"
+                    "    low = 0\n"
+                    "    high = len(arr) - 1\n"
+                    "    while low <= high:\n"
+                    "        mid = (low + high) // 2\n"
+                    "        if arr[mid] == target:\n"
+                    "            return mid\n"
+                    "        elif arr[mid] < target:\n"
+                    "            low = mid + 1\n"
+                    "        else:\n"
+                    "            high = mid - 1\n"
+                    "    return -1\n"
+                ),
+                agent_thoughts="Explaining sorting precondition for binary search and providing implementation.",
                 suggested_board_commands=[
                     TextCommand(
                         id="chat_note",
@@ -1060,17 +1120,43 @@ class TeacherAgent:
                     )
                 ],
                 trace=AgentTrace(
+                    source="fallback_canned",
+                    provider="internal",
+                    model="canned_socratic",
+                    latency_ms=0,
                     detected_misconception="precondition_unclear",
                     strategy_chosen="socratic_explanation",
                     mastery_before=0.50,
                     mastery_after=0.55,
-                    provider_used="mock"
+                    provider_used="internal"
                 )
             )
 
+        try:
+            mastery_profile = learner_client.get_mastery(student_id)
+            c_tag = concept.lower().replace(" ", "_")
+            current_m = mastery_profile.concept_scores.get(c_tag, 0.5)
+        except Exception:
+            current_m = 0.5
+
+        history_context = ""
+        if req.history:
+            history_context = "\nRecent Conversation History:\n" + "\n".join(
+                [f"- {turn.get('role', 'user')}: {turn.get('content', '')}" for turn in req.history[-4:]]
+            )
+
         prompt = (
-            f"The student asks during step {req.current_step_index} of {req.concept}: '{req.message}'\n"
-            f"Provide a clear, brief pedagogical reply and optional whiteboard board commands to clarify."
+            f"You are an expert AI virtual tutor teaching an interactive computer science lesson on '{concept}'.\n"
+            f"Current Lesson Step Index: {step_idx}\n"
+            f"Student Mastery Score: {current_m}\n"
+            f"{history_context}\n"
+            f"Student Message: '{req.message}'\n\n"
+            f"Provide an insightful, helpful, conversational response adhering strictly to the ChatMessageResponse schema:\n"
+            f"- reply: clear, pedagogically grounded response tailored to the student's mastery level\n"
+            f"- code: IF the student asks how to write or implement code (e.g. 'How to write binary search in python'), "
+            f"provide a clean, runnable Python code block here. Otherwise null.\n"
+            f"- suggested_board_commands: optional list of whiteboard commands (text, box, arrow, equation, mermaid) to illustrate the point visually\n"
+            f"- agent_thoughts: your concise internal reasoning (visible in the UI thoughts banner)"
         )
 
         res = router.generate_structured_sync(
@@ -1080,16 +1166,26 @@ class TeacherAgent:
         )
         if res.trace is None:
             res.trace = AgentTrace(
+                source="mock",
+                provider="mock",
+                model="canned",
+                latency_ms=0,
                 detected_misconception=None,
                 strategy_chosen="conversational_guidance",
-                mastery_before=0.50,
-                mastery_after=0.50,
+                mastery_before=current_m,
+                mastery_after=current_m,
                 provider_used="mock"
             )
+        else:
+            if res.trace.mastery_before is None:
+                res.trace.mastery_before = current_m
+            if res.trace.mastery_after is None:
+                res.trace.mastery_after = current_m
         return res
 
     async def handle_chat(self, req: ChatMessageRequest) -> ChatMessageResponse:
         return self.handle_chat_sync(req)
+
 
 
 teacher_agent = TeacherAgent()

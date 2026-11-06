@@ -555,6 +555,8 @@
     let speechRate = 1.0;
     let selectedOptionIdx = null;
     let isPenMode = false;
+    let playbackAdvanceTimer = null;
+    let narrationRequestId = 0;
 
     // Initialize Mermaid
     if (window.mermaid) {
@@ -714,6 +716,7 @@
     }
 
     async function loadStep(index) {
+      stopNarration();
       currentStepIdx = index;
       activeRemediationCommands = [];
       document.getElementById("remediationPill").classList.add("hidden");
@@ -731,7 +734,7 @@
       renderWhiteboard(step.board_commands);
       renderAgentThoughts(step);
       setupTabs(step);
-      speakNarration(step.narration);
+      if (isPlaying) speakNarration(step.narration);
     }
 
     async function renderWhiteboard(commands) {
@@ -1153,9 +1156,11 @@
       const btnText = document.getElementById("playPauseText");
 
       if (isPlaying) {
+        speakNarration(currentSteps[currentStepIdx].narration);
         btnText.innerText = "Pause";
         btnIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
       } else {
+        stopNarration();
         btnText.innerText = "Play";
         btnIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
       }
@@ -1200,32 +1205,65 @@
       }
 
       loadStep(currentStepIdx);
+      replaySpeech();
       label.innerText = "Explain simply";
       btn.disabled = false;
     }
 
-    function speakNarration(text) {
-      if (!voiceEnabled || !window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
+    function stopNarration() {
+      narrationRequestId += 1;
+      if (playbackAdvanceTimer !== null) {
+        clearTimeout(playbackAdvanceTimer);
+        playbackAdvanceTimer = null;
+      }
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      const dot = document.getElementById("speakingDot");
+      if (dot) dot.classList.add("hidden");
+    }
+
+    function schedulePlaybackAdvance() {
+      if (!isPlaying || currentStepIdx >= currentSteps.length - 1) {
+        if (isPlaying && currentStepIdx >= currentSteps.length - 1) togglePlayPause();
+        return;
+      }
+      playbackAdvanceTimer = setTimeout(() => {
+        playbackAdvanceTimer = null;
+        if (isPlaying) nextStep();
+      }, 3500);
+    }
+
+    function speakWithBrowser(text, shouldAdvance = false) {
+      if (!window.speechSynthesis) {
+        if (shouldAdvance) schedulePlaybackAdvance();
+        return;
+      }
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = speechRate;
-
       const dot = document.getElementById("speakingDot");
       utterance.onstart = () => { dot.classList.remove("hidden"); };
       utterance.onend = () => {
         dot.classList.add("hidden");
-        if (isPlaying && currentStepIdx < currentSteps.length - 1) {
-          setTimeout(() => nextStep(), 1500);
-        } else if (isPlaying && currentStepIdx >= currentSteps.length - 1) {
-          togglePlayPause();
-        }
+        if (shouldAdvance) schedulePlaybackAdvance();
       };
-      utterance.onerror = () => { dot.classList.add("hidden"); };
+      utterance.onerror = () => {
+        dot.classList.add("hidden");
+        if (shouldAdvance) schedulePlaybackAdvance();
+      };
       window.speechSynthesis.speak(utterance);
     }
 
+    function speakNarration(text, force = false) {
+      stopNarration();
+      if (!voiceEnabled) {
+        if (!force) schedulePlaybackAdvance();
+        return;
+      }
+      const shouldAdvance = !force && isPlaying;
+      speakWithBrowser(text, shouldAdvance);
+    }
+
     function replaySpeech() {
-      speakNarration(currentSteps[currentStepIdx].narration);
+      speakNarration(currentSteps[currentStepIdx].narration, true);
     }
 
     function toggleVoiceEnabled() {
@@ -1235,7 +1273,7 @@
         btn.style.color = "var(--accent)";
         replaySpeech();
       } else {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        stopNarration();
         btn.style.color = "var(--text-tertiary)";
         document.getElementById("speakingDot").classList.add("hidden");
       }
@@ -1303,12 +1341,12 @@
           reasoning = data.agent_thoughts || "";
           suggestedCmds = data.suggested_board_commands || [];
         } else {
-          replyText = "In binary search, the sorted invariant guarantees that every element left of the midpoint is strictly smaller, so we can discard half the array with one comparison.";
-          reasoning = "Explaining sorted invariant.";
+          const errorBody = await res.text();
+          throw new Error(`Teacher API HTTP ${res.status}: ${errorBody.slice(0, 160)}`);
         }
       } catch (err) {
-        replyText = "Because the array is sorted, comparing against the midpoint rules out 50% of the remaining elements.";
-        reasoning = "Fallback explanation.";
+        replyText = "I could not reach the teacher service. Please check that the backend is running on port 8000 and try again.";
+        reasoning = String(err && err.message ? err.message : err);
       }
 
       const bubble = document.getElementById("chatLoadingBubble");

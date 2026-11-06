@@ -26,6 +26,8 @@
 
 ## Person 2 / Member 3: Classroom UI (/frontend/classroom)
 - **Status:** Complete, Redesigned & Verified (High-Contrast Theme, Real Tabs, 100dvh Layout, Contrast Audit)
+- **Hotfix (2026-11-06):** Playback now starts/stops narration and auto-advance correctly, including browsers without speech synthesis; launcher-selected real mode is preserved for Groq chat.
+- **Runtime hotfix (2026-11-06):** Fixed the gateway import crash caused by the uninitialized logger in the TTS mount block. Chat now reaches Groq instead of returning the browser's canned fallback. Classroom narration uses the browser's default speech engine directly.
 - **Implemented & Verified:**
   - **Whiteboard Contrast & Theming:** Added explicit whiteboard CSS tokens (`--board-bg`, `--board-ink`, `--cell-bg`, `--cell-ink`, `--cell-border`, `--pointer-low`, `--pointer-high`, `--pointer-mid`, `--board-equation-bg`, `--board-equation-text`) for both light and dark modes. Overrides hardcoded box fills and text colors so array cells, math equations, and labels remain crisp in dark mode.
   - **Dark-Mode Aware Diagrams & KaTeX:** Mermaid diagrams dynamically initialize with neutral/dark theme palettes and listener for color-scheme changes; KaTeX equations use board equation tokens.

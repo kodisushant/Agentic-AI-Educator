@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 import json
 import os
@@ -32,6 +33,8 @@ from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps, g
 from backend.agent.tools import execute_tool_call
 from backend.agent.llm_router import router
 from backend.agent.client import learner_client, assess_client
+
+logger = logging.getLogger("agent_service")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

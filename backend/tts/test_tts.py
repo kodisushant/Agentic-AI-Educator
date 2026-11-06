@@ -6,9 +6,14 @@ All network calls are strictly mocked. Never calls live ElevenLabs API in tests.
 import asyncio
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+# Ensure workspace root is in sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from unittest.mock import AsyncMock, patch
 
 from fastapi import FastAPI

@@ -9,7 +9,13 @@ Verifies:
 """
 
 import asyncio
+import sys
 import unittest
+from pathlib import Path
+
+# Ensure workspace root is in sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

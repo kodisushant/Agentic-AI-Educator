@@ -352,6 +352,15 @@ async def submit_quiz(req: QuizSubmitRequest):
     return assess_client.submit_quiz(req)
 
 
+# Mount ElevenLabs TTS router per Member 2 request
+try:
+    from backend.tts.router import tts_router
+    app.include_router(tts_router)
+    logger.info("ElevenLabs TTS router mounted on /tts")
+except Exception as e:
+    logger.warning(f"Could not mount ElevenLabs TTS router: {e}")
+
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("BACKEND_PORT", 8000))

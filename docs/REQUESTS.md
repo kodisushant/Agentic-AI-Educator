@@ -44,7 +44,7 @@ Only Person 1 may update `/contracts`.
   This exposes:
   - `POST /tts`: Synthesizes speech with local `cache/tts/` caching and automatic browser fallback (`HTTP 503 {"fallback":"browser"}`).
   - `GET /tts/status`: Operational status endpoint reporting key configuration, default model, and cached files count without leaking secrets.
-- **Status:** Open
+- **Status:** Accepted (Mounted in backend/agent/main.py)
 
 
 ## Request: Mount Interactive Panels in frontend/classroom/index.html

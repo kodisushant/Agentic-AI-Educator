@@ -23,23 +23,24 @@
 ---
 
 ## Person 2 / Member 3: Classroom UI (/frontend/classroom)
-- **Status:** Complete, Tested & Verified (All Sprint Tasks 0-7 Implemented)
+- **Status:** Complete, Redesigned & Verified (High-Contrast Theme, Real Tabs, 100dvh Layout, Contrast Audit)
 - **Implemented & Verified:**
-  - **Task 0 (Plugin Mount Points & Stubs):** Added `<div id="code-panel">`, `<div id="chat-panel">`, `<div id="quiz-panel">` and loaded `js/code-panel.js`, `js/chat-panel.js`, `js/quiz-panel.js`. Created safe initial plugin stubs implementing `mount()`, `loadChunk()`, `pause()`, `resume()`, and `run()`. All calls strictly guarded with `window.CodePanel?.`, `window.ChatPanel?.`, `window.QuizPanel?.`.
-  - **Task 1 (State Machine & Playback Controls):** Built complete 4-state machine (`idle`, `playing`, `paused`, `finished`) with live status badge (`#stateIndicatorBadge`). Pausing halts board animation, audio playback, and invokes `window.CodePanel?.pause()`. Play resumes from exact pause timestamp, and step changing preserves mode state.
-  - **Task 2 (Auto Layout & No Text Overlap):** Created responsive auto-layout flow engine (`whiteboard-auto-flow`, `whiteboard-row`, `whiteboard-equation`, `whiteboard-mermaid`) calculating bounding boxes, text wrapping, and element margins so elements never collide or overlap. Narration is strictly confined to the dedicated Voice Narration Panel below the board.
-  - **Task 3 (Curriculum Topic Picker Home Screen):** Interactive initial home screen fetching cards from `GET /topics` with graceful fallback to curriculum catalog. Added "Type any topic" input box dispatching `POST /lesson/generate` with difficulty selector, animated skeleton loader, and retryable error state.
-  - **Task 4 (Voice Playback & Sentence Prefetching):** Sentence-by-sentence audio narration dispatching `POST /tts` (with `audio/mpeg` HTML Audio playback) and fallback to browser `speechSynthesis` on 503/error. Features Natural English voice selector, LaTeX/markdown stripping, unified pause/resume/mute handling, and asynchronous next-sentence audio prefetching.
-  - **Task 5 (Code Step Synchronization):** When step contains `code_chunks`, dispatches synchronized `window.CodePanel?.loadChunk()` payloads with code, explanation, and expected output.
-  - **Task 6 (Lag & Performance Optimization):** Lazy-loads KaTeX and Mermaid libraries on demand only when equations or diagrams are present. Debounced window resize event (150ms), in-memory lesson JSON caching (`lessonMemoryCache`), and zero re-renders of identical steps.
-  - **Task 7 (Teacher Reasoning & Trace Panel):** Small collapsible panel displaying real metadata trace (`source` labeled as LLM/CACHE/MOCK/FALLBACK_CANNED, `provider`, and `latency_ms`) without fake canned text.
+  - **Whiteboard Contrast & Theming:** Added explicit whiteboard CSS tokens (`--board-bg`, `--board-ink`, `--cell-bg`, `--cell-ink`, `--cell-border`, `--pointer-low`, `--pointer-high`, `--pointer-mid`, `--board-equation-bg`, `--board-equation-text`) for both light and dark modes. Overrides hardcoded box fills and text colors so array cells, math equations, and labels remain crisp in dark mode.
+  - **Dark-Mode Aware Diagrams & KaTeX:** Mermaid diagrams dynamically initialize with neutral/dark theme palettes and listener for color-scheme changes; KaTeX equations use board equation tokens.
+  - **Pointer Positioning:** Low/mid/high pointer arrows now render with low/high/mid labels positioned safely in a reserved row under the cells without overlapping arrows or cell contents.
+  - **Single Active Tab View:** Enforced tab layout via CSS (`display: none !important` on `.hidden`) and JS so exactly one panel (Chat, Quiz, or Code) is displayed at a time, each taking 100% height with its own internal scroll. Chat input is pinned at the bottom and message list scrolls. Quiz notification dot appears only when a new question arrives.
+  - **App Shell & Player Bar (100dvh):** Migrated `.classroom-app` to a 3-row CSS Grid (`52px 1fr 56px`) with `height: 100dvh; min-height: 0`, guaranteeing the bottom player bar is permanently anchored and never cut off at any viewport size (1280x720, 1024x700). Right panel widened to 420px.
+  - **Header & Sidebar Synchronization:** Unified topic selection state via `syncTopicState()`. Header concept badge dynamically updates alongside sidebar active items to prevent state mismatches.
+  - **Learner Dashboard Sizing & Typography:** Restyled `frontend/dashboard/index.html` with 24px+ card padding, exact type scale (28px header, 18px card titles, 16px body, 13px meta), charts >= 320px with un-truncated labels (`autoSkip: false`, font size 13px), and 2-column layout at 1280px collapsing to 1 column below 900px.
+  - **WCAG AA Contrast Audit Utility:** Implemented `window.auditContrast()` in both classroom and dashboard, checking text nodes against effective background luminance (3:1 for large text, 4.5:1 for body text). All UI token pairs verify between 4.97:1 and 17.4:1 ratio.
 - **Tested & Verified:**
   - Verified static HTTP serving via `python -m http.server 3000 --directory frontend/classroom`.
   - Verified plugin mount points and guarded calls with zero runtime errors.
   - Verified topic picker, fallback generation, voice playback fallback, and auto-layout styling.
+  - Verified WCAG contrast math across all light and dark mode token pairs.
 - **What is REAL & VERIFIED:**
-  - Complete standalone Classroom HTML5 UI (`frontend/classroom/index.html`), stylesheet (`frontend/classroom/css/classroom.css`), and plugin integration stubs (`frontend/classroom/js/*.js`).
-- **Teammate Blockers:** None. Member 4 has ready mount points and stubs to plug into.
+  - Standalone Classroom HTML5 UI (`frontend/classroom/index.html`), stylesheets (`theme.css`, `layout.css`, `components.css`), and Dashboard (`frontend/dashboard/index.html`).
+- **Teammate Blockers:** None.
 
 ---
 

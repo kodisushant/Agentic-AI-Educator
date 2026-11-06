@@ -3,218 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Teacher — Learner Mastery & Knowledge Dashboard</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Virtual Teacher — Learner Dashboard</title>
+  
+  <!-- Preconnect Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet with Cache Busting -->
+  <link rel="stylesheet" href="css/theme.css?v=3">
+  
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0284c7',
-              600: '#0369a1',
-              700: '#075985',
-            }
-          }
-        }
-      }
-    }
-  </script>
+
   <style>
-    @keyframes pulse-slow {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    .animate-pulse-slow {
-      animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .top-bar {
+      height: 60px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-subtle);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      min-height: 36px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .btn:hover {
+      background-color: var(--bg-hover);
+    }
+    .btn-primary {
+      background-color: var(--accent);
+      color: var(--text-on-accent);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+    .badge-accent {
+      background-color: var(--accent-subtle);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+    .badge-success {
+      background-color: var(--status-success-subtle);
+      border-color: var(--status-success-border);
+      color: var(--status-success);
+    }
+    .badge-error {
+      background-color: var(--status-error-subtle);
+      border-color: var(--status-error-border);
+      color: var(--status-error);
+    }
+    .grid-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .grid-two-col {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 900px) {
+      .grid-two-col {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white">
+<body>
 
-  <!-- Top Navigation Bar -->
-  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-sky-500/20">
-          VT
-        </div>
-        <div>
-          <h1 class="text-base font-semibold leading-none text-white">AI Virtual Teacher</h1>
-          <p class="text-xs text-slate-400 mt-1">Student Knowledge Graph & Mastery Model</p>
-        </div>
-      </div>
+  <!-- Top Navigation Bar (60px) -->
+  <header class="top-bar">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <h1 style="font-family: var(--font-serif); font-size: 28px; font-weight: 600; letter-spacing: -0.02em;">Learner Mastery Dashboard</h1>
+      <span class="badge">EWMA Cognitive Model</span>
+    </div>
 
-      <!-- Controls -->
-      <div class="flex items-center space-x-3">
-        <div class="hidden sm:flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700/60 text-xs">
-          <span class="px-2.5 py-1 font-medium text-slate-400">Persona:</span>
-          <select id="userSelector" class="bg-slate-900 text-sky-400 font-semibold rounded px-2 py-0.5 border border-slate-700 focus:outline-none focus:border-sky-500" onchange="switchPersona(this.value)">
-            <option value="demo_student">Alex Chen (Demo Student)</option>
-            <option value="novice_learner">Maya Patel (Novice Learner)</option>
-          </select>
-        </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="font-size: 0.8125rem; color: var(--text-secondary);">Student:</label>
+      <select id="userSelector" class="btn" onchange="switchPersona(this.value)">
+        <option value="demo_student">Alex Chen (Demo Student)</option>
+        <option value="novice_learner">Maya Patel (Novice Learner)</option>
+      </select>
 
-        <button onclick="resetData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium rounded-lg border border-slate-700 transition flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          Reset Demo
-        </button>
+      <button onclick="resetData()" class="btn" title="Reset Student State">
+        Reset state
+      </button>
 
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-          <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          Live EWMA Model
-        </span>
-      </div>
+      <span class="badge badge-success">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: currentColor;"></span>
+        Model Active
+      </span>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+  <main class="container">
 
-    <!-- Hero Banner / High-Priority Recommendation -->
-    <div id="recommendationBanner" class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-sky-950/80 via-indigo-950/40 to-slate-900 border border-sky-800/40 p-6 shadow-xl shadow-sky-950/30">
-      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="space-y-2 max-w-3xl">
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30">
-              NEXT RECOMMENDED STEP
-            </span>
-            <span id="recActionBadge" class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              QUIZ
-            </span>
-          </div>
-          <h2 id="recConceptTitle" class="text-2xl font-bold text-white tracking-tight">
-            Binary Search Bounds Update
-          </h2>
-          <p id="recReasonText" class="text-sm text-slate-300 leading-relaxed">
-            Priority practice: lowest mastery score (0.45) with active misconceptions diagnosed on right-pointer partition logic.
-          </p>
+    <!-- Recommendation Banner (High-Priority Next Step) -->
+    <div id="recommendationBanner" class="card" style="border-left: 4px solid var(--accent); display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Next Recommended Step</span>
+          <span id="recActionBadge" class="badge badge-accent">QUIZ</span>
         </div>
-        <div class="flex flex-col sm:flex-row gap-3 shrink-0">
-          <button onclick="simulateQuickAttempt(true)" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm transition shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Simulate Correct Answer (+Score)
+        <div style="display: flex; gap: 8px;">
+          <button onclick="simulateQuickAttempt(true)" class="btn btn-primary">
+            Simulate correct (+score)
           </button>
-          <button onclick="simulateQuickAttempt(false)" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 border border-rose-900/50 font-medium text-sm transition flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            Simulate Mistake (-Score)
+          <button onclick="simulateQuickAttempt(false)" class="btn" style="color: var(--status-error);">
+            Simulate mistake (-score)
           </button>
         </div>
       </div>
+
+      <h2 id="recConceptTitle" style="font-family: var(--font-serif); font-size: 1.35rem; font-weight: 600;">
+        BINARY SEARCH BOUNDS UPDATE
+      </h2>
+      <p id="recReasonText" style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+        Priority practice: lowest mastery score (0.45) with active misconceptions diagnosed on pointer partition logic.
+      </p>
     </div>
 
     <!-- Key Metrics Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Overall Topic Mastery</p>
-        <div class="flex items-baseline gap-2">
-          <span id="metricOverall" class="text-3xl font-extrabold text-white">66%</span>
-          <span class="text-xs text-slate-400">EWMA weighted</span>
+    <div class="grid-metrics">
+      <div class="card" style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Overall Topic Mastery</span>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span id="metricOverall" style="font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono);">66%</span>
+          <span style="font-size: 0.75rem; color: var(--text-tertiary);">EWMA weighted</span>
         </div>
-        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-3">
-          <div id="metricOverallBar" class="bg-sky-500 h-full rounded-full transition-all duration-500" style="width: 66%"></div>
+        <div style="width: 100%; height: 6px; background-color: var(--bg-subtle); border-radius: var(--radius-pill); overflow: hidden; margin-top: 6px;">
+          <div id="metricOverallBar" style="height: 100%; background-color: var(--accent); width: 66%; transition: width 300ms ease;"></div>
         </div>
       </div>
 
-      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Weak Areas Diagnosed</p>
-        <div class="flex items-baseline gap-2">
-          <span id="metricWeakCount" class="text-3xl font-extrabold text-rose-400">1</span>
-          <span class="text-xs text-slate-400">score &lt; 0.60</span>
+      <div class="card" style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Weak Areas Diagnosed</span>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span id="metricWeakCount" style="font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono); color: var(--status-error);">1</span>
+          <span style="font-size: 0.75rem; color: var(--text-tertiary);">score &lt; 0.60</span>
         </div>
-        <p class="text-xs text-slate-400 mt-2">Active misconception detected</p>
+        <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">Active misconception detected</span>
       </div>
 
-      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Practice Attempts</p>
-        <div class="flex items-baseline gap-2">
-          <span id="metricAttempts" class="text-3xl font-extrabold text-white">11</span>
-          <span class="text-xs text-emerald-400 font-medium">Logged in SQLite</span>
+      <div class="card" style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Practice Attempts</span>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span id="metricAttempts" style="font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono);">11</span>
+          <span style="font-size: 0.75rem; color: var(--status-success);">Logged in SQLite</span>
         </div>
-        <p class="text-xs text-slate-400 mt-2">Checkpoints & exercises</p>
+        <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">Checkpoints & exercises</span>
       </div>
 
-      <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-1">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Memory Retention Model</p>
-        <div class="flex items-baseline gap-2">
-          <span class="text-xl font-bold text-indigo-400">Ebbinghaus</span>
+      <div class="card" style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Memory Retention Model</span>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 1.25rem; font-weight: 700; font-family: var(--font-serif);">Ebbinghaus Decay</span>
         </div>
-        <p class="text-xs text-slate-400 mt-2">Temporal decay rate: 3%/day</p>
+        <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">Temporal decay: 3%/day</span>
       </div>
     </div>
 
     <!-- Charts & Weak Concepts Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- Chart Card (2 Cols) -->
-      <div class="lg:col-span-2 bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-        <div class="flex items-center justify-between">
+    <div class="grid-two-col">
+      <!-- Mastery Bar Analysis -->
+      <div class="card" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <h3 class="text-lg font-bold text-white">Concept Mastery Radar & Bar Analysis</h3>
-            <p class="text-xs text-slate-400">Real-time mastery index per sub-topic of Binary Search</p>
+            <h3 style="font-family: var(--font-serif); font-size: 18px; font-weight: 600;">Sub-Topic Mastery Analysis</h3>
+            <p style="font-size: 13px; color: var(--text-tertiary);">Real-time mastery scores across concept components</p>
           </div>
-          <span class="text-xs text-slate-400 font-mono">threshold: 0.60</span>
+          <span class="badge">Benchmark: 0.60</span>
         </div>
-        <div class="h-64 sm:h-72">
+        <div style="height: 320px;">
           <canvas id="masteryChart"></canvas>
         </div>
       </div>
 
-      <!-- Weak Concepts & Misconceptions (1 Col) -->
-      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-bold text-white">Diagnosed Weak Areas</h3>
-            <span class="px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30">
-              Needs Attention
-            </span>
+      <!-- Diagnosed Weak Areas -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-family: var(--font-serif); font-size: 18px; font-weight: 600;">Diagnosed Weak Areas</h3>
+            <span class="badge badge-error">Needs attention</span>
           </div>
-          <div id="weakAreaList" class="space-y-3">
-            <!-- Dynamic items populated by JS -->
-          </div>
+          <div id="weakAreaList" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
-        <div class="pt-4 border-t border-slate-800 text-xs text-slate-400">
-          💡 <span class="font-medium text-slate-300">Agentic Loop:</span> Weak concepts and tagged misconceptions feed directly into the Teacher Agent's next lesson step prompt.
+        <div style="padding-top: 12px; border-top: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-secondary);">
+          <strong style="color: var(--text-primary);">Adaptive loop:</strong> Weak concepts and tagged misconceptions feed directly into the Teacher Agent's remediation.
         </div>
       </div>
     </div>
 
-    <!-- Attempt History Timeline & Real-time Event Simulator -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- History Timeline (2 Cols) -->
-      <div class="lg:col-span-2 bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-        <div class="flex items-center justify-between">
+    <!-- Attempt History Timeline & Live Simulator -->
+    <div class="grid-two-col">
+      <!-- History Timeline -->
+      <div class="card" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <h3 class="text-lg font-bold text-white">Attempt History Timeline</h3>
-            <p class="text-xs text-slate-400">Chronological checkpoint interactions and diagnosed misconceptions</p>
+            <h3 style="font-family: var(--font-serif); font-size: 18px; font-weight: 600;">Attempt History Timeline</h3>
+            <p style="font-size: 13px; color: var(--text-tertiary);">Chronological student interactions and misconceptions</p>
           </div>
-          <span id="historyCountBadge" class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded">
-            Latest 10 attempts
-          </span>
+          <span id="historyCountBadge" class="badge">Latest 10 attempts</span>
         </div>
-        <div id="historyTimeline" class="space-y-3 overflow-y-auto max-h-96 pr-2">
-          <!-- Populated by JS -->
-        </div>
+        <div id="historyTimeline" style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto;"></div>
       </div>
 
-      <!-- Live Simulator & API Status (1 Col) -->
-      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <!-- Live Attempt Simulator -->
+      <div class="card" style="display: flex; flex-direction: column; gap: 16px;">
         <div>
-          <h3 class="text-lg font-bold text-white">Live Attempt Simulator</h3>
-          <p class="text-xs text-slate-400">Test how the EWMA model updates in real-time</p>
+          <h3 style="font-family: var(--font-serif); font-size: 18px; font-weight: 600;">Live Attempt Simulator</h3>
+          <p style="font-size: 13px; color: var(--text-tertiary);">Test real-time EWMA knowledge score updates</p>
         </div>
 
-        <form id="attemptForm" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs">
+        <form id="attemptForm" onsubmit="handleFormSubmit(event)" style="display: flex; flex-direction: column; gap: 12px; font-size: 0.8125rem;">
           <div>
-            <label class="block text-slate-400 mb-1">Target Concept</label>
-            <select id="formConcept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
+            <label style="display: block; color: var(--text-secondary); margin-bottom: 4px;">Target Concept</label>
+            <select id="formConcept" class="btn" style="width: 100%; text-align: left;">
               <option value="binary_search_bounds_update">binary_search_bounds_update</option>
               <option value="binary_search_intuition">binary_search_intuition</option>
               <option value="binary_search_complexity">binary_search_complexity</option>
@@ -223,20 +293,20 @@
           </div>
 
           <div>
-            <label class="block text-slate-400 mb-1">Result</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" id="btnCorrect" onclick="setFormCorrect(true)" class="py-2 px-3 rounded-lg border border-emerald-600 bg-emerald-950/40 text-emerald-300 font-semibold text-center">
-                ✓ Correct
+            <label style="display: block; color: var(--text-secondary); margin-bottom: 4px;">Result</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button type="button" id="btnCorrect" onclick="setFormCorrect(true)" class="btn badge-success" style="padding: 8px; font-weight: 600;">
+                Correct
               </button>
-              <button type="button" id="btnIncorrect" onclick="setFormCorrect(false)" class="py-2 px-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-center">
-                ✗ Incorrect
+              <button type="button" id="btnIncorrect" onclick="setFormCorrect(false)" class="btn" style="padding: 8px;">
+                Incorrect
               </button>
             </div>
           </div>
 
-          <div id="misconceptionField" class="hidden">
-            <label class="block text-slate-400 mb-1">Diagnosed Misconception</label>
-            <select id="formMisconception" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-rose-300">
+          <div id="misconceptionField" style="display: none;">
+            <label style="display: block; color: var(--text-secondary); margin-bottom: 4px;">Diagnosed Misconception</label>
+            <select id="formMisconception" class="btn" style="width: 100%; color: var(--status-error);">
               <option value="confuses_direction_when_target_greater">confuses_direction_when_target_greater</option>
               <option value="confuses_low_with_high_shift">confuses_low_with_high_shift</option>
               <option value="fails_to_exclude_checked_midpoint">fails_to_exclude_checked_midpoint</option>
@@ -245,18 +315,17 @@
           </div>
 
           <div>
-            <label class="block text-slate-400 mb-1">Time Spent: <span id="timeVal">15</span>s</label>
-            <input type="range" id="formTime" min="3" max="60" value="15" oninput="document.getElementById('timeVal').innerText = this.value" class="w-full accent-sky-500">
+            <label style="display: block; color: var(--text-secondary); margin-bottom: 4px;">Time Spent: <span id="timeVal">15</span>s</label>
+            <input type="range" id="formTime" min="3" max="60" value="15" oninput="document.getElementById('timeVal').innerText = this.value" style="width: 100%; accent-color: var(--accent);">
           </div>
 
-          <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition shadow-lg shadow-indigo-600/20">
-            Submit Attempt to Learner Model
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 8px 16px;">
+            Submit to learner model
           </button>
         </form>
 
-        <div class="border-t border-slate-800 pt-3 text-[11px] text-slate-500 space-y-1">
-          <p>Endpoints: <code class="text-slate-400">POST /learner/attempt</code></p>
-          <p>Database: <code class="text-slate-400">backend/learner/learner.db</code></p>
+        <div style="font-size: 0.6875rem; color: var(--text-tertiary); border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+          Database: <code class="font-mono">backend/learner/learner.db</code>
         </div>
       </div>
     </div>
@@ -264,13 +333,10 @@
   </main>
 
   <script>
-    // State
     let currentUserId = "demo_student";
     let isCorrectState = true;
     let masteryChart = null;
-    const API_BASE = "http://localhost:8000"; // fallback or proxy to learner port 8002
 
-    // Fallback in-memory state if server is offline
     const LOCAL_STATE = {
       demo_student: {
         name: "Alex Chen",
@@ -343,19 +409,18 @@
       const misc = document.getElementById("misconceptionField");
 
       if (val) {
-        btnC.className = "py-2 px-3 rounded-lg border border-emerald-600 bg-emerald-950/40 text-emerald-300 font-semibold text-center";
-        btnI.className = "py-2 px-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-center";
-        misc.classList.add("hidden");
+        btnC.className = "btn badge-success";
+        btnI.className = "btn";
+        misc.style.display = "none";
       } else {
-        btnI.className = "py-2 px-3 rounded-lg border border-rose-600 bg-rose-950/40 text-rose-300 font-semibold text-center";
-        btnC.className = "py-2 px-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-center";
-        misc.classList.remove("hidden");
+        btnI.className = "btn badge-error";
+        btnC.className = "btn";
+        misc.style.display = "block";
       }
     }
 
     async function fetchDashboardData() {
       try {
-        // Try live backend first (port 8000 or 8002)
         const res = await fetch(`http://localhost:8002/learner/summary/${currentUserId}`).catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
@@ -363,7 +428,6 @@
           return;
         }
 
-        // Try standard agent port 8000
         const res8000 = await fetch(`http://localhost:8000/learner/mastery/${currentUserId}`).catch(() => null);
         if (res8000 && res8000.ok) {
           const mastery = await res8000.json();
@@ -384,7 +448,6 @@
         console.warn("Backend unavailable, using local mock store:", err);
       }
 
-      // Render local fallback
       const data = LOCAL_STATE[currentUserId];
       renderDashboard({
         user_id: currentUserId,
@@ -398,87 +461,88 @@
     }
 
     function renderDashboard(data) {
-      // Overall Metric
       const pct = Math.round(data.overall_score * 100);
       document.getElementById("metricOverall").innerText = `${pct}%`;
       document.getElementById("metricOverallBar").style.width = `${pct}%`;
 
-      // Weak Count Metric
       const weakList = data.weak_concepts || [];
       document.getElementById("metricWeakCount").innerText = weakList.length;
 
-      // Practice Attempts Count
       const totalAttempts = data.history ? data.history.length : (data.total_attempts || 11);
       document.getElementById("metricAttempts").innerText = totalAttempts;
 
-      // Recommendation Banner
       if (data.recommendation) {
         document.getElementById("recConceptTitle").innerText = data.recommendation.recommended_concept.replace(/_/g, " ").toUpperCase();
         document.getElementById("recReasonText").innerText = data.recommendation.reason;
         const actionBadge = document.getElementById("recActionBadge");
         actionBadge.innerText = data.recommendation.suggested_action.toUpperCase();
-        if (data.recommendation.suggested_action === "lesson") {
-          actionBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30";
-        } else {
-          actionBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30";
-        }
       }
 
-      // Render Chart
       renderChart(data.concept_scores);
 
-      // Render Weak Areas
       const weakContainer = document.getElementById("weakAreaList");
       weakContainer.innerHTML = "";
       if (weakList.length === 0) {
-        weakContainer.innerHTML = `<div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-800/40 text-emerald-400 text-xs">🎉 No weak concepts identified. Mastery exceeds benchmark across all topics!</div>`;
+        weakContainer.innerHTML = `<div class="card" style="font-size: 0.8125rem; color: var(--status-success);">No weak concepts identified. Mastery exceeds benchmark across all topics.</div>`;
       } else {
         weakList.forEach(item => {
           const card = document.createElement("div");
-          card.className = "p-3.5 rounded-xl bg-slate-900 border border-rose-900/40 space-y-2";
+          card.style.padding = "12px";
+          card.style.border = "1px solid var(--status-error-border)";
+          card.style.borderRadius = "var(--radius-md)";
+          card.style.backgroundColor = "var(--status-error-subtle)";
+          card.style.display = "flex";
+          card.style.flexDirection = "column";
+          card.style.gap = "6px";
           
           let miscBadges = "";
           (item.active_misconceptions || []).forEach(m => {
-            miscBadges += `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 mr-1 mt-1">⚠️ ${m}</span>`;
+            miscBadges += `<span class="badge badge-error" style="font-size: 0.6875rem; margin-right: 4px;">${m}</span>`;
           });
 
           card.innerHTML = `
-            <div class="flex items-center justify-between">
-              <span class="font-semibold text-xs text-white">${item.concept_tag.replace(/_/g, " ")}</span>
-              <span class="text-xs font-mono font-bold text-rose-400">${Math.round(item.mastery_score * 100)}%</span>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-weight: 600; font-size: 0.8125rem;">${item.concept_tag.replace(/_/g, " ")}</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; font-size: 0.8125rem; color: var(--status-error);">${Math.round(item.mastery_score * 100)}%</span>
             </div>
-            <p class="text-[11px] text-slate-300 leading-tight">${item.recommended_action || "Targeted practice needed."}</p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">${item.recommended_action || "Targeted practice needed."}</p>
             <div>${miscBadges}</div>
           `;
           weakContainer.appendChild(card);
         });
       }
 
-      // Render History Timeline
       const histContainer = document.getElementById("historyTimeline");
       histContainer.innerHTML = "";
       (data.history || []).forEach(item => {
         const row = document.createElement("div");
-        row.className = "flex items-start gap-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800";
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.gap = "12px";
+        row.style.padding = "10px";
+        row.style.borderRadius = "var(--radius-md)";
+        row.style.backgroundColor = "var(--bg-subtle)";
+        row.style.border = "1px solid var(--border-color)";
+
         const isOk = item.is_correct;
-        const badgeColor = isOk ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : "bg-rose-500/20 text-rose-400 border-rose-500/40";
         const icon = isOk ? "✓" : "✗";
+        const iconColor = isOk ? "var(--status-success)" : "var(--status-error)";
 
         let miscHtml = "";
         if (item.misconceptions && item.misconceptions.length > 0) {
-          miscHtml = `<div class="text-[10px] text-rose-400 mt-1">Diagnosed: ${item.misconceptions.join(", ")}</div>`;
+          miscHtml = `<div style="font-size: 0.6875rem; color: var(--status-error);">Misconception: ${item.misconceptions.join(", ")}</div>`;
         }
 
         row.innerHTML = `
-          <div class="w-6 h-6 rounded-full border ${badgeColor} flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+          <div style="width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; color: ${iconColor}; border: 1px solid ${iconColor}; flex-shrink: 0;">
             ${icon}
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-slate-200">${item.concept_tag.replace(/_/g, " ")}</span>
-              <span class="text-[10px] text-slate-500 font-mono">${item.created_at || "Recent"}</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-weight: 500; font-size: 0.8125rem;">${item.concept_tag.replace(/_/g, " ")}</span>
+              <span style="font-size: 0.6875rem; color: var(--text-tertiary); font-family: var(--font-mono);">${item.created_at || "Recent"}</span>
             </div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Time: ${item.time_spent_seconds}s ${item.question_id ? `• Q: ${item.question_id}` : ""}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Time: ${item.time_spent_seconds}s ${item.question_id ? `· ${item.question_id}` : ""}</div>
             ${miscHtml}
           </div>
         `;
@@ -489,14 +553,15 @@
     function renderChart(scores) {
       const labels = Object.keys(scores).map(k => k.replace(/binary_search_/g, "").replace(/_/g, " ").toUpperCase());
       const values = Object.values(scores).map(v => Math.round(v * 100));
-      const colors = values.map(v => v >= 75 ? 'rgba(16, 185, 129, 0.8)' : v >= 55 ? 'rgba(2, 132, 199, 0.8)' : 'rgba(244, 63, 94, 0.8)');
-      const borders = values.map(v => v >= 75 ? '#10b981' : v >= 55 ? '#0284c7' : '#f43f5e');
+      const colors = values.map(v => v >= 75 ? 'rgba(21, 128, 61, 0.8)' : v >= 55 ? 'rgba(14, 116, 144, 0.8)' : 'rgba(185, 28, 28, 0.8)');
+      const borders = values.map(v => v >= 75 ? '#15803D' : v >= 55 ? '#0E7490' : '#B91C1C');
 
       const ctx = document.getElementById('masteryChart').getContext('2d');
       if (masteryChart) {
         masteryChart.destroy();
       }
 
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       masteryChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -506,7 +571,7 @@
             data: values,
             backgroundColor: colors,
             borderColor: borders,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderRadius: 6
           }]
         },
@@ -514,23 +579,23 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => `Mastery: ${ctx.raw}%`
-              }
-            }
+            legend: { display: false }
           },
           scales: {
             y: {
               beginAtZero: true,
               max: 100,
-              grid: { color: 'rgba(51, 65, 85, 0.3)' },
-              ticks: { color: '#94a3b8', font: { size: 10 } }
+              grid: { color: isDark ? 'rgba(45, 49, 54, 0.6)' : 'rgba(229, 224, 216, 0.5)' },
+              ticks: { color: isDark ? '#A0A5AB' : '#6B6864', font: { family: 'JetBrains Mono', size: 13 } }
             },
             x: {
               grid: { display: false },
-              ticks: { color: '#cbd5e1', font: { size: 10, weight: 'bold' } }
+              ticks: {
+                color: isDark ? '#EDEDED' : '#1A1A1A',
+                font: { family: 'Instrument Sans', size: 13, weight: '600' },
+                autoSkip: false,
+                maxRotation: 0
+              }
             }
           }
         }
@@ -543,7 +608,6 @@
       const isCorrect = isCorrectState;
       const timeSpent = parseFloat(document.getElementById("formTime").value);
       const misc = !isCorrect ? [document.getElementById("formMisconception").value] : [];
-
       await recordAttemptDirect(concept, isCorrect, timeSpent, misc);
     }
 
@@ -564,26 +628,18 @@
       };
 
       try {
-        // Send to backend
-        const res = await fetch("http://localhost:8002/learner/attempt", {
+        await fetch("http://localhost:8002/learner/attempt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         }).catch(() => null);
+        await fetch("http://localhost:8000/learner/attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }).catch(() => null);
+      } catch (err) {}
 
-        if (!res || !res.ok) {
-          // Also try standard port 8000
-          await fetch("http://localhost:8000/learner/attempt", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }).catch(() => null);
-        }
-      } catch (err) {
-        console.warn("Could not post to backend, updating local state:", err);
-      }
-
-      // Update local state copy
       const user = LOCAL_STATE[currentUserId];
       const curr = user.scores[concept_tag] || 0.50;
       const delta = is_correct ? 0.12 : -0.15;
@@ -599,7 +655,6 @@
         created_at: "Just now"
       });
 
-      // Update weak list
       user.weak = [];
       for (const [k, v] of Object.entries(user.scores)) {
         if (v < 0.60) {
@@ -610,14 +665,6 @@
             recommended_action: is_correct ? "Strengthen boundary precision with next quiz" : "Review pointer movement: when target > mid, search the right partition."
           });
         }
-      }
-
-      if (user.scores["binary_search_bounds_update"] >= 0.60) {
-        user.recommendation = {
-          recommended_concept: "binary_search_edge_cases",
-          reason: "Bounds mastery improved! Next step: tackle edge cases and termination conditions.",
-          suggested_action: "quiz"
-        };
       }
 
       fetchDashboardData();
@@ -636,7 +683,107 @@
       fetchDashboardData();
     }
 
-    // Initial load
+    // Contrast Audit Utility
+    window.auditContrast = function() {
+      function parseColor(c) {
+        if (!c || c === "transparent" || c === "inherit" || c === "initial") return null;
+        const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        if (!m) return null;
+        return {
+          r: parseInt(m[1], 10),
+          g: parseInt(m[2], 10),
+          b: parseInt(m[3], 10),
+          a: m[4] !== undefined ? parseFloat(m[4]) : 1.0
+        };
+      }
+
+      function getEffectiveBg(el) {
+        let cur = el;
+        const bgColors = [];
+        while (cur && cur !== document.documentElement) {
+          const style = window.getComputedStyle(cur);
+          const col = parseColor(style.backgroundColor);
+          if (col && col.a > 0) {
+            bgColors.unshift(col);
+            if (col.a >= 0.99) break;
+          }
+          cur = cur.parentElement;
+        }
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let base = isDark ? { r: 20, g: 21, b: 23, a: 1 } : { r: 250, g: 248, b: 244, a: 1 };
+        for (const col of bgColors) {
+          const alpha = col.a;
+          base = {
+            r: Math.round(col.r * alpha + base.r * (1 - alpha)),
+            g: Math.round(col.g * alpha + base.g * (1 - alpha)),
+            b: Math.round(col.b * alpha + base.b * (1 - alpha)),
+            a: 1.0
+          };
+        }
+        return base;
+      }
+
+      function relLuminance(rgb) {
+        const a = [rgb.r, rgb.g, rgb.b].map(v => {
+          v /= 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+      }
+
+      function contrastRatio(fgRgb, bgRgb) {
+        const l1 = relLuminance(fgRgb);
+        const l2 = relLuminance(bgRgb);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      }
+
+      const failures = [];
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.closest(".hidden") || parent.classList.contains("hidden")) return NodeFilter.FILTER_REJECT;
+          const style = window.getComputedStyle(parent);
+          if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+
+      let node;
+      while ((node = walker.nextNode())) {
+        const el = node.parentElement;
+        const style = window.getComputedStyle(el);
+        const fg = parseColor(style.color);
+        if (!fg || fg.a === 0) continue;
+        const bg = getEffectiveBg(el);
+        const ratio = contrastRatio(fg, bg);
+        const fontSize = parseFloat(style.fontSize) || 16;
+        const fontWeight = parseInt(style.fontWeight) || 400;
+        const isLarge = fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700);
+        const threshold = isLarge ? 3.0 : 4.5;
+
+        if (ratio < threshold) {
+          failures.push({
+            text: node.textContent.trim().slice(0, 50),
+            ratio: ratio.toFixed(2),
+            required: threshold,
+            fg: `rgb(${fg.r},${fg.g},${fg.b})`,
+            bg: `rgb(${bg.r},${bg.g},${bg.b})`,
+            element: el
+          });
+        }
+      }
+
+      console.log(`[Contrast Audit] Found ${failures.length} issues.`);
+      if (failures.length > 0) {
+        console.table(failures.map(f => ({ text: f.text, ratio: f.ratio, required: f.required, fg: f.fg, bg: f.bg })));
+      }
+      return failures;
+    };
+
     fetchDashboardData();
   </script>
 </body>

@@ -1,0 +1,284 @@
+/* Layout System for Classroom */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* App Shell Structure: grid with fixed header+footer rows so player bar is never cut off */
+.classroom-app {
+  display: grid;
+  grid-template-rows: 52px 1fr 56px;
+  height: 100dvh;
+  height: 100vh; /* fallback */
+  overflow: hidden;
+  background-color: var(--bg-page);
+}
+
+/* Top Bar: 52px */
+.top-bar {
+  height: 52px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  z-index: 30;
+}
+
+.top-bar-left,
+.top-bar-center,
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.top-bar-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Main Workspace: 3-column split */
+.classroom-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 240px 1fr 420px;
+  min-height: 0; /* Critical for inner scrolling */
+  overflow: hidden;
+  position: relative;
+  transition: grid-template-columns 200ms ease;
+}
+
+.classroom-body.rail-collapsed {
+  grid-template-columns: 0px 1fr 420px;
+}
+
+/* 1. Left Rail (240px, Collapsible) */
+.left-rail {
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 240px;
+  height: 100%;
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.classroom-body.rail-collapsed .left-rail {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rail-search-container {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rail-topic-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 2. Center Stage (Whiteboard Hero) */
+.center-stage {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-page);
+  padding: var(--space-3) var(--space-4);
+  gap: var(--space-2);
+}
+
+.stage-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: 28px;
+}
+
+.step-heading {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.whiteboard-container {
+  flex: 1;
+  min-height: 0;
+  background-color: var(--board-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-subtle);
+}
+
+.stage-caption {
+  flex-shrink: 0;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+}
+
+/* 3. Right Panel (420px) */
+.right-panel {
+  background-color: var(--bg-surface);
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  width: 420px;
+}
+
+.panel-tab-header {
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+}
+
+.panel-tab-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+  position: relative;
+}
+
+.panel-tab-button:hover {
+  color: var(--text-primary);
+}
+
+.panel-tab-button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.panel-tab-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Exactly one tab visible at a time */
+.panel-tab-body.hidden {
+  display: none !important;
+}
+
+/* Chat panel: message list scrolls, input pinned at bottom */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-messages-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.chat-input-bar {
+  flex-shrink: 0;
+}
+
+/* 4. Bottom Player Bar: 56px */
+.bottom-player-bar {
+  height: 56px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  z-index: 30;
+}
+
+/* Responsive adjustments for 1024px */
+@media (max-width: 1200px) {
+  .classroom-body {
+    grid-template-columns: 210px 1fr 380px;
+  }
+  .left-rail {
+    width: 210px;
+  }
+  .right-panel {
+    width: 380px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .classroom-body {
+    grid-template-columns: 0px 1fr 320px;
+  }
+  .right-panel {
+    width: 320px;
+  }
+  .left-rail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  }
+  .classroom-body:not(.rail-collapsed) .left-rail {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+

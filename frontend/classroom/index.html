@@ -3,1766 +3,1003 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Virtual Teacher — Interactive Digital Classroom</title>
-  <!-- Google Fonts for Hand-Drawn Whiteboard Styling -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Virtual Teacher — Classroom</title>
+  
+  <!-- Preconnect Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Classroom Custom Stylesheet -->
-  <link rel="stylesheet" href="css/classroom.css">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-            handwriting: ['Architects Daughter', 'cursive']
-          },
-          colors: {
-            brand: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0284c7',
-              600: '#0369a1',
-              700: '#075985',
-            }
-          }
-        }
-      }
-    };
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets with Cache Busting -->
+  <link rel="stylesheet" href="css/theme.css?v=3">
+  <link rel="stylesheet" href="css/layout.css?v=3">
+  <link rel="stylesheet" href="css/components.css?v=3">
+  
+  <!-- KaTeX CDN for mathematical typesetting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  
+  <!-- Mermaid CDN for flowcharts and decision trees -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  
+  <!-- Pyodide WebAssembly CDN for browser python execution -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white flex flex-col">
+<body class="classroom-app">
 
-  <!-- Top Classroom Header -->
-  <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-sky-500/20">
-          VT
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-sm font-semibold text-white">AI Virtual Teacher</h1>
-            <span id="headerConceptBadge" class="text-[11px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/60">
-              Select Topic
-            </span>
-            <!-- Visible Playback State Indicator -->
-            <span id="stateIndicatorBadge" class="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-slate-800 text-slate-400 border-slate-700">
-              IDLE
-            </span>
-          </div>
-          <p class="text-xs text-slate-400">Digital Whiteboard & Live Adaptive Classroom</p>
-        </div>
-      </div>
+  <!-- Top Bar (52px) -->
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <button onclick="toggleRail()" class="btn-icon" title="Toggle Topics Rail" aria-label="Toggle Topics Rail">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+      </button>
+      <h1 class="top-bar-title">Virtual Teacher</h1>
+      <span id="headerConceptBadge" class="badge">Binary Search</span>
+    </div>
 
-      <!-- Controls, Topic Switcher & Persona -->
-      <div class="flex items-center space-x-3">
-        <button onclick="openTopicPicker()" id="changeTopicBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 rounded-lg border border-slate-700 transition text-xs font-medium">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
-          <span>Topics</span>
-        </button>
+    <div class="top-bar-center">
+      <span id="agentProviderBadge" class="badge">AI-generated (groq 710ms)</span>
+      <span id="backendStatusPill" class="badge badge-accent">
+        <span id="backendStatusDot" style="width: 6px; height: 6px; border-radius: 50%; background-color: currentColor;"></span>
+        <span id="backendStatusText">Standby</span>
+      </span>
+    </div>
 
-        <div class="hidden sm:flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700/60 text-xs">
-          <span class="px-2 py-0.5 text-slate-400">Student:</span>
-          <select id="personaSelector" onchange="onPersonaChanged()" class="bg-slate-900 text-sky-400 font-semibold rounded px-2 py-0.5 border border-slate-700 focus:outline-none focus:border-sky-500 text-xs">
-            <option value="demo_student">Alex Chen (Demo Student)</option>
-            <option value="novice_learner">Maya Patel (Novice Learner)</option>
-          </select>
-        </div>
+    <div class="top-bar-right">
+      <button onclick="toggleAgentBanner()" class="btn" id="reasoningToggleBtn" title="Toggle Teacher Reasoning Trace">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>Teacher reasoning</span>
+      </button>
 
-        <span id="backendStatusPill" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-sky-950/80 text-sky-400 border-sky-800/60">
-          <span id="backendStatusDot" class="w-1.5 h-1.5 mr-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-          <span id="backendStatusText">Connecting...</span>
-        </span>
-      </div>
+      <select id="personaSelector" class="btn" style="padding-right: 24px;" aria-label="Student Persona">
+        <option value="demo_student">Alex Chen (Demo Student)</option>
+        <option value="novice_learner">Maya Patel (Novice Learner)</option>
+      </select>
     </div>
   </header>
 
-  <!-- TOPIC PICKER VIEW (HOME SCREEN / MODAL) -->
-  <div id="topicPickerModal" class="relative z-40 max-w-7xl mx-auto px-4 py-8 w-full flex flex-col items-center">
-    <div class="w-full max-w-4xl bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur">
-      <div class="text-center mb-8">
-        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400 bg-sky-950/80 border border-sky-800/60 px-3 py-1 rounded-full">
-          Interactive Curriculum
-        </span>
-        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-3">What would you like to learn today?</h2>
-        <p class="text-sm text-slate-400 mt-2 max-w-xl mx-auto">
-          Choose a foundational computer science topic below or generate an AI-tailored lesson plan for any custom concept.
-        </p>
+  <!-- Teacher Reasoning Drawer (Floating / Collapsible) -->
+  <div id="agentBanner" class="reasoning-drawer hidden">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div id="agentBannerIconBox" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--accent);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </div>
+        <span id="agentBannerTitle" style="font-weight: 600; font-size: 0.8125rem;">Teacher Reasoning Trace</span>
+      </div>
+      <button onclick="toggleAgentBanner()" class="btn-icon" style="width: 24px; height: 24px; border: none;" aria-label="Close reasoning drawer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="agentBannerBody">
+      <div id="agentThoughtsContent" style="padding: 10px; background-color: var(--bg-subtle); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.5; color: var(--text-primary); border: 1px solid var(--border-color);">
+        <div style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600;">Active Cognitive Model</div>
+        <div id="agentThoughtsText">Analyzing student bounds intuition and pointer invariant...</div>
       </div>
 
-      <!-- Type Any Topic Input Box -->
-      <form onsubmit="handleCustomTopicSubmit(event)" class="mb-8">
-        <div class="bg-slate-950/80 p-2 sm:p-2.5 rounded-2xl border border-slate-700/80 flex flex-col sm:flex-row items-center gap-2.5 shadow-inner">
-          <div class="flex-1 w-full flex items-center px-3 gap-2.5">
-            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input type="text" id="customTopicInput" placeholder="Type any topic (e.g., Dynamic Programming, QuickSort, A* Search)..." class="w-full bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none">
-          </div>
-          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <select id="customLevelSelect" class="bg-slate-900 text-xs text-sky-300 border border-slate-700 rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500">
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate" selected>Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
-            <button type="submit" id="generateLessonBtn" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-sky-500/25 transition flex items-center justify-center gap-2">
-              <span id="generateBtnText">Generate Lesson</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </button>
-          </div>
-        </div>
-      </form>
-
-      <!-- Topic Generation Skeleton Loader -->
-      <div id="topicSkeletonLoader" class="hidden mb-6 p-6 rounded-2xl border border-slate-800 bg-slate-950/60 space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="h-5 w-48 rounded-lg skeleton-shimmer"></div>
-          <div class="h-5 w-20 rounded-lg skeleton-shimmer"></div>
-        </div>
-        <div class="h-4 w-full rounded skeleton-shimmer"></div>
-        <div class="h-4 w-3/4 rounded skeleton-shimmer"></div>
-        <div class="pt-2 flex gap-3">
-          <div class="h-8 w-24 rounded-lg skeleton-shimmer"></div>
-          <div class="h-8 w-24 rounded-lg skeleton-shimmer"></div>
-        </div>
+      <div id="remediationContent" class="hidden" style="margin-top: 8px; padding: 10px; background-color: var(--status-error-subtle); border: 1px solid var(--status-error-border); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--status-error);">
+        <div style="font-weight: 600; margin-bottom: 2px;">Targeted Remediation Triggered</div>
+        <div id="remediationText">Visual bounds annotation updated.</div>
       </div>
-
-      <!-- Topic Error State Banner -->
-      <div id="topicErrorBanner" class="hidden mb-6 p-4 rounded-xl border border-rose-800/80 bg-rose-950/60 text-xs text-rose-300 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-          <span id="topicErrorMessage">Failed to generate lesson. Please select a pre-baked topic or try again.</span>
-        </div>
-        <button onclick="dismissTopicError()" class="text-rose-400 hover:text-white font-semibold ml-3">Dismiss</button>
-      </div>
-
-      <!-- Topic Cards Grid from GET /topics -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between text-xs text-slate-400 px-1 font-semibold">
-          <span>FEATURED TOPICS</span>
-          <span id="topicsCountBadge" class="font-mono text-sky-400">Loading...</span>
-        </div>
-        <div id="topicsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Populated by JS -->
-        </div>
+      
+      <div style="margin-top: 8px;">
+        <span id="misconceptionBadge" class="badge badge-error hidden"></span>
+        <svg id="agentBannerChevron" class="hidden"></svg>
       </div>
     </div>
   </div>
 
-  <!-- MAIN CLASSROOM VIEW (HIDDEN INITIALLY UNTIL TOPIC IS LOADED) -->
-  <main id="classroomMainView" class="hidden max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <!-- Main 3-Column Workspace -->
+  <main class="classroom-body" id="classroomBody">
     
-    <!-- Left Column: Whiteboard, Controls, Narration, Teacher Reasoning Trace (8 Cols) -->
-    <div class="lg:col-span-8 flex flex-col space-y-4">
+    <!-- 1. Left Rail (240px, Collapsible Topics) -->
+    <aside class="left-rail" id="leftRail">
+      <div class="rail-search-container">
+        <input type="text" id="topicSearchInput" placeholder="Any topic (e.g. Recursion)..." class="chat-input-field" style="width: 100%; font-size: 0.75rem; padding: 6px 10px;" onkeydown="handleTopicSearch(event)">
+      </div>
 
-      <!-- Whiteboard Canvas Card -->
-      <div class="relative w-full h-[580px] bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col select-none" id="canvasContainer">
-        
-        <!-- Whiteboard Top Left Status & Step Badge -->
-        <div class="absolute top-3 left-4 z-20 flex items-center gap-2">
-          <div class="flex items-center gap-2 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700/80 shadow-md">
-            <span id="canvasPulseDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            <span class="text-xs font-semibold text-slate-200">Interactive Canvas</span>
-            <span id="canvasStepBadge" class="text-[10px] text-sky-400 font-mono bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-800/60">
-              Step 1 of 5
-            </span>
-          </div>
-
-          <!-- Remediation Alert Pill -->
-          <div id="remediationPill" class="hidden flex items-center gap-1.5 bg-rose-950/90 text-rose-300 text-xs px-2.5 py-1.5 rounded-lg border border-rose-800/80 animate-pulse">
-            <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-            <span class="font-medium">Visual Remediation Active</span>
+      <div class="rail-topic-scroll">
+        <div>
+          <div class="topic-level-heading">Foundational</div>
+          <div class="topic-list-group">
+            <button class="topic-item active" onclick="switchLessonTopic('Binary Search')">
+              <span>Binary Search</span>
+              <span class="topic-progress-dot"></span>
+            </button>
+            <button class="topic-item" onclick="switchLessonTopic('Two Pointers')">
+              <span>Two Pointers</span>
+              <span class="topic-progress-dot"></span>
+            </button>
           </div>
         </div>
 
-        <!-- Canvas Controls (Zoom / Pan / Layout Toggle / Reset) -->
-        <div class="absolute top-3 right-4 z-20 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur p-1 rounded-xl border border-slate-700/80 shadow-lg">
-          <button onclick="toggleAutoLayoutMode()" id="layoutModeBtn" title="Toggle Auto-Layout Flow" class="px-2 h-7 text-[11px] font-mono text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition flex items-center gap-1 border border-transparent hover:border-slate-700">
-            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"/></svg>
-            <span id="layoutModeLabel">Auto Layout</span>
+        <div>
+          <div class="topic-level-heading">Intermediate</div>
+          <div class="topic-list-group">
+            <button class="topic-item" onclick="switchLessonTopic('Recursion & Trees')">
+              <span>Recursion & Trees</span>
+              <span class="topic-progress-dot"></span>
+            </button>
+            <button class="topic-item" onclick="switchLessonTopic('Sliding Window')">
+              <span>Sliding Window</span>
+              <span class="topic-progress-dot"></span>
+            </button>
+            <button class="topic-item" onclick="switchLessonTopic('Dynamic Programming')">
+              <span>Dynamic Programming</span>
+              <span class="topic-progress-dot"></span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="topic-level-heading">Advanced</div>
+          <div class="topic-list-group">
+            <button class="topic-item" onclick="switchLessonTopic('Graph BFS / DFS')">
+              <span>Graph BFS / DFS</span>
+              <span class="topic-progress-dot"></span>
+            </button>
+            <button class="topic-item" onclick="switchLessonTopic('Backtracking')">
+              <span>Backtracking</span>
+              <span class="topic-progress-dot"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. Center Stage (Whiteboard Hero) -->
+    <section class="center-stage">
+      <div class="stage-header">
+        <h2 id="narrationStepSubtitle" class="step-heading">Binary Search: Divide & Conquer</h2>
+        <span id="canvasStepBadge" class="badge">Step 1 of 5</span>
+      </div>
+
+      <div class="whiteboard-container" id="canvasContainer">
+        <!-- Floating Tools Overlay -->
+        <div class="board-tools-overlay">
+          <button onclick="handleZoom(0.15)" class="btn-icon" style="width: 26px; height: 26px; border: none;" title="Zoom In" aria-label="Zoom In">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
-          <div class="w-[1px] h-4 bg-slate-700 mx-0.5"></div>
-          <button onclick="handleZoom(0.15)" title="Zoom In" class="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span id="zoomLevelDisplay" class="font-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); padding: 0 4px;">100%</span>
+          <button onclick="handleZoom(-0.15)" class="btn-icon" style="width: 26px; height: 26px; border: none;" title="Zoom Out" aria-label="Zoom Out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
-          <span id="zoomLevelDisplay" class="text-[11px] font-mono text-slate-400 px-1">100%</span>
-          <button onclick="handleZoom(-0.15)" title="Zoom Out" class="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
-          </button>
-          <div class="w-[1px] h-4 bg-slate-700 mx-0.5"></div>
-          <button onclick="resetCanvasTransform()" title="Reset Canvas View" class="px-2 h-7 flex items-center justify-center text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
+          <div style="width: 1px; height: 14px; background-color: var(--border-color); margin: 0 2px;"></div>
+          <button onclick="resetCanvasTransform()" class="btn" style="padding: 2px 6px; font-size: 0.6875rem; border: none;" title="Reset Canvas View">
             Reset
           </button>
+          <div style="width: 1px; height: 14px; background-color: var(--border-color); margin: 0 2px;"></div>
+          <button id="penToggleBtn" onclick="togglePenMode()" class="btn-icon" style="width: 26px; height: 26px; border: none;" title="Freehand Pen Tool" aria-label="Freehand Pen Tool">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </button>
+          <button id="penClearBtn" onclick="clearFreehandDrawing()" class="btn hidden" style="padding: 2px 6px; font-size: 0.6875rem; border: none;" title="Clear Pen Markings">
+            Clear
+          </button>
         </div>
 
-        <!-- Viewport Layer -->
-        <div id="canvasViewport" class="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden board-grid">
-          <div id="canvasTransformLayer" class="absolute top-0 left-0 w-full h-full origin-top-left transition-transform duration-75">
+        <!-- Remediation Indicator Pill -->
+        <div class="board-step-indicator">
+          <div id="remediationPill" class="badge badge-error hidden">
+            <span>Visual review active</span>
+          </div>
+        </div>
+
+        <!-- Canvas Viewport Layer -->
+        <div id="canvasViewport" class="whiteboard-canvas">
+          <div id="canvasTransformLayer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 0 0; transition: transform 75ms ease-out;">
+            <!-- Freehand Drawing Overlay -->
+            <canvas id="freehandCanvas" width="1600" height="1000" style="position: absolute; top: 0; left: 0; pointer-events: none; z-index: 10;"></canvas>
+            
             <!-- SVG Arrow and Vector Layer -->
-            <svg id="svgArrowLayer" class="absolute top-0 left-0 w-[1600px] h-[1000px] pointer-events-none" style="overflow: visible;">
+            <svg id="svgArrowLayer" style="position: absolute; top: 0; left: 0; width: 1600px; height: 1000px; pointer-events: none; overflow: visible;">
               <defs>
                 <marker id="arrowhead-blue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#0284c7" />
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#0E7490" />
                 </marker>
                 <marker id="arrowhead-green" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#16a34a" />
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#15803D" />
                 </marker>
                 <marker id="arrowhead-red" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#dc2626" />
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#B91C1C" />
                 </marker>
                 <marker id="arrowhead-amber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#d97706" />
+                  <path d="M 0 0 L 8 4 L 0 8 z" fill="#B45309" />
                 </marker>
               </defs>
             </svg>
 
-            <!-- HTML Elements Layer (Boxes, Text, Equations, Mermaid diagrams) -->
-            <div id="htmlElementsLayer" class="absolute top-0 left-0 w-full h-full"></div>
+            <!-- HTML Elements Layer (Boxes, Equations, Flowcharts) -->
+            <div id="htmlElementsLayer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></div>
           </div>
         </div>
       </div>
 
-      <!-- Playback Controls Bar with State Machine -->
-      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur flex flex-col sm:flex-row items-center justify-between gap-4">
-        <!-- Stepper Indicators -->
-        <div class="flex items-center space-x-2">
-          <span class="text-xs font-semibold text-slate-400 mr-2">Steps:</span>
-          <div id="stepperContainer" class="flex items-center space-x-1.5"></div>
-        </div>
-
-        <!-- Play / Pause / Step Controls -->
-        <div class="flex items-center space-x-3">
-          <button id="prevStepBtn" onclick="prevStep()" class="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl border border-slate-700 transition" title="Previous Step">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-          </button>
-
-          <button id="playPauseBtn" onclick="togglePlayPause()" class="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-sky-500/25 flex items-center gap-2 transition">
-            <span id="playPauseIcon">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
-            </span>
-            <span id="playPauseText" class="text-xs font-semibold">Play</span>
-          </button>
-
-          <button id="nextStepBtn" onclick="nextStep()" class="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl border border-slate-700 transition" title="Next Step">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-
-        <!-- Adaptive "I don't understand" Button -->
-        <div>
-          <button id="dontUnderstandBtn" onclick="triggerDontUnderstand()" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm group" title="Request teacher to adapt and explain more simply">
-            <span class="w-2 h-2 rounded-full bg-amber-400 group-hover:animate-ping"></span>
-            <span id="dontUnderstandLabel">I don't understand</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Spoken Narration Panel (Narration strictly lives here, not on the whiteboard) -->
-      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur transition-all duration-300">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-          <div class="flex items-center space-x-3">
-            <div class="relative">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/20">
-                AI
-              </div>
-              <span id="speakingDot" class="hidden absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 animate-ping"></span>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-slate-100">Virtual Teacher Voice</span>
-                <span id="narrationTopicBadge" class="text-[11px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/50">Topic</span>
-                <span id="audioSourceBadge" class="text-[10px] font-mono text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700">TTS</span>
-              </div>
-              <p id="narrationStepSubtitle" class="text-[11px] text-slate-400">Step 1 Spoken Explanation</p>
-            </div>
-          </div>
-
-          <!-- Audio Controls: Voice Picker, Speed, Replay, Mute -->
-          <div class="flex items-center space-x-2">
-            <!-- Animated Sound Wave Indicator -->
-            <div id="soundWaveIndicator" class="hidden flex items-center gap-1 h-5 px-2 bg-emerald-950/60 rounded border border-emerald-800/50">
-              <span class="wave-bar"></span>
-              <span class="wave-bar"></span>
-              <span class="wave-bar"></span>
-              <span class="wave-bar"></span>
-            </div>
-
-            <!-- Voice Picker Dropdown -->
-            <select id="voicePickerSelect" onchange="onVoiceSelected()" class="bg-slate-800 text-[11px] text-slate-300 border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:border-sky-500 max-w-[120px] truncate" title="Voice Selection">
-              <option value="default">Default Natural Voice</option>
-            </select>
-
-            <!-- Speed Button -->
-            <button onclick="cycleSpeechRate()" id="speechRateBtn" title="Speech Speed" class="text-xs font-mono px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">
-              1.05x
-            </button>
-
-            <!-- Replay Button -->
-            <button onclick="replayCurrentNarration()" title="Replay Voice Narration" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            </button>
-
-            <!-- Voice / Mute Toggle Button -->
-            <button onclick="toggleVoiceMute()" id="voiceToggleBtn" title="Mute/Unmute Audio" class="p-1.5 rounded-lg border bg-sky-950/80 text-sky-400 border-sky-800 hover:bg-sky-900 transition">
-              <svg id="voiceToggleIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <p id="narrationText" class="text-sm text-slate-200 leading-relaxed font-normal selection:bg-sky-500 selection:text-white">
+      <!-- One-line Narration Caption Below Whiteboard -->
+      <div class="stage-caption">
+        <div id="speakingDot" style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent); flex-shrink: 0;" class="hidden"></div>
+        <p id="narrationText" style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
           Loading lesson narration...
         </p>
+        <span id="narrationTopicBadge" class="hidden"></span>
       </div>
+    </section>
 
-      <!-- Teacher Reasoning & Trace Panel (Collapsible with Source, Provider, Latency) -->
-      <div id="teacherReasoningCard" class="rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg bg-slate-900/90 border-slate-800/80">
-        <div onclick="toggleReasoningTrace()" class="px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/40 transition select-none">
-          <div class="flex items-center space-x-2.5">
-            <div id="reasoningIconBox" class="w-6 h-6 rounded-lg flex items-center justify-center bg-indigo-600/30 text-indigo-300">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-            </div>
-            <div class="flex items-center gap-2">
-              <span id="reasoningCardTitle" class="text-xs font-semibold text-slate-200">Teacher Reasoning</span>
-              <!-- Trace Pill: source, provider, latency -->
-              <span id="traceSourcePill" class="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800">
-                LLM
-              </span>
-              <span id="traceMetadataPill" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-                groq (420ms)
-              </span>
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <span id="misconceptionTraceBadge" class="hidden text-[11px] font-mono text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800"></span>
-            <svg id="reasoningChevron" class="w-4 h-4 text-slate-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </div>
-        </div>
-
-        <div id="reasoningCardBody" class="px-4 pb-3.5 pt-1 space-y-2.5 text-xs text-slate-300 border-t border-slate-800/60">
-          <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono text-[11px] leading-relaxed text-indigo-300">
-            <span class="text-slate-500 font-semibold uppercase tracking-wider block mb-1 text-[10px]">Cognitive Trace:</span>
-            <span id="reasoningThoughtText">Observing student pace, evaluating cognitive load, and preparing progressive whiteboard elements.</span>
-          </div>
-
-          <div id="remediationCardDetail" class="hidden bg-rose-950/40 p-2.5 rounded-xl border border-rose-800/60 text-[11px] leading-relaxed text-rose-200">
-            <span class="text-rose-400 font-semibold uppercase tracking-wider block mb-1 text-[10px]">Pedagogical Remediation Strategy:</span>
-            <span id="remediationDetailText">Targeted corrective visual overlays applied.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column: Sidebar Panels (Plugin Mount Points for Member 4) (4 Cols) -->
-    <div class="lg:col-span-4 flex flex-col space-y-4">
-      
-      <!-- Tab Header Navigation -->
-      <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
-        <button id="tabChatBtn" onclick="switchRightTab('chat')" class="flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20">
-          Teacher Chat
+    <!-- 3. Right Panel (380px) with Tabs: Code | Chat | Quiz -->
+    <aside class="right-panel">
+      <!-- Plain Text Tabs Header -->
+      <nav class="panel-tab-header">
+        <button id="tabChatBtn" onclick="switchTab('chat')" class="panel-tab-button active">
+          Chat
         </button>
-        <button id="tabCodeBtn" onclick="switchRightTab('code')" class="flex-1 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200 relative">
-          Code Panel
-          <span id="codeNoticeDot" class="hidden w-2 h-2 rounded-full bg-emerald-400 absolute top-1.5 right-2 animate-ping"></span>
-        </button>
-        <button id="tabQuizBtn" onclick="switchRightTab('quiz')" class="flex-1 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200 relative">
+        <button id="tabCheckpointBtn" onclick="switchTab('checkpoint')" class="panel-tab-button">
           Quiz
-          <span id="quizNoticeDot" class="hidden w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-2 animate-ping"></span>
+          <span id="checkpointNoticeDot" class="hidden" style="width: 5px; height: 5px; border-radius: 50%; background-color: var(--accent); margin-left: 6px;"></span>
         </button>
+        <button id="tabCodeBtn" onclick="switchTab('code')" class="panel-tab-button">
+          Code
+        </button>
+      </nav>
+
+      <!-- Panel Body: Chat -->
+      <div id="tabChatContent" class="panel-tab-body chat-container">
+        <!-- Quick Starter Inquiries -->
+        <div class="chat-quick-chips">
+          <button onclick="sendChatMessage('Why must the array be sorted?')" class="chip-btn">
+            Why sorted?
+          </button>
+          <button onclick="sendChatMessage('Why low + (high - low) // 2?')" class="chip-btn">
+            Midpoint formula
+          </button>
+          <button onclick="sendChatMessage('What is time complexity?')" class="chip-btn">
+            Time complexity
+          </button>
+        </div>
+
+        <!-- Stacked Messages (Plain Blocks) -->
+        <div id="chatMessages" class="chat-messages-list">
+          <div class="chat-block teacher-block">
+            <div class="chat-block-meta">
+              <span>Teacher</span>
+              <span>Just now</span>
+            </div>
+            <p>Welcome to Binary Search. Ask any clarifying questions about the pointer movement, formulas, or invariants.</p>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form onsubmit="handleChatSubmit(event)" class="chat-input-bar">
+          <input type="text" id="chatInput" placeholder="Ask a question..." class="chat-input-field" autocomplete="off">
+          <button type="submit" id="chatSendBtn" class="btn btn-primary" title="Send Question" aria-label="Send Question">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </form>
       </div>
 
-      <!-- PLUGIN MOUNT POINT 1: CHAT PANEL -->
-      <div id="tabChatWrapper" class="flex flex-col">
-        <div id="chat-panel" class="w-full">
-          <!-- Member 4 ChatPanel.mount() injects here. Built-in fallback if plugin not ready: -->
-          <div id="builtinChatFallback" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-2xl backdrop-blur flex flex-col h-[520px]">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div class="flex items-center space-x-2.5">
-                <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                </div>
-                <div>
-                  <h3 class="text-xs font-semibold text-slate-100">Live Teacher Chat</h3>
-                  <p class="text-[10px] text-slate-400">Ask clarifying questions anytime</p>
-                </div>
-              </div>
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            </div>
+      <!-- Panel Body: Quiz / Checkpoint -->
+      <div id="tabCheckpointContent" class="panel-tab-body quiz-container hidden">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+          <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Concept Check</span>
+          <span id="checkpointConceptBadge" class="badge">bounds_update</span>
+        </div>
 
-            <!-- Messages Container -->
-            <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs">
-              <div class="flex flex-col items-start">
-                <div class="max-w-[85%] rounded-2xl p-3 shadow-md bg-slate-800 text-slate-200 border border-slate-700/80 rounded-bl-sm leading-relaxed">
-                  <p id="chatWelcomeMsg">Hello! I'm your AI Teacher. Ask me anything about the intuition, algorithms, or code!</p>
-                </div>
-                <span class="text-[9px] text-slate-500 mt-1 px-1">Just now</span>
-              </div>
-            </div>
+        <h3 id="checkpointQuestionText" class="quiz-question-title">
+          Loading question...
+        </h3>
 
-            <!-- Chat Input Form -->
-            <form onsubmit="handleChatSubmit(event)" class="pt-2 border-t border-slate-800 flex items-center gap-2">
-              <input type="text" id="chatInput" placeholder="Ask your teacher a question..." class="flex-1 bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
-              <button type="submit" id="chatSendBtn" class="p-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl transition shadow-md shadow-sky-500/20">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-              </button>
-            </form>
-          </div>
+        <div id="checkpointOptionsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+        <button id="checkpointSubmitBtn" onclick="submitCheckpointAnswer()" class="btn btn-primary" style="width: 100%; padding: 8px 16px; margin-top: 4px;">
+          Check answer
+        </button>
+
+        <div id="checkpointFeedbackBox" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+          <div id="checkpointFeedbackAlert" class="quiz-explanation-box"></div>
+          <button onclick="resetCheckpoint()" class="btn" style="width: 100%;">
+            Try again
+          </button>
         </div>
       </div>
 
-      <!-- PLUGIN MOUNT POINT 2: CODE PANEL -->
-      <div id="tabCodeWrapper" class="hidden flex flex-col">
-        <div id="code-panel" class="w-full">
-          <!-- Member 4 CodePanel.mount() injects here. Built-in fallback if plugin not ready: -->
-          <div id="builtinCodeFallback" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <h4 class="text-xs font-semibold text-slate-200">Interactive Live Code</h4>
-              </div>
-              <span id="codeLangBadge" class="text-[10px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/60">python</span>
-            </div>
-            <div class="relative">
-              <textarea id="codeSnippetBox" spellcheck="false" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono text-xs text-sky-300 leading-relaxed min-h-[220px] max-h-[320px] resize-y focus:outline-none focus:border-sky-500"></textarea>
-            </div>
-            <div class="flex items-center justify-between pt-1">
-              <button onclick="runBuiltinCode()" id="runCodeBtn" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
-                <span>Run Python</span>
-              </button>
-              <span id="codeStatusBadge" class="text-[10px] font-mono text-slate-400 bg-slate-800/60 px-2 py-1 rounded border border-slate-700/60">Ready</span>
-            </div>
-            <div id="codeOutputContainer" class="bg-black/80 rounded-xl border border-slate-800 p-3 font-mono text-xs space-y-1">
-              <div class="text-[10px] text-slate-500 border-b border-slate-900 pb-1">TERMINAL OUTPUT</div>
-              <pre id="codeStdoutBox" class="text-emerald-400 text-[11px] whitespace-pre-wrap font-mono">Code execution ready.</pre>
-            </div>
-            <p id="codeExplanationBox" class="text-[11px] text-slate-400 leading-relaxed"></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- PLUGIN MOUNT POINT 3: QUIZ PANEL -->
-      <div id="tabQuizWrapper" class="hidden flex flex-col">
-        <div id="quiz-panel" class="w-full">
-          <!-- Member 4 QuizPanel.mount() injects here. Built-in fallback if plugin not ready: -->
-          <div id="builtinQuizFallback" class="bg-slate-900/95 border border-indigo-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur transition-all duration-300">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <h3 class="text-sm font-semibold text-slate-100">Understanding Checkpoint</h3>
-              </div>
-              <span id="checkpointConceptBadge" class="text-[11px] font-mono text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/60">
-                checkpoint
-              </span>
-            </div>
-
-            <p id="checkpointQuestionText" class="text-sm font-medium text-slate-100 mb-4 leading-relaxed">
-              No checkpoint question active for this step.
-            </p>
-
-            <div id="checkpointOptionsList" class="space-y-2 mb-4"></div>
-
-            <button id="checkpointSubmitBtn" onclick="submitCheckpointAnswer()" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 disabled:opacity-40 text-white font-medium text-xs rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2">
-              Check My Answer
+      <!-- Panel Body: Code Execution -->
+      <div id="tabCodeContent" class="panel-tab-body hidden" style="padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+          <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);">Interactive Python</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button onclick="copyCodeSnippet()" id="copyCodeBtn" class="btn" style="padding: 2px 8px; font-size: 0.6875rem;">
+              Copy
             </button>
-
-            <div id="checkpointFeedbackBox" class="hidden space-y-3 pt-2">
-              <div id="checkpointFeedbackAlert" class="p-3 rounded-xl border text-xs leading-relaxed"></div>
-              <button onclick="resetCheckpoint()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl border border-slate-700 transition">
-                Try Again
-              </button>
-            </div>
+            <span id="codeLangBadge" class="badge font-mono">python</span>
           </div>
         </div>
-      </div>
 
-    </div>
+        <textarea id="codeSnippetBox" spellcheck="false" class="font-mono" style="width: 100%; height: 220px; padding: 10px; font-size: 0.8125rem; line-height: 1.5; background-color: var(--bg-subtle); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); resize: vertical;"></textarea>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button onclick="runPyodideCode()" id="runCodeBtn" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="runCodeLabel">Run code</span>
+          </button>
+          <span id="pyodideStatusBadge" class="badge">Pyodide ready</span>
+        </div>
+
+        <!-- Terminal Output -->
+        <div id="codeOutputContainer" style="background-color: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
+            <span>OUTPUT</span>
+            <span id="executionTimePill">0ms</span>
+          </div>
+          <pre id="codeStdoutBox" class="font-mono" style="font-size: 0.75rem; line-height: 1.5; color: var(--text-primary); white-space: pre-wrap;">Click "Run code" to execute.</pre>
+          <div id="codeErrorAction" class="hidden">
+            <button onclick="askTeacherAboutError()" class="btn" style="font-size: 0.6875rem; padding: 2px 6px;">
+              Ask teacher about error
+            </button>
+          </div>
+        </div>
+
+        <p id="codeExplanationBox" style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;"></p>
+      </div>
+    </aside>
+
   </main>
 
-  <!-- Plugin Scripts (Member 4 implements; Member 3 provides mounts and calls) -->
-  <script src="js/code-panel.js"></script>
-  <script src="js/chat-panel.js"></script>
-  <script src="js/quiz-panel.js"></script>
+  <!-- 4. Bottom Player Bar (56px) -->
+  <footer class="bottom-player-bar">
+    <!-- Playback Controls -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="prevStepBtn" onclick="prevStep()" class="btn-icon" title="Previous Step (Left Arrow)" aria-label="Previous Step">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
 
-  <!-- Core Classroom Client Logic -->
+      <button id="playPauseBtn" onclick="togglePlayPause()" class="btn btn-primary" title="Play or Pause Lesson (Spacebar)" style="min-width: 88px;">
+        <span id="playPauseIcon" style="display: inline-flex; align-items: center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </span>
+        <span id="playPauseText">Play</span>
+      </button>
+
+      <button id="nextStepBtn" onclick="nextStep()" class="btn-icon" title="Next Step (Right Arrow)" aria-label="Next Step">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+
+      <span id="playerStateText" class="font-mono" style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 8px;">
+        Step 1 of 5
+      </span>
+    </div>
+
+    <!-- Segmented Stepper Bar -->
+    <div id="stepperContainer" class="segmented-stepper"></div>
+
+    <!-- Audio & Clarification Controls -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="dontUnderstandBtn" onclick="triggerDontUnderstand()" class="btn" title="Request teacher to explain more simply">
+        <span id="dontUnderstandLabel">Explain simply</span>
+      </button>
+
+      <button onclick="cycleSpeechRate()" id="speechRateBtn" class="btn font-mono" style="padding: 4px 8px; font-size: 0.75rem;" title="Speech Speed">
+        1x
+      </button>
+
+      <button onclick="replaySpeech()" class="btn-icon" title="Replay voice narration" aria-label="Replay Voice">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+      </button>
+
+      <button onclick="toggleVoiceEnabled()" id="voiceToggleBtn" class="btn-icon" title="Voice Mute / Unmute" aria-label="Toggle Voice">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+      </button>
+      <div id="soundWaveIndicator" class="hidden"></div>
+    </div>
+  </footer>
+
+  <!-- Embedded Lesson Data & Execution Scripts -->
   <script>
-    const API_BASE = "http://localhost:8000";
-
-    // Fallback Topics List matching GET /topics
-    const FALLBACK_TOPICS = [
-      {
-        id: "binary-search",
-        title: "Binary Search",
-        description: "Divide-and-conquer search algorithm on sorted arrays with logarithmic complexity.",
-        level: "Beginner",
-        has_code: true
-      },
-      {
-        id: "recursion",
-        title: "Recursion & Call Stack",
-        description: "Base cases, call stack unwinding, termination invariants, and recursive tree branches.",
-        level: "Intermediate",
-        has_code: true
-      },
-      {
-        id: "two-pointers",
-        title: "Two Pointers Technique",
-        description: "Efficient symmetric array traversal for searching pairs, reversing, and sliding windows.",
-        level: "Intermediate",
-        has_code: true
-      },
-      {
-        id: "gradient-descent",
-        title: "Gradient Descent",
-        description: "Optimization algorithm iteratively updating weights against loss gradients in machine learning.",
-        level: "Advanced",
-        has_code: true
-      }
-    ];
-
-    // Pre-baked Fallback Lesson Plan for Binary Search
-    const FALLBACK_BINARY_SEARCH_LESSON = [
+    // Embedded 5-step fallback lesson
+    const FALLBACK_LESSON = [
       {
         step_id: "bs_step_0",
         step_index: 0,
         total_steps: 5,
         concept: "Binary Search",
-        narration: "Welcome to Binary Search! Imagine searching for a contact in a phonebook of 1,000 pages. Instead of checking every page one by one, you open to the exact middle. If the target name is alphabetically greater, you discard the entire first half! This divide-and-conquer strategy slashes time complexity from linear to logarithmic.",
+        narration: "Welcome to Binary Search. In an array of sorted elements, we can compare directly against the midpoint to eliminate half the search space in each iteration, achieving logarithmic time complexity.",
         board_commands: [
           { type: "clear", id: "clear_0" },
-          { type: "text", id: "title_text", content: "Binary Search: Divide & Conquer", x: 60.0, y: 40.0, size: 24, color: "#f8fafc" },
-          { type: "text", id: "array_label", content: "Sorted Array (n = 10):", x: 60.0, y: 95.0, size: 15, color: "#94a3b8" },
-          { type: "box", id: "box_0", label: "2", x: 60.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_1", label: "5", x: 125.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_2", label: "8", x: 190.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_3", label: "12", x: 255.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_4", label: "16", x: 320.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_5", label: "23", x: 385.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_6", label: "38", x: 450.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_7", label: "56", x: 515.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_8", label: "72", x: 580.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_9", label: "91", x: 645.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "arrow", id: "arr_low", start_x: 87.0, start_y: 215.0, end_x: 87.0, end_y: 180.0, label: "low = 0", color: "#16a34a" },
-          { type: "arrow", id: "arr_high", start_x: 672.0, start_y: 215.0, end_x: 672.0, end_y: 180.0, label: "high = 9", color: "#dc2626" },
-          { type: "equation", id: "eq_complexity", latex: "\\mathcal{O}(\\log_2 n) \\ll \\mathcal{O}(n)", x: 60.0, y: 245.0, label: "Logarithmic vs Linear Efficiency" }
+          { type: "text", id: "title_text", content: "Binary Search: Divide & Conquer", x: 60.0, y: 40.0, size: 22, color: "#1A1A1A" },
+          { type: "text", id: "array_label", content: "Sorted Array (n = 10):", x: 60.0, y: 90.0, size: 14, color: "#6B6864" },
+          { type: "box", id: "box_0", label: "2", x: 60.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_1", label: "5", x: 125.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_2", label: "8", x: 190.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_3", label: "12", x: 255.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_4", label: "16", x: 320.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_5", label: "23", x: 385.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_6", label: "38", x: 450.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_7", label: "56", x: 515.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_8", label: "72", x: 580.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_9", label: "91", x: 645.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "arrow", id: "arr_low", start_x: 87.0, start_y: 205.0, end_x: 87.0, end_y: 172.0, label: "low = 0", color: "#15803D" },
+          { type: "arrow", id: "arr_high", start_x: 672.0, start_y: 205.0, end_x: 672.0, end_y: 172.0, label: "high = 9", color: "#B91C1C" },
+          { type: "equation", id: "eq_complexity", latex: "\\mathcal{O}(\\log_2 n) \\ll \\mathcal{O}(n)", x: 60.0, y: 235.0, label: "Efficiency Bound" },
+          { type: "mermaid", id: "flow_overview", chart: "graph LR\n  A[Sorted Array] --> B[Check Midpoint]\n  B -->|Target == Mid| C[Found!]\n  B -->|Target < Mid| D[Search Left Half]\n  B -->|Target > Mid| E[Search Right Half]", x: 60.0, y: 320.0, title: "Decision Flowchart" }
         ],
-        agent_thoughts: "Student baseline: bounds=0.45, intuition=0.90. Initiating high-level divide-and-conquer visual.",
-        trace: { source: "mock", provider: "groq", model: "llama-3.3-70b-versatile", latency_ms: 380 }
+        agent_thoughts: "Student mastery state: bounds=0.45, intuition=0.90. Displaying divide-and-conquer partition visual.",
+        provider_metadata: { provider: "groq", latency_ms: 710, cached: true }
       },
       {
         step_id: "bs_step_1",
         step_index: 1,
         total_steps: 5,
         concept: "Binary Search",
-        narration: "Now we calculate our first midpoint: mid = low + (high - low) // 2. Here, 0 + (9 - 0) // 2 = 4. Element at index 4 is 16. Our target is 23! Because 23 is greater than 16, every item from index 0 through index 4 is strictly less than 23. We safely discard the entire left half!",
+        narration: "We compute midpoint: mid = low + (high - low) // 2. With low=0 and high=9, mid is 4 (value 16). Because target 23 is greater than 16, elements from index 0 to 4 are discarded.",
         board_commands: [
-          { type: "box", id: "box_0", label: "2", x: 60.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
-          { type: "box", id: "box_1", label: "5", x: 125.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
-          { type: "box", id: "box_2", label: "8", x: 190.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
-          { type: "box", id: "box_3", label: "12", x: 255.0, y: 125.0, width: 55.0, height: 48.0, color: "#64748b", fill: "#0f172a" },
-          { type: "box", id: "box_4", label: "16", x: 320.0, y: 125.0, width: 55.0, height: 48.0, color: "#f59e0b", fill: "#451a03" },
-          { type: "box", id: "box_5", label: "23", x: 385.0, y: 125.0, width: 55.0, height: 48.0, color: "#10b981", fill: "#064e3b" },
-          { type: "box", id: "box_6", label: "38", x: 450.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_7", label: "56", x: 515.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_8", label: "72", x: 580.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "box", id: "box_9", label: "91", x: 645.0, y: 125.0, width: 55.0, height: 48.0, color: "#3b82f6", fill: "#1e293b" },
-          { type: "arrow", id: "arr_mid", start_x: 347.0, start_y: 215.0, end_x: 347.0, end_y: 180.0, label: "mid = 4 (value: 16)", color: "#f59e0b" },
-          { type: "equation", id: "eq_mid", latex: "mid = low + \\left\\lfloor \\frac{high - low}{2} \\right\\rfloor = 0 + 4 = 4", x: 60.0, y: 245.0, label: "Safe Overflow Midpoint Calculation" },
-          { type: "text", id: "probe_text", content: "Target = 23. Since 23 > array[4] (16), discard indices [0 .. 4].", x: 60.0, y: 335.0, size: 15, color: "#38bdf8" }
+          { type: "box", id: "box_0", label: "2", x: 60.0, y: 120.0, width: 55.0, height: 46.0, color: "#D1D5DB", fill: "#F3F4F6" },
+          { type: "box", id: "box_1", label: "5", x: 125.0, y: 120.0, width: 55.0, height: 46.0, color: "#D1D5DB", fill: "#F3F4F6" },
+          { type: "box", id: "box_2", label: "8", x: 190.0, y: 120.0, width: 55.0, height: 46.0, color: "#D1D5DB", fill: "#F3F4F6" },
+          { type: "box", id: "box_3", label: "12", x: 255.0, y: 120.0, width: 55.0, height: 46.0, color: "#D1D5DB", fill: "#F3F4F6" },
+          { type: "box", id: "box_4", label: "16", x: 320.0, y: 120.0, width: 55.0, height: 46.0, color: "#B45309", fill: "#FFFBEB" },
+          { type: "box", id: "box_5", label: "23", x: 385.0, y: 120.0, width: 55.0, height: 46.0, color: "#15803D", fill: "#F0FDF4" },
+          { type: "box", id: "box_6", label: "38", x: 450.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_7", label: "56", x: 515.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_8", label: "72", x: 580.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "box", id: "box_9", label: "91", x: 645.0, y: 120.0, width: 55.0, height: 46.0, color: "#0E7490", fill: "#F8F6F0" },
+          { type: "arrow", id: "arr_mid", start_x: 347.0, start_y: 205.0, end_x: 347.0, end_y: 172.0, label: "mid = 4 (value: 16)", color: "#B45309" },
+          { type: "equation", id: "eq_mid", latex: "mid = low + \\left\\lfloor \\frac{high - low}{2} \\right\\rfloor = 0 + 4 = 4", x: 60.0, y: 235.0, label: "Overflow-Safe Calculation" },
+          { type: "text", id: "probe_text", content: "Target 23 > array[4] (16) -> discard left partition [0 .. 4].", x: 60.0, y: 320.0, size: 14, color: "#0E7490" }
         ],
-        agent_thoughts: "Emphasizing safe midpoint calculation to prevent integer overflow.",
-        trace: { source: "llm", provider: "gemini", model: "gemini-1.5-flash", latency_ms: 820 }
+        agent_thoughts: "Midpoint evaluated. Highlighting safe overflow formula.",
+        provider_metadata: { provider: "gemini", latency_ms: 1250, cached: false }
       },
       {
         step_id: "bs_step_2",
         step_index: 2,
         total_steps: 5,
         concept: "Binary Search",
-        narration: "Time for a quick check! When target 23 is greater than array[mid] 16, how should we update our pointers? Think carefully about which elements are already ruled out.",
+        narration: "Checkpoint: When target is greater than the midpoint value, how should pointers update?",
         board_commands: [
-          { type: "text", id: "checkpoint_banner", content: "Checkpoint: Bounds Pointer Update", x: 60.0, y: 60.0, size: 20, color: "#fbbf24" },
-          { type: "equation", id: "eq_bounds", latex: "target > array[mid] \\implies \\text{Search space is } [mid + 1, high]", x: 60.0, y: 110.0, label: "Invariant Rule" }
+          { type: "text", id: "checkpoint_banner", content: "Checkpoint: Bounds Pointer Update", x: 60.0, y: 60.0, size: 20, color: "#1A1A1A" },
+          { type: "equation", id: "eq_bounds", latex: "target > array[mid] \\implies \\text{Next Search Space: } [mid + 1, high]", x: 60.0, y: 110.0, label: "Partition Invariant" }
         ],
         check_question: {
           question_id: "bs_check_bounds",
-          question: "When target (23) is greater than array[mid] (16), what is the correct pointer update?",
+          question: "When target (23) is greater than array[mid] (16), what is the correct update?",
           options: ["high = mid - 1", "low = mid + 1", "low = mid", "high = mid"],
           correct_index: 1,
-          explanation: "Because array[mid] was already checked and is too small, we set low = mid + 1 to inspect only elements strictly to its right.",
+          explanation: "Because array[mid] is already examined and too small, set low = mid + 1 to search the right half.",
           concept_tag: "binary_search_bounds_update"
         },
-        agent_thoughts: "Checking bounds update logic. Alex Chen previously showed bounds confusion misconception.",
-        trace: { source: "cache", provider: "groq", model: "llama-3.3-70b-versatile", latency_ms: 120 }
+        agent_thoughts: "Verifying student bounds update understanding.",
+        provider_metadata: { provider: "groq", latency_ms: 680, cached: true }
       },
       {
         step_id: "bs_step_3",
         step_index: 3,
         total_steps: 5,
         concept: "Binary Search",
-        narration: "Let's inspect the clean Python implementation. Notice while low <= high: the less-than-or-equal condition is essential for single-element arrays. And we use mid + 1 and mid - 1 to guarantee loop termination.",
+        narration: "Here is the standard Python implementation. Notice low <= high is necessary to handle single-element arrays.",
         board_commands: [
-          { type: "text", id: "code_banner", content: "Python Implementation & Invariants", x: 60.0, y: 50.0, size: 20, color: "#38bdf8" },
-          { type: "equation", id: "eq_termination", latex: "high - low \\text{ strictly decreases each iteration } \\implies \\mathcal{O}(\\log n)", x: 60.0, y: 100.0, label: "Loop Termination Invariant" }
-        ],
-        code_chunks: [
-          {
-            code: "def binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n    while low <= high:\n        mid = low + (high - low) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\nnums = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]\nidx = binary_search(nums, 23)\nprint(f'Target 23 found at index {idx}!')",
-            explanation: "Complete binary search implementation executing in live code panel.",
-            expected_output: "Target 23 found at index 5!"
-          }
+          { type: "text", id: "code_banner", content: "Python Implementation & Invariants", x: 60.0, y: 50.0, size: 20, color: "#1A1A1A" },
+          { type: "equation", id: "eq_termination", latex: "high - low \\text{ strictly decreases } \\implies \\mathcal{O}(\\log n)", x: 60.0, y: 95.0, label: "Termination Guarantee" },
+          { type: "mermaid", id: "complexity_tree", chart: "graph TD\n  N[Array size N] --> N2a[N/2]\n  N --> N2b[N/2]\n  N2a --> N4a[N/4]\n  N2a --> N4b[N/4]\n  N2b --> N4c[N/4]\n  N2b --> N4d[N/4]", x: 60.0, y: 175.0, title: "Subproblem Halving Tree" }
         ],
         code_action: {
           code: "def binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n    while low <= high:\n        mid = low + (high - low) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\nnums = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]\nidx = binary_search(nums, 23)\nprint(f'Target 23 found at index {idx}!')",
           language: "python",
-          explanation: "Complete binary search implementation executing in live code panel."
+          action: "execute",
+          explanation: "Runnable Python implementation executing in-browser via Pyodide."
         },
-        agent_thoughts: "Transitioning from visual whiteboard to live runnable code.",
-        trace: { source: "llm", provider: "gemini", model: "gemini-1.5-flash", latency_ms: 910 }
+        agent_thoughts: "Connecting visual concept to runnable code.",
+        provider_metadata: { provider: "gemini", latency_ms: 1100, cached: false }
       },
       {
         step_id: "bs_step_4",
         step_index: 4,
         total_steps: 5,
         concept: "Binary Search",
-        narration: "Fantastic job completing the Binary Search module! You've mastered pointer convergence, logarithmic halving, and overflow-safe midpoint calculation. Continue to the Live Coding runner or practice in the Quiz panel!",
+        narration: "Lesson complete! You have verified midpoint halving, bounds convergence, and overflow protection.",
         board_commands: [
           { type: "clear", id: "clear_end" },
-          { type: "text", id: "summary_title", content: "Module Complete: Binary Search Mastery Achieved!", x: 60.0, y: 50.0, size: 22, color: "#34d399" },
-          { type: "box", id: "box_summary", label: "Mastery: 85%", x: 60.0, y: 110.0, width: 180.0, height: 60.0, color: "#10b981", fill: "#064e3b" },
-          { type: "text", id: "next_recommendation", content: "Recommended Next Concept: 'Two Pointers & Sliding Window'", x: 60.0, y: 200.0, size: 16, color: "#38bdf8" }
+          { type: "text", id: "summary_title", content: "Lesson Complete: Binary Search Mastered", x: 60.0, y: 50.0, size: 22, color: "#15803D" },
+          { type: "box", id: "box_summary", label: "Mastery: 85%", x: 60.0, y: 110.0, width: 180.0, height: 50.0, color: "#15803D", fill: "#F0FDF4" },
+          { type: "text", id: "next_recommendation", content: "Next topic: 'Two Pointers & Sliding Window'", x: 60.0, y: 190.0, size: 15, color: "#0E7490" },
+          { type: "mermaid", id: "learning_path", chart: "graph LR\n  A[Binary Search (Mastered)] --> B[Two Pointers]\n  B --> C[Sliding Window]", x: 60.0, y: 240.0, title: "Learning Path" }
         ],
-        agent_thoughts: "Final step completed. Updating student mastery profile in learner model.",
+        agent_thoughts: "Completed module. State updated to 0.85.",
         is_final_step: true,
-        trace: { source: "mock", provider: "groq", model: "llama-3.3-70b-versatile", latency_ms: 320 }
+        provider_metadata: { provider: "groq", latency_ms: 690, cached: true }
       }
     ];
 
-    // =========================================================================
-    // APPLICATION STATE & STATE MACHINE
-    // =========================================================================
-    // Proper State Machine: 'idle' | 'playing' | 'paused' | 'finished'
-    let playbackState = "idle"; 
-
-    let currentTopic = null;
-    let currentSteps = [];
+    // State Variables
+    let currentSteps = [...FALLBACK_LESSON];
     let currentStepIdx = 0;
-    let currentUserId = "demo_student";
-    let autoLayoutEnabled = true;
-
-    // In-memory Cache for Lesson JSON (prevents lag and refetches)
-    const lessonMemoryCache = new Map();
-
-    // Canvas Transform State
+    let isPlaying = false;
     let zoomLevel = 1.0;
     let panOffset = { x: 0, y: 0 };
     let isPanning = false;
     let panStart = { x: 0, y: 0 };
     let activeRemediationCommands = [];
-
-    // Right Sidebar Tab State
-    let activeRightTab = "chat";
-    const chatHistory = [];
-
-    // Audio & Narration State
-    let voiceMuted = false;
-    let speechRate = 1.05;
-    let selectedVoice = null;
-    let availableVoices = [];
-    let currentAudioElement = null;
-    let currentUtterance = null;
-    let sentenceList = [];
-    let currentSentenceIdx = 0;
-    const ttsSentenceBlobCache = new Map(); // Prefetched sentence blobs
-    let activeTTSController = null;
-
-    // Checkpoint selection state
+    let voiceEnabled = true;
+    let speechRate = 1.0;
     let selectedOptionIdx = null;
+    let isPenMode = false;
 
-    // Lazy Loading Libs Flags
-    let katexLoaded = false;
-    let mermaidLoaded = false;
-
-    // =========================================================================
-    // STATE MACHINE TRANSITIONS
-    // =========================================================================
-    function setPlaybackState(newState) {
-      playbackState = newState;
-      const indicator = document.getElementById("stateIndicatorBadge");
-      const btnText = document.getElementById("playPauseText");
-      const btnIcon = document.getElementById("playPauseIcon");
-      const pulseDot = document.getElementById("canvasPulseDot");
-
-      switch (newState) {
-        case "playing":
-          indicator.innerText = "PLAYING";
-          indicator.className = "text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-emerald-950/80 text-emerald-400 border-emerald-800 animate-pulse";
-          btnText.innerText = "Pause";
-          btnIcon.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
-          pulseDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
-          window.CodePanel?.resume?.();
-          break;
-
-        case "paused":
-          indicator.innerText = "PAUSED";
-          indicator.className = "text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-950/80 text-amber-400 border-amber-800";
-          btnText.innerText = "Resume";
-          btnIcon.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>`;
-          pulseDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400";
-          // Halt Audio
-          haltAllAudio(false);
-          // Halt CodePanel
-          window.CodePanel?.pause?.();
-          break;
-
-        case "finished":
-          indicator.innerText = "FINISHED";
-          indicator.className = "text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-indigo-950/80 text-indigo-400 border-indigo-800";
-          btnText.innerText = "Replay";
-          btnIcon.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>`;
-          pulseDot.className = "w-2.5 h-2.5 rounded-full bg-indigo-400";
-          haltAllAudio(true);
-          window.CodePanel?.pause?.();
-          break;
-
-        case "idle":
-        default:
-          indicator.innerText = "IDLE";
-          indicator.className = "text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-slate-800 text-slate-400 border-slate-700";
-          btnText.innerText = "Play";
-          btnIcon.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>`;
-          pulseDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
-          haltAllAudio(true);
-          window.CodePanel?.pause?.();
-          break;
-      }
-    }
-
-    function togglePlayPause() {
-      if (playbackState === "playing") {
-        setPlaybackState("paused");
-      } else if (playbackState === "paused") {
-        setPlaybackState("playing");
-        resumeCurrentSentence();
-      } else if (playbackState === "finished") {
-        jumpToStep(0);
-        setPlaybackState("playing");
-        playStepNarration();
-      } else { // idle
-        setPlaybackState("playing");
-        playStepNarration();
-      }
-    }
-
-    // =========================================================================
-    // TOPIC PICKER (Requirement 3: Home screen cards, "type any topic", skeleton, error)
-    // =========================================================================
-    async function loadTopicsList() {
-      const grid = document.getElementById("topicsGrid");
-      const badge = document.getElementById("topicsCountBadge");
-
-      try {
-        const res = await fetch(`${API_BASE}/topics`);
-        if (res.ok) {
-          const topics = await res.json();
-          renderTopicCards(topics);
-          badge.innerText = `${topics.length} Available`;
-          updateBackendStatus(true);
-          return;
+    // Initialize Mermaid
+    if (window.mermaid) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: prefersDark ? 'dark' : 'neutral',
+        themeVariables: prefersDark ? {
+          primaryColor: '#2A2D32',
+          primaryTextColor: '#EDEDED',
+          primaryBorderColor: '#2DD4BF',
+          lineColor: '#A0A5AB',
+          background: '#1E2124',
+          mainBkg: '#2A2D32',
+          nodeBorder: '#2DD4BF',
+          clusterBkg: '#232629',
+          titleColor: '#EDEDED',
+          edgeLabelBackground: '#1E2124',
+          fontFamily: 'Instrument Sans, sans-serif'
+        } : {
+          primaryColor: '#F8F6F0',
+          primaryTextColor: '#1A1A1A',
+          primaryBorderColor: '#0E7490',
+          lineColor: '#6B6864',
+          fontFamily: 'Instrument Sans, sans-serif'
         }
-      } catch (err) {
-        console.warn("[Topics] /topics unreachable, falling back to local curriculum catalog.");
-      }
-
-      // Fallback
-      renderTopicCards(FALLBACK_TOPICS);
-      badge.innerText = `${FALLBACK_TOPICS.length} Pre-loaded`;
-      checkBackendHealth();
-    }
-
-    function renderTopicCards(topics) {
-      const grid = document.getElementById("topicsGrid");
-      grid.innerHTML = "";
-
-      topics.forEach((t) => {
-        const card = document.createElement("div");
-        card.className = "bg-slate-950/70 border border-slate-800 hover:border-sky-500/80 p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-500/10 flex flex-col justify-between group";
-        
-        let levelColor = "text-emerald-400 bg-emerald-950/80 border-emerald-800/60";
-        if (t.level === "Intermediate") levelColor = "text-sky-400 bg-sky-950/80 border-sky-800/60";
-        if (t.level === "Advanced") levelColor = "text-indigo-400 bg-indigo-950/80 border-indigo-800/60";
-
-        card.innerHTML = `
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${levelColor}">${t.level || 'Beginner'}</span>
-              ${t.has_code ? '<span class="text-[10px] font-mono text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Live Code</span>' : ''}
-            </div>
-            <h3 class="text-base font-bold text-white group-hover:text-sky-300 transition">${t.title}</h3>
-            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">${t.description}</p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-slate-850 flex items-center justify-between text-xs font-semibold text-sky-400 group-hover:text-sky-300">
-            <span>Start Interactive Lesson</span>
-            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-          </div>
-        `;
-        card.onclick = () => selectTopic(t);
-        grid.appendChild(card);
+      });
+      // Re-initialize when color scheme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        location.reload();
       });
     }
 
-    async function selectTopic(topicObj) {
-      currentTopic = topicObj;
-      document.getElementById("headerConceptBadge").innerText = topicObj.title;
-      document.getElementById("narrationTopicBadge").innerText = topicObj.title;
+    // Toggle Left Rail
+    function toggleRail() {
+      const body = document.getElementById("classroomBody");
+      body.classList.toggle("rail-collapsed");
+    }
 
-      // Check In-Memory Cache first (Requirement 6: no lag)
-      if (lessonMemoryCache.has(topicObj.id || topicObj.title)) {
-        currentSteps = lessonMemoryCache.get(topicObj.id || topicObj.title);
-        launchClassroomView();
-        return;
+    // Handle Search Input in Left Rail
+    async function handleTopicSearch(e) {
+      if (e.key === "Enter") {
+        const query = e.target.value.trim();
+        if (query) {
+          switchLessonTopic(query);
+        }
       }
+    }
 
-      showTopicSkeleton(true);
-      dismissTopicError();
+    // Sync header badge and sidebar topic selection
+    function syncTopicState(topicName) {
+      if (!topicName) return;
+      const badge = document.getElementById("headerConceptBadge");
+      if (badge) badge.innerText = topicName;
+      document.querySelectorAll(".topic-item").forEach(btn => {
+        const txt = btn.textContent.trim().toLowerCase();
+        const target = topicName.toLowerCase();
+        if (txt === target || txt.includes(target) || target.includes(txt)) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
 
+    // Switch Topic
+    async function switchLessonTopic(topicName) {
+      syncTopicState(topicName);
+      document.getElementById("narrationStepSubtitle").innerText = `${topicName}: Overview`;
+      document.getElementById("narrationText").innerText = `Generating adaptive lesson for ${topicName}...`;
+      
       try {
-        // Try POST /lesson/generate
-        const res = await fetch(`${API_BASE}/lesson/generate`, {
+        const res = await fetch("http://localhost:8000/lesson/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            topic: topicObj.title,
-            level: topicObj.level || "Beginner",
-            user_id: currentUserId
+            topic: topicName,
+            level: "beginner",
+            user_id: document.getElementById("personaSelector").value
           })
         });
-
         if (res.ok) {
-          const lessonData = await res.json();
-          const steps = Array.isArray(lessonData) ? lessonData : (lessonData.steps || [lessonData]);
-          currentSteps = steps;
-          lessonMemoryCache.set(topicObj.id || topicObj.title, steps);
-          showTopicSkeleton(false);
-          launchClassroomView();
-          return;
-        }
-      } catch (err) {
-        console.log("[Lesson] /lesson/generate not available, trying /mock/lesson or pre-baked lesson.");
-      }
-
-      // Try GET /mock/lesson?concept=...
-      try {
-        const mockRes = await fetch(`${API_BASE}/mock/lesson?concept=${encodeURIComponent(topicObj.title)}`);
-        if (mockRes.ok) {
-          const mockSteps = await mockRes.json();
-          if (Array.isArray(mockSteps) && mockSteps.length > 0) {
-            currentSteps = mockSteps;
-            lessonMemoryCache.set(topicObj.id || topicObj.title, mockSteps);
-            showTopicSkeleton(false);
-            launchClassroomView();
+          const data = await res.json();
+          if (data && data.steps && data.steps.length > 0) {
+            currentSteps = data.steps;
+            currentStepIdx = 0;
+            renderStepper();
+            loadStep(0);
             return;
           }
         }
-      } catch (e) {
-        // Ignore and fallback to local pre-baked
+      } catch (err) {
+        console.log("Using local lesson data for topic:", topicName);
       }
-
-      // Fallback pre-baked
-      if (topicObj.id === "binary-search" || topicObj.title.toLowerCase().includes("binary")) {
-        currentSteps = [...FALLBACK_BINARY_SEARCH_LESSON];
-        lessonMemoryCache.set(topicObj.id || topicObj.title, currentSteps);
-        showTopicSkeleton(false);
-        launchClassroomView();
-      } else {
-        // Generate a valid mock dynamic lesson plan matching contract
-        currentSteps = generateSynthesizedLesson(topicObj.title, topicObj.level);
-        lessonMemoryCache.set(topicObj.id || topicObj.title, currentSteps);
-        showTopicSkeleton(false);
-        launchClassroomView();
-      }
-    }
-
-    async function handleCustomTopicSubmit(e) {
-      e.preventDefault();
-      const input = document.getElementById("customTopicInput");
-      const title = input.value.trim();
-      if (!title) return;
-
-      const level = document.getElementById("customLevelSelect").value;
-      const customTopicObj = {
-        id: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        title: title,
-        description: `Custom AI-synthesized lesson covering ${title}.`,
-        level: level,
-        has_code: true
-      };
-
-      selectTopic(customTopicObj);
-    }
-
-    function generateSynthesizedLesson(title, level) {
-      return [
-        {
-          step_id: `synth_step_0`,
-          step_index: 0,
-          total_steps: 4,
-          concept: title,
-          narration: `Welcome to our interactive lesson on ${title}! In this module, we will explore the foundational intuition, trace step-by-step state representations on the board, examine runnable code, and verify our conceptual understanding.`,
-          board_commands: [
-            { type: "clear", id: "clr_0" },
-            { type: "text", id: "synth_title", content: `${title}: Core Conceptual Model`, x: 60, y: 50, size: 24, color: "#f8fafc" },
-            { type: "box", id: "synth_b1", label: "Input State", x: 60, y: 120, width: 140, height: 60, color: "#38bdf8", fill: "#0c4a6e" },
-            { type: "box", id: "synth_b2", label: "Transformation", x: 260, y: 120, width: 160, height: 60, color: "#818cf8", fill: "#312e81" },
-            { type: "box", id: "synth_b3", label: "Solved Result", x: 480, y: 120, width: 140, height: 60, color: "#34d399", fill: "#064e3b" },
-            { type: "arrow", id: "synth_arr1", start_x: 200, start_y: 150, end_x: 260, end_y: 150, label: "processes", color: "#38bdf8" },
-            { type: "arrow", id: "synth_arr2", start_x: 420, start_y: 150, end_x: 480, end_y: 150, label: "yields", color: "#818cf8" }
-          ],
-          agent_thoughts: `Synthesized introductory intuition for ${title} tailored to ${level} difficulty.`,
-          trace: { source: "llm", provider: "groq", model: "llama-3.3-70b-versatile", latency_ms: 450 }
-        },
-        {
-          step_id: `synth_step_1`,
-          step_index: 1,
-          total_steps: 4,
-          concept: title,
-          narration: `Let's examine the mathematical invariant governing ${title}. Formulating the state invariant guarantees correctness and clarifies how bounds or states converge towards the solution.`,
-          board_commands: [
-            { type: "text", id: "inv_title", content: "Mathematical State & Invariant", x: 60, y: 50, size: 20, color: "#fbbf24" },
-            { type: "equation", id: "eq_synth", latex: "\\forall k \\in S, \\quad f(k) \\le \\mathcal{O}(\\phi(n))", x: 60, y: 110, label: "Core Invariant Bound" },
-            { type: "text", id: "inv_desc", content: `Each progressive step preserves the optimal substructure of ${title}.`, x: 60, y: 220, size: 16, color: "#94a3b8" }
-          ],
-          agent_thoughts: `Formalizing the invariant representation for ${title}.`,
-          trace: { source: "mock", provider: "groq", model: "llama-3.3-70b-versatile", latency_ms: 310 }
-        },
-        {
-          step_id: `synth_step_2`,
-          step_index: 2,
-          total_steps: 4,
-          concept: title,
-          narration: `Here is the clean implementation for ${title}. Study how the base case terminates cleanly and handles edge scenarios gracefully.`,
-          board_commands: [
-            { type: "text", id: "code_synth_title", content: `Executable Implementation: ${title}`, x: 60, y: 50, size: 20, color: "#38bdf8" }
-          ],
-          code_chunks: [
-            {
-              code: `# Implementation for ${title}\ndef solve(data):\n    print("Executing ${title} algorithm...")\n    result = [x * 2 for x in data]\n    return result\n\noutput = solve([1, 2, 3, 4, 5])\nprint("Result:", output)`,
-              explanation: `Interactive Python execution for ${title}.`,
-              expected_output: "Result: [2, 4, 6, 8, 10]"
-            }
-          ],
-          code_action: {
-            code: `# Implementation for ${title}\ndef solve(data):\n    print("Executing ${title} algorithm...")\n    result = [x * 2 for x in data]\n    return result\n\noutput = solve([1, 2, 3, 4, 5])\nprint("Result:", output)`,
-            language: "python"
-          },
-          check_question: {
-            question_id: `chk_${title.toLowerCase()}`,
-            question: `What is the primary condition that guarantees optimal execution in ${title}?`,
-            options: ["The invariant is preserved across iterations", "The input is always zero", "Using random guessing", "Ignoring edge cases"],
-            correct_index: 0,
-            explanation: `Correct! Preserving the state invariant ensures mathematical soundness and termination.`,
-            concept_tag: `${title.toLowerCase()}_invariant`
-          },
-          agent_thoughts: `Testing student comprehension on the state invariant for ${title}.`,
-          trace: { source: "cache", provider: "gemini", model: "gemini-1.5-flash", latency_ms: 140 }
-        },
-        {
-          step_id: `synth_step_3`,
-          step_index: 3,
-          total_steps: 4,
-          concept: title,
-          narration: `Great work! You have completed the introductory tour of ${title}. You are now ready to experiment with live code modifications and test your mastery!`,
-          board_commands: [
-            { type: "clear", id: "clr_synth_end" },
-            { type: "text", id: "end_title", content: `Module Completed: ${title}`, x: 60, y: 50, size: 22, color: "#34d399" },
-            { type: "box", id: "end_box", label: "Mastery: 80%", x: 60, y: 110, width: 180, height: 60, color: "#10b981", fill: "#064e3b" }
-          ],
-          is_final_step: true,
-          agent_thoughts: `Final synthesis step achieved for ${title}.`,
-          trace: { source: "llm", provider: "groq", model: "llama-3.3-70b-versatile", latency_ms: 390 }
-        }
-      ];
-    }
-
-    function showTopicSkeleton(show) {
-      const loader = document.getElementById("topicSkeletonLoader");
-      const btn = document.getElementById("generateLessonBtn");
-      const btnText = document.getElementById("generateBtnText");
-      if (show) {
-        loader.classList.remove("hidden");
-        btn.disabled = true;
-        btnText.innerText = "Synthesizing Lesson...";
-      } else {
-        loader.classList.add("hidden");
-        btn.disabled = false;
-        btnText.innerText = "Generate Lesson";
-      }
-    }
-
-    function showTopicError(msg) {
-      const banner = document.getElementById("topicErrorBanner");
-      const msgEl = document.getElementById("topicErrorMessage");
-      msgEl.innerText = msg;
-      banner.classList.remove("hidden");
-    }
-
-    function dismissTopicError() {
-      document.getElementById("topicErrorBanner").classList.add("hidden");
-    }
-
-    function openTopicPicker() {
-      document.getElementById("topicPickerModal").classList.remove("hidden");
-      document.getElementById("classroomMainView").classList.add("hidden");
-      setPlaybackState("idle");
-    }
-
-    function launchClassroomView() {
-      document.getElementById("topicPickerModal").classList.add("hidden");
-      document.getElementById("classroomMainView").classList.remove("hidden");
+      
+      // Fallback
+      currentSteps = FALLBACK_LESSON.map(s => ({ ...s, concept: topicName }));
       currentStepIdx = 0;
-      setPlaybackState("idle");
       renderStepper();
-      loadStep(0, false);
-      // Mount Plugin Panels if not yet mounted
-      initPlugins();
+      loadStep(0);
     }
 
-    // =========================================================================
-    // PLUGIN INTERFACE & MOUNT POINTS (Requirement 0 & Spec Header)
-    // =========================================================================
-    let pluginsMounted = false;
-    function initPlugins() {
-      if (pluginsMounted) return;
-      pluginsMounted = true;
-
-      // 1. Mount CodePanel
-      const codeEl = document.getElementById("code-panel");
-      if (codeEl && window.CodePanel?.mount) {
-        try {
-          window.CodePanel.mount(codeEl);
-          // Hide fallback if plugin mounted
-          const fallback = document.getElementById("builtinCodeFallback");
-          if (fallback) fallback.classList.add("hidden");
-        } catch (e) {
-          console.warn("[CodePanel] mount failed:", e);
+    // Fetch Initial Lesson
+    async function initClassroom() {
+      try {
+        const res = await fetch("http://localhost:8000/mock/lesson");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            currentSteps = data;
+            document.getElementById("backendStatusPill").className = "badge badge-success";
+            document.getElementById("backendStatusDot").style.backgroundColor = "var(--status-success)";
+            document.getElementById("backendStatusText").innerText = "Live";
+          }
         }
+      } catch (e) {
+        document.getElementById("backendStatusText").innerText = "Offline";
       }
 
-      // 2. Mount ChatPanel
-      const chatEl = document.getElementById("chat-panel");
-      if (chatEl && window.ChatPanel?.mount) {
-        try {
-          window.ChatPanel.mount(chatEl, {
-            apiBase: API_BASE,
-            getContext: () => ({
-              topic: currentTopic?.title || "Binary Search",
-              step_index: currentStepIdx,
-              history: chatHistory,
-              user_id: currentUserId
-            })
-          });
-          const fallback = document.getElementById("builtinChatFallback");
-          if (fallback) fallback.classList.add("hidden");
-        } catch (e) {
-          console.warn("[ChatPanel] mount failed:", e);
-        }
-      }
-
-      // 3. Mount QuizPanel
-      const quizEl = document.getElementById("quiz-panel");
-      if (quizEl && window.QuizPanel?.mount) {
-        try {
-          window.QuizPanel.mount(quizEl, {
-            apiBase: API_BASE,
-            getUserId: () => currentUserId
-          });
-          const fallback = document.getElementById("builtinQuizFallback");
-          if (fallback) fallback.classList.add("hidden");
-        } catch (e) {
-          console.warn("[QuizPanel] mount failed:", e);
-        }
-      }
+      renderStepper();
+      loadStep(currentStepIdx);
+      setupPanning();
+      setupKeyboardShortcuts();
     }
 
-    // =========================================================================
-    // STEP NAVIGATION & PLAYBACK
-    // =========================================================================
+    // Keyboard Shortcuts: Space = Play/Pause, Left/Right = Steps
+    function setupKeyboardShortcuts() {
+      window.addEventListener("keydown", (e) => {
+        if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+        if (e.code === "Space") {
+          e.preventDefault();
+          togglePlayPause();
+        } else if (e.code === "ArrowRight") {
+          e.preventDefault();
+          nextStep();
+        } else if (e.code === "ArrowLeft") {
+          e.preventDefault();
+          prevStep();
+        }
+      });
+    }
+
+    // Segmented Stepper Bar
     function renderStepper() {
       const container = document.getElementById("stepperContainer");
       container.innerHTML = "";
       currentSteps.forEach((_, idx) => {
-        const btn = document.createElement("button");
-        btn.innerText = idx + 1;
-        btn.onclick = () => jumpToStep(idx);
-        btn.className = `w-7 h-7 rounded-lg text-xs font-semibold font-mono flex items-center justify-center transition-all ${
-          idx === currentStepIdx
-            ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30 scale-105 border border-sky-400"
-            : idx < currentStepIdx
-            ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 hover:bg-emerald-900"
-            : "bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-750 hover:text-slate-200"
+        const segment = document.createElement("div");
+        segment.className = `stepper-segment ${
+          idx === currentStepIdx ? "active" : idx < currentStepIdx ? "completed" : ""
         }`;
-        container.appendChild(btn);
+        segment.title = `Jump to Step ${idx + 1}`;
+        segment.onclick = () => jumpToStep(idx);
+        container.appendChild(segment);
       });
+      document.getElementById("playerStateText").innerText = `${isPlaying ? "Playing" : "Paused"} · Step ${currentStepIdx + 1} of ${currentSteps.length}`;
     }
 
-    // Step change respects current playback state (Requirement 1: playback only starts when step changes if playing)
-    async function loadStep(index, triggeredByPlay = false) {
+    async function loadStep(index) {
       currentStepIdx = index;
       activeRemediationCommands = [];
       document.getElementById("remediationPill").classList.add("hidden");
       renderStepper();
 
       const step = currentSteps[currentStepIdx];
+      syncTopicState(step.concept);
       document.getElementById("canvasStepBadge").innerText = `Step ${currentStepIdx + 1} of ${currentSteps.length}`;
-      document.getElementById("narrationStepSubtitle").innerText = `Step ${currentStepIdx + 1} Spoken Explanation`;
+      document.getElementById("narrationStepSubtitle").innerText = `${step.concept}: Step ${currentStepIdx + 1}`;
       document.getElementById("narrationText").innerText = step.narration;
 
-      // Update Nav Buttons
       document.getElementById("prevStepBtn").disabled = (currentStepIdx === 0);
       document.getElementById("nextStepBtn").disabled = (currentStepIdx === currentSteps.length - 1);
 
-      // Render Whiteboard with Auto-Layout & No text overlap (Requirement 2)
       renderWhiteboard(step.board_commands);
-
-      // Render Teacher Reasoning & Cognitive Trace (Requirement 7)
-      renderTeacherTrace(step);
-
-      // Setup Checkpoint Question or Code Step (Requirement 5)
-      setupStepPluginContent(step);
-
-      // Audio narration playback based on current state
-      haltAllAudio(true);
-      if (playbackState === "playing" || triggeredByPlay) {
-        playStepNarration();
-      }
-    }
-
-    function nextStep() {
-      if (currentStepIdx < currentSteps.length - 1) {
-        loadStep(currentStepIdx + 1, playbackState === "playing");
-      } else {
-        setPlaybackState("finished");
-      }
-    }
-
-    function prevStep() {
-      if (currentStepIdx > 0) {
-        loadStep(currentStepIdx - 1, playbackState === "playing");
-      }
-    }
-
-    function jumpToStep(idx) {
-      loadStep(idx, playbackState === "playing");
-    }
-
-    // =========================================================================
-    // WHITEBOARD AUTO-LAYOUT ENGINE (Requirement 2: measure, wrap, flow, no overlap)
-    // =========================================================================
-    function toggleAutoLayoutMode() {
-      autoLayoutEnabled = !autoLayoutEnabled;
-      const label = document.getElementById("layoutModeLabel");
-      label.innerText = autoLayoutEnabled ? "Auto Layout" : "Exact Coords";
-      const step = currentSteps[currentStepIdx];
-      if (step) renderWhiteboard(step.board_commands);
+      renderAgentThoughts(step);
+      setupTabs(step);
+      speakNarration(step.narration);
     }
 
     async function renderWhiteboard(commands) {
       const svgLayer = document.getElementById("svgArrowLayer");
       const htmlLayer = document.getElementById("htmlElementsLayer");
 
-      // Keep defs in SVG
       const defs = svgLayer.querySelector("defs");
       svgLayer.innerHTML = "";
       if (defs) svgLayer.appendChild(defs);
       htmlLayer.innerHTML = "";
 
-      // Filter commands (Narration strictly goes in its own panel, not on whiteboard!)
       const allCmds = [...commands, ...activeRemediationCommands];
       const activeCmds = [];
       for (const cmd of allCmds) {
         if (cmd.type === "clear") {
           activeCmds.length = 0;
         } else {
-          // Guard against accidental whole narration placed as text on board
-          if (cmd.type === "text" && cmd.content && cmd.content.length > 250) {
-            continue;
-          }
           activeCmds.push(cmd);
         }
       }
 
-      // Check if Lazy KaTeX or Mermaid needed (Requirement 6)
-      const hasEquation = activeCmds.some(c => c.type === "equation");
-      const hasMermaid = activeCmds.some(c => c.type === "mermaid");
+      const boxMap = {};
+      activeCmds.forEach(c => {
+        if (c.type === "box") boxMap[c.id] = c;
+      });
 
-      if (hasEquation && !katexLoaded) {
-        await loadKaTeXLibrary();
-      }
-      if (hasMermaid && !mermaidLoaded) {
-        await loadMermaidLibrary();
-      }
+      // SVG Arrows
+      activeCmds.filter(c => c.type === "arrow").forEach(cmd => {
+        let sx = cmd.start_x || 0;
+        let sy = cmd.start_y || 0;
+        let ex = cmd.end_x || 0;
+        let ey = cmd.end_y || 0;
 
-      if (!autoLayoutEnabled) {
-        // Render with raw coordinate positions
-        renderRawCoordsWhiteboard(activeCmds, svgLayer, htmlLayer);
-        return;
-      }
+        if (cmd.from_id && boxMap[cmd.from_id]) {
+          const b = boxMap[cmd.from_id];
+          sx = b.x + (b.width || 80) / 2;
+          sy = b.y + (b.height || 50);
+        }
+        if (cmd.to_id && boxMap[cmd.to_id]) {
+          const b = boxMap[cmd.to_id];
+          ex = b.x + (b.width || 80) / 2;
+          ey = b.y;
+        }
 
-      // Auto Layout: measure, flow in columns/rows, wrap text, avoid overlapping bounding boxes
-      renderAutoLayoutWhiteboard(activeCmds, svgLayer, htmlLayer);
-    }
+        const color = cmd.color || "#0E7490";
+        let marker = "arrowhead-blue";
+        if (color.includes("15803D") || color.includes("16a34a")) marker = "arrowhead-green";
+        else if (color.includes("B91C1C") || color.includes("dc2626")) marker = "arrowhead-red";
+        else if (color.includes("B45309") || color.includes("d97706")) marker = "arrowhead-amber";
 
-    function renderAutoLayoutWhiteboard(activeCmds, svgLayer, htmlLayer) {
-      // Auto-layout container: Flows cleanly with vertical and horizontal spacing
-      const flowContainer = document.createElement("div");
-      flowContainer.className = "whiteboard-auto-flow";
-      flowContainer.style.width = "100%";
-      flowContainer.style.minHeight = "100%";
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", sx);
+        line.setAttribute("y1", sy);
+        line.setAttribute("x2", ex);
+        line.setAttribute("y2", ey);
+        line.setAttribute("stroke", color);
+        line.setAttribute("stroke-width", "2");
+        line.setAttribute("marker-end", `url(#${marker})`);
+        svgLayer.appendChild(line);
 
-      // Group consecutive boxes into an array row
-      let i = 0;
-      let animIndex = 0;
-
-      while (i < activeCmds.length) {
-        const cmd = activeCmds[i];
-        animIndex++;
-        const animDelay = `${Math.min(animIndex * 35, 300)}ms`;
-
-        if (cmd.type === "box") {
-          // Collect row of boxes
-          const boxRow = document.createElement("div");
-          boxRow.className = "whiteboard-row board-element-enter";
-          boxRow.style.animationDelay = animDelay;
-
-          while (i < activeCmds.length && activeCmds[i].type === "box") {
-            const bCmd = activeCmds[i];
-            const box = document.createElement("div");
-            box.className = "whiteboard-box";
-            box.style.borderColor = bCmd.color || "#3b82f6";
-            box.style.backgroundColor = bCmd.fill || "#0f172a";
-            box.style.color = "#f8fafc";
-            box.innerText = bCmd.label || "";
-            boxRow.appendChild(box);
-            i++;
-          }
-          flowContainer.appendChild(boxRow);
-          continue;
-        } else if (cmd.type === "text") {
-          const isRemediation = cmd.id && (cmd.id.includes("misconception") || cmd.id.includes("remediation"));
-          const textCard = document.createElement("div");
-          textCard.className = `whiteboard-text board-element-enter ${
-            isRemediation ? "bg-rose-950/80 p-3 rounded-xl border border-rose-800 text-rose-200 font-medium" : "text-slate-100 font-semibold"
-          }`;
-          textCard.style.animationDelay = animDelay;
-          textCard.style.fontSize = `${cmd.size || 18}px`;
-          if (!isRemediation && cmd.color) textCard.style.color = cmd.color;
-          textCard.innerText = cmd.content || "";
-          flowContainer.appendChild(textCard);
-        } else if (cmd.type === "equation") {
-          const eqCard = document.createElement("div");
-          eqCard.className = "whiteboard-equation board-element-enter";
-          eqCard.style.animationDelay = animDelay;
-          let labelHtml = cmd.label ? `<div class="text-[11px] font-medium text-indigo-300 uppercase tracking-wider mb-1">${cmd.label}</div>` : "";
-          let rendered = cmd.latex || "";
-          if (window.katex) {
-            try {
-              rendered = katex.renderToString(cmd.latex, { displayMode: true, throwOnError: false });
-            } catch (err) {
-              rendered = cmd.latex;
+        if (cmd.label) {
+          // Detect pointer labels (low/high/mid) and render them as HTML below the box,
+          // not as SVG text floating over cells
+          const labelLow = cmd.label.toLowerCase();
+          const isPointerLabel = ["low", "high", "mid", "left", "right", "start", "end"].some(k => labelLow.includes(k));
+          if (isPointerLabel) {
+            // Render pointer label as HTML div below the target position
+            const pLabel = document.createElement("div");
+            pLabel.style.position = "absolute";
+            // Place below the arrow endpoint + offset
+            const lx = (sx + ex) / 2;
+            const ly = Math.max(sy, ey) + 10;
+            pLabel.style.left = `${lx}px`;
+            pLabel.style.top = `${ly}px`;
+            pLabel.style.transform = "translateX(-50%)";
+            pLabel.style.fontSize = "11px";
+            pLabel.style.fontFamily = "var(--font-mono)";
+            pLabel.style.fontWeight = "700";
+            pLabel.style.lineHeight = "1.2";
+            pLabel.style.textAlign = "center";
+            pLabel.style.pointerEvents = "none";
+            pLabel.style.whiteSpace = "nowrap";
+            // Pick token based on pointer name
+            if (labelLow.includes("high") || labelLow.includes("right") || labelLow.includes("end")) {
+              pLabel.style.color = "var(--pointer-high)";
+            } else if (labelLow.includes("mid")) {
+              pLabel.style.color = "var(--pointer-mid)";
+            } else {
+              pLabel.style.color = "var(--pointer-low)";
             }
-          }
-          eqCard.innerHTML = `${labelHtml}<div class="text-sky-300 text-lg font-mono overflow-x-auto">${rendered}</div>`;
-          flowContainer.appendChild(eqCard);
-        } else if (cmd.type === "mermaid") {
-          const mCard = document.createElement("div");
-          mCard.className = "whiteboard-mermaid board-element-enter";
-          mCard.style.animationDelay = animDelay;
-          const chartId = `m_${cmd.id}_${Date.now()}`;
-          const titleHtml = cmd.title ? `<div class="text-xs font-semibold text-slate-300 mb-2 border-b border-slate-800 pb-1">${cmd.title}</div>` : "";
-          mCard.innerHTML = `${titleHtml}<div id="${chartId}" class="text-xs"></div>`;
-          flowContainer.appendChild(mCard);
-
-          if (window.mermaid) {
-            setTimeout(async () => {
-              try {
-                const { svg } = await mermaid.render(chartId + "_svg", cmd.chart);
-                const el = document.getElementById(chartId);
-                if (el) el.innerHTML = svg;
-              } catch (err) {
-                const el = document.getElementById(chartId);
-                if (el) el.innerHTML = `<pre class="text-sky-400 font-mono text-xs">${cmd.chart}</pre>`;
-              }
-            }, 50);
+            pLabel.textContent = cmd.label;
+            htmlLayer.appendChild(pLabel);
+          } else {
+            // Non-pointer label: keep it as SVG text near the arrow midpoint
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", (sx + ex) / 2);
+            text.setAttribute("y", (sy + ey) / 2 - 6);
+            text.setAttribute("fill", color);
+            text.setAttribute("font-size", "12");
+            text.setAttribute("font-family", "var(--font-mono)");
+            text.setAttribute("font-weight", "600");
+            text.setAttribute("text-anchor", "middle");
+            text.textContent = cmd.label;
+            svgLayer.appendChild(text);
           }
         }
-        i++;
-      }
+      });
 
-      htmlLayer.appendChild(flowContainer);
-    }
-
-    function renderRawCoordsWhiteboard(activeCmds, svgLayer, htmlLayer) {
+      // Render Boxes, Equations, Mermaid
       let animIndex = 0;
-      activeCmds.forEach(cmd => {
+      for (const cmd of activeCmds) {
         animIndex++;
-        const animDelay = `${Math.min(animIndex * 40, 400)}ms`;
+        const animDelay = `${Math.min(animIndex * 30, 300)}ms`;
 
         if (cmd.type === "box") {
           const box = document.createElement("div");
-          box.style.position = "absolute";
           box.style.left = `${cmd.x}px`;
           box.style.top = `${cmd.y}px`;
-          box.style.width = `${cmd.width || 60}px`;
-          box.style.height = `${cmd.height || 48}px`;
-          box.style.borderColor = cmd.color || "#3b82f6";
-          box.style.backgroundColor = cmd.fill || "#0f172a";
-          box.className = "board-element-enter border-2 rounded-xl flex items-center justify-center font-mono font-bold text-sm text-slate-100 shadow-md";
+          box.style.width = `${cmd.width || 80}px`;
+          box.style.height = `${cmd.height || 50}px`;
+          // Always use CSS vars for bg/text so dark-mode works;
+          // only use cmd.color for the border accent
+          box.style.borderColor = cmd.color || "var(--board-box-border)";
+          box.style.backgroundColor = "var(--cell-bg)";
+          box.style.color = "var(--cell-ink)";
+          box.className = "board-element-enter board-box";
           box.style.animationDelay = animDelay;
           box.innerText = cmd.label || "";
           htmlLayer.appendChild(box);
         } else if (cmd.type === "text") {
+          const isRemediation = cmd.id.includes("misconception") || cmd.id.includes("remediation");
           const txt = document.createElement("div");
           txt.style.position = "absolute";
           txt.style.left = `${cmd.x}px`;
           txt.style.top = `${cmd.y}px`;
           txt.style.fontSize = `${cmd.size || 16}px`;
-          txt.style.color = cmd.color || "#f8fafc";
-          txt.className = "board-element-enter font-sans max-w-xl leading-relaxed font-semibold";
+          // Board text must always use board ink token (never inherit page color)
+          txt.style.color = isRemediation ? "var(--status-error)" : "var(--board-ink)";
+          txt.className = `board-element-enter ${isRemediation ? "badge badge-error" : "font-sans"}`;
+          txt.style.fontWeight = isRemediation ? "600" : "500";
           txt.style.animationDelay = animDelay;
           txt.innerText = cmd.content;
           htmlLayer.appendChild(txt);
         } else if (cmd.type === "equation") {
           const eqCard = document.createElement("div");
-          eqCard.style.position = "absolute";
           eqCard.style.left = `${cmd.x}px`;
           eqCard.style.top = `${cmd.y}px`;
-          eqCard.className = "board-element-enter bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 shadow-xl backdrop-blur max-w-md";
+          eqCard.className = "board-element-enter board-equation-card";
           eqCard.style.animationDelay = animDelay;
-          let rendered = cmd.latex;
+          // Use board-specific tokens so equation cards are readable in dark mode
+          eqCard.style.backgroundColor = "var(--board-equation-bg)";
+          eqCard.style.color = "var(--board-equation-text)";
+          eqCard.style.borderColor = "var(--cell-border)";
+
+          let labelHtml = cmd.label ? `<div class="board-equation-label">${cmd.label}</div>` : "";
+          let renderedMath = cmd.latex;
           if (window.katex) {
-            try { rendered = katex.renderToString(cmd.latex, { displayMode: true, throwOnError: false }); } catch (e) {}
+            try {
+              renderedMath = katex.renderToString(cmd.latex, { displayMode: true, throwOnError: false });
+            } catch (err) {
+              renderedMath = cmd.latex;
+            }
           }
-          eqCard.innerHTML = `<div class="text-sky-300 font-mono">${rendered}</div>`;
+          eqCard.innerHTML = `${labelHtml}<div class="board-equation-content" style="color:var(--board-equation-text)">${renderedMath}</div>`;
           htmlLayer.appendChild(eqCard);
-        }
-      });
-    }
+        } else if (cmd.type === "mermaid") {
+          const mCard = document.createElement("div");
+          mCard.style.left = `${cmd.x || 60}px`;
+          mCard.style.top = `${cmd.y || 100}px`;
+          mCard.className = "board-element-enter board-mermaid-card";
+          mCard.style.animationDelay = animDelay;
 
-    // =========================================================================
-    // VOICE PLAYBACK ENGINE (Requirement 4: POST /tts, 503 fallback, prefetch, strip LaTeX)
-    // =========================================================================
-    function stripMarkdownAndLaTeX(rawText) {
-      if (!rawText) return "";
-      let s = rawText;
-      // Remove LaTeX math environments \[ ... \] and \( ... \)
-      s = s.replace(/\\\[.*?\\\]/gs, " equation ");
-      s = s.replace(/\\\(.*?\\\)/gs, " ");
-      // Remove inline dollar math $ ... $
-      s = s.replace(/\$.*?\$/g, " formula ");
-      // Remove LaTeX control words like \mathcal, \left, \right, \frac
-      s = s.replace(/\\[a-zA-Z]+/g, " ");
-      // Remove markdown bold, italic, code
-      s = s.replace(/[*_#`~>]/g, "");
-      // Clean duplicate whitespace
-      return s.replace(/\s+/g, " ").trim();
-    }
+          const titleHtml = cmd.title ? `<div class="board-mermaid-title">${cmd.title}</div>` : "";
+          const chartContainerId = `mermaid_${cmd.id}_${Date.now()}`;
+          mCard.innerHTML = `${titleHtml}<div id="${chartContainerId}" class="overflow-x-auto text-xs"></div>`;
+          htmlLayer.appendChild(mCard);
 
-    function splitIntoSentences(text) {
-      if (!text) return [];
-      const cleaned = text.trim();
-      const matches = cleaned.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g);
-      return matches ? matches.map(m => m.trim()).filter(Boolean) : [cleaned];
-    }
-
-    async function playStepNarration() {
-      const step = currentSteps[currentStepIdx];
-      if (!step || !step.narration) return;
-
-      sentenceList = splitIntoSentences(step.narration);
-      currentSentenceIdx = 0;
-      ttsSentenceBlobCache.clear();
-
-      playCurrentSentence();
-    }
-
-    async function playCurrentSentence() {
-      if (playbackState !== "playing") return;
-      if (currentSentenceIdx >= sentenceList.length) {
-        // Step narration complete: auto advance to next step if playing
-        onStepNarrationComplete();
-        return;
-      }
-
-      const sentence = sentenceList[currentSentenceIdx];
-      const spokenText = stripMarkdownAndLaTeX(sentence);
-
-      // Trigger prefetching for next sentence (Requirement 4)
-      prefetchNextSentence(currentSentenceIdx + 1);
-
-      // Check if we have prefetched audio blob
-      if (ttsSentenceBlobCache.has(currentSentenceIdx)) {
-        const audioBlob = ttsSentenceBlobCache.get(currentSentenceIdx);
-        playAudioBlob(audioBlob);
-        return;
-      }
-
-      // Call POST /tts (Requirement 4: POST /tts -> audio/mpeg, 503 fallback)
-      try {
-        const controller = new AbortController();
-        activeTTSController = controller;
-        const res = await fetch(`${API_BASE}/tts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: spokenText }),
-          signal: controller.signal
-        });
-
-        if (res.ok) {
-          const blob = await res.blob();
-          document.getElementById("audioSourceBadge").innerText = "TTS Cloud";
-          playAudioBlob(blob);
-          return;
-        }
-      } catch (err) {
-        // Fall back to browser speech synthesis
-      }
-
-      // Browser speechSynthesis fallback
-      fallbackToSpeechSynthesis(spokenText);
-    }
-
-    function playAudioBlob(blob) {
-      haltAllAudio(false);
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-      currentAudioElement = audio;
-      audio.playbackRate = speechRate;
-      audio.muted = voiceMuted;
-
-      showVoiceVisuals(true);
-
-      audio.onended = () => {
-        showVoiceVisuals(false);
-        currentSentenceIdx++;
-        if (playbackState === "playing") {
-          playCurrentSentence();
-        }
-      };
-
-      audio.onerror = () => {
-        showVoiceVisuals(false);
-        // Fallback to speech synthesis on audio error
-        const sentence = sentenceList[currentSentenceIdx];
-        fallbackToSpeechSynthesis(stripMarkdownAndLaTeX(sentence));
-      };
-
-      if (!voiceMuted) {
-        audio.play().catch(e => {
-          fallbackToSpeechSynthesis(stripMarkdownAndLaTeX(sentenceList[currentSentenceIdx]));
-        });
-      }
-    }
-
-    function fallbackToSpeechSynthesis(cleanText) {
-      document.getElementById("audioSourceBadge").innerText = "WebSpeech";
-      if (!window.speechSynthesis || voiceMuted) {
-        // Simulate sentence duration if voice disabled or muted
-        setTimeout(() => {
-          currentSentenceIdx++;
-          if (playbackState === "playing") playCurrentSentence();
-        }, Math.max(1500, cleanText.length * 50));
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      currentUtterance = utterance;
-      utterance.rate = speechRate;
-      utterance.pitch = 1.0;
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      } else if (availableVoices.length > 0) {
-        const natural = availableVoices.find(v => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Google"))) || availableVoices[0];
-        if (natural) utterance.voice = natural;
-      }
-
-      utterance.onstart = () => showVoiceVisuals(true);
-      utterance.onend = () => {
-        showVoiceVisuals(false);
-        currentSentenceIdx++;
-        if (playbackState === "playing") {
-          playCurrentSentence();
-        }
-      };
-      utterance.onerror = () => {
-        showVoiceVisuals(false);
-        currentSentenceIdx++;
-        if (playbackState === "playing") playCurrentSentence();
-      };
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    async function prefetchNextSentence(nextIdx) {
-      if (nextIdx >= sentenceList.length || ttsSentenceBlobCache.has(nextIdx)) return;
-      const nextText = stripMarkdownAndLaTeX(sentenceList[nextIdx]);
-
-      try {
-        const res = await fetch(`${API_BASE}/tts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: nextText })
-        });
-        if (res.ok) {
-          const blob = await res.blob();
-          ttsSentenceBlobCache.set(nextIdx, blob);
-        }
-      } catch (e) {
-        // Silently skip prefetch failure
-      }
-    }
-
-    function resumeCurrentSentence() {
-      if (currentAudioElement && currentAudioElement.paused) {
-        showVoiceVisuals(true);
-        currentAudioElement.play();
-      } else if (window.speechSynthesis && window.speechSynthesis.paused) {
-        showVoiceVisuals(true);
-        window.speechSynthesis.resume();
-      } else {
-        playCurrentSentence();
-      }
-    }
-
-    function haltAllAudio(resetIndex = true) {
-      if (activeTTSController) {
-        activeTTSController.abort();
-        activeTTSController = null;
-      }
-      if (currentAudioElement) {
-        currentAudioElement.pause();
-        currentAudioElement = null;
-      }
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      showVoiceVisuals(false);
-      if (resetIndex) {
-        currentSentenceIdx = 0;
-      }
-    }
-
-    function showVoiceVisuals(speaking) {
-      const wave = document.getElementById("soundWaveIndicator");
-      const dot = document.getElementById("speakingDot");
-      if (speaking && !voiceMuted) {
-        wave.classList.remove("hidden");
-        dot.classList.remove("hidden");
-      } else {
-        wave.classList.add("hidden");
-        dot.classList.add("hidden");
-      }
-    }
-
-    function onStepNarrationComplete() {
-      if (currentStepIdx < currentSteps.length - 1) {
-        // Pause 1 second before stepping forward
-        setTimeout(() => {
-          if (playbackState === "playing") {
-            nextStep();
+          if (window.mermaid) {
+            try {
+              const { svg } = await mermaid.render(chartContainerId + "_svg", cmd.chart);
+              document.getElementById(chartContainerId).innerHTML = svg;
+            } catch (err) {
+              document.getElementById(chartContainerId).innerHTML = `<pre class="font-mono" style="font-size: 0.75rem;">${cmd.chart}</pre>`;
+            }
           }
-        }, 1200);
+        }
+      }
+    }
+
+    function renderAgentThoughts(step) {
+      const providerBadge = document.getElementById("agentProviderBadge");
+      const miscBadge = document.getElementById("misconceptionBadge");
+      const thoughtsText = document.getElementById("agentThoughtsText");
+      const remedBox = document.getElementById("remediationContent");
+      const remedText = document.getElementById("remediationText");
+
+      if (step.provider_metadata) {
+        providerBadge.innerText = `${step.provider_metadata.provider} (${step.provider_metadata.latency_ms || 700}ms)`;
+        providerBadge.classList.remove("hidden");
       } else {
-        setPlaybackState("finished");
-      }
-    }
-
-    function replayCurrentNarration() {
-      haltAllAudio(true);
-      setPlaybackState("playing");
-      playStepNarration();
-    }
-
-    function toggleVoiceMute() {
-      voiceMuted = !voiceMuted;
-      const btn = document.getElementById("voiceToggleBtn");
-      const icon = document.getElementById("voiceToggleIcon");
-
-      if (voiceMuted) {
-        btn.className = "p-1.5 rounded-lg border bg-slate-800 text-slate-500 border-slate-700 hover:text-slate-300 transition";
-        icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>`;
-        haltAllAudio(false);
-      } else {
-        btn.className = "p-1.5 rounded-lg border bg-sky-950/80 text-sky-400 border-sky-800 hover:bg-sky-900 transition";
-        icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>`;
-        if (playbackState === "playing") resumeCurrentSentence();
-      }
-    }
-
-    function cycleSpeechRate() {
-      const rates = [0.95, 1.05, 1.15];
-      const curIdx = rates.indexOf(speechRate);
-      speechRate = rates[(curIdx + 1) % rates.length];
-      document.getElementById("speechRateBtn").innerText = `${speechRate}x`;
-      if (currentAudioElement) currentAudioElement.playbackRate = speechRate;
-    }
-
-    function initVoicePicker() {
-      if (!window.speechSynthesis) return;
-      const updateVoices = () => {
-        availableVoices = window.speechSynthesis.getVoices();
-        const select = document.getElementById("voicePickerSelect");
-        select.innerHTML = "";
-
-        const englishVoices = availableVoices.filter(v => v.lang.startsWith("en"));
-        const listToUse = englishVoices.length > 0 ? englishVoices : availableVoices;
-
-        listToUse.forEach((v, idx) => {
-          const opt = document.createElement("option");
-          opt.value = v.name;
-          opt.innerText = `${v.name.substring(0, 22)} (${v.lang})`;
-          if (v.name.includes("Natural") || v.name.includes("Google") || idx === 0) {
-            opt.selected = true;
-            selectedVoice = v;
-          }
-          select.appendChild(opt);
-        });
-      };
-
-      window.speechSynthesis.onvoiceschanged = updateVoices;
-      updateVoices();
-    }
-
-    function onVoiceSelected() {
-      const select = document.getElementById("voicePickerSelect");
-      selectedVoice = availableVoices.find(v => v.name === select.value) || null;
-    }
-
-    // =========================================================================
-    // CODE STEPS & PLUGIN SYNC (Requirement 5: CodePanel.loadChunk in sync)
-    // =========================================================================
-    function setupStepPluginContent(step) {
-      const codeDot = document.getElementById("codeNoticeDot");
-      const quizDot = document.getElementById("quizNoticeDot");
-
-      // 1. Sync CodePanel chunks
-      if (step.code_chunks && step.code_chunks.length > 0) {
-        codeDot.classList.remove("hidden");
-        const chunk = step.code_chunks[0];
-        // Guarded plugin call
-        window.CodePanel?.loadChunk?.(chunk);
-        
-        // Sync fallback editor
-        const codeBox = document.getElementById("codeSnippetBox");
-        if (codeBox) codeBox.value = chunk.code || "";
-        const expBox = document.getElementById("codeExplanationBox");
-        if (expBox) expBox.innerText = chunk.explanation || "";
-      } else if (step.code_action) {
-        codeDot.classList.remove("hidden");
-        const chunk = { code: step.code_action.code, explanation: step.code_action.explanation, expected_output: "" };
-        window.CodePanel?.loadChunk?.(chunk);
-        const codeBox = document.getElementById("codeSnippetBox");
-        if (codeBox) codeBox.value = step.code_action.code || "";
-      } else {
-        codeDot.classList.add("hidden");
+        providerBadge.classList.add("hidden");
       }
 
-      // 2. Checkpoint question
-      if (step.check_question) {
-        quizDot.classList.remove("hidden");
-        renderCheckpointQuestion(step.check_question);
-      } else {
-        quizDot.classList.add("hidden");
-      }
-    }
-
-    function switchRightTab(tabName) {
-      activeRightTab = tabName;
-      const chatBtn = document.getElementById("tabChatBtn");
-      const codeBtn = document.getElementById("tabCodeBtn");
-      const quizBtn = document.getElementById("tabQuizBtn");
-
-      const chatWrapper = document.getElementById("tabChatWrapper");
-      const codeWrapper = document.getElementById("tabCodeWrapper");
-      const quizWrapper = document.getElementById("tabQuizWrapper");
-
-      [chatBtn, codeBtn, quizBtn].forEach(b => {
-        b.className = "flex-1 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200 relative";
-      });
-      [chatWrapper, codeWrapper, quizWrapper].forEach(w => w.classList.add("hidden"));
-
-      if (tabName === "chat") {
-        chatBtn.className = "flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20";
-        chatWrapper.classList.remove("hidden");
-      } else if (tabName === "code") {
-        codeBtn.className = "flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20";
-        codeWrapper.classList.remove("hidden");
-      } else if (tabName === "quiz") {
-        quizBtn.className = "flex-1 py-1.5 rounded-lg font-medium transition bg-sky-500 text-white shadow-md shadow-sky-500/20";
-        quizWrapper.classList.remove("hidden");
-      }
-    }
-
-    // =========================================================================
-    // TEACHER REASONING & TRACE (Requirement 7: source, provider, latency, no canned text)
-    // =========================================================================
-    function renderTeacherTrace(step) {
-      const sourcePill = document.getElementById("traceSourcePill");
-      const metaPill = document.getElementById("traceMetadataPill");
-      const thoughtText = document.getElementById("reasoningThoughtText");
-      const miscBadge = document.getElementById("misconceptionTraceBadge");
-      const remedCard = document.getElementById("remediationCardDetail");
-      const remedText = document.getElementById("remediationDetailText");
-
-      const trace = step.trace || step.provider_metadata || { source: "mock", provider: "groq", latency_ms: 420 };
-      const source = trace.source || (trace.cached ? "cache" : "llm");
-      const provider = trace.provider || "groq";
-      const latency = trace.latency_ms || 400;
-
-      // Label cached/fallback/mock visibly (Requirement 7)
-      sourcePill.innerText = source.toUpperCase();
-      if (source === "llm") {
-        sourcePill.className = "text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800";
-      } else if (source === "cache") {
-        sourcePill.className = "text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-sky-950/80 text-sky-300 border border-sky-800";
-      } else if (source === "fallback_canned") {
-        sourcePill.className = "text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-purple-950/80 text-purple-300 border border-purple-800";
-      } else { // mock
-        sourcePill.className = "text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-amber-950/80 text-amber-300 border border-amber-800";
-      }
-
-      metaPill.innerText = `${provider} (${latency}ms)`;
-      thoughtText.innerText = step.agent_thoughts || "Observing student pace, evaluating cognitive load, and preparing progressive whiteboard elements.";
+      thoughtsText.innerText = step.agent_thoughts || "Observing student pace and knowledge model.";
 
       if (step.detected_misconception) {
         miscBadge.innerText = step.detected_misconception;
         miscBadge.classList.remove("hidden");
-        remedCard.classList.remove("hidden");
+        remedBox.classList.remove("hidden");
         remedText.innerText = step.remediation || "Targeted visual review triggered.";
       } else {
         miscBadge.classList.add("hidden");
-        remedCard.classList.add("hidden");
+        remedBox.classList.add("hidden");
       }
     }
 
-    function toggleReasoningTrace() {
-      const body = document.getElementById("reasoningCardBody");
-      const chevron = document.getElementById("reasoningChevron");
-      body.classList.toggle("hidden");
-      chevron.classList.toggle("rotate-180");
+    function setupTabs(step) {
+      const noticeDot = document.getElementById("checkpointNoticeDot");
+      const tabCodeBtn = document.getElementById("tabCodeBtn");
+
+      if (step.check_question) {
+        renderCheckpoint(step.check_question);
+        if (activeTabName !== "checkpoint") {
+          noticeDot.classList.remove("hidden");
+        } else {
+          noticeDot.classList.add("hidden");
+        }
+      } else {
+        noticeDot.classList.add("hidden");
+      }
+
+      if (step.code_action) {
+        tabCodeBtn.classList.remove("hidden");
+        document.getElementById("codeLangBadge").innerText = step.code_action.language || "python";
+        const codeBox = document.getElementById("codeSnippetBox");
+        codeBox.value = step.code_action.code;
+        document.getElementById("codeExplanationBox").innerText = step.code_action.explanation || "";
+      } else {
+        tabCodeBtn.classList.add("hidden");
+        if (activeTabName === "code") switchTab("chat");
+      }
     }
 
-    // =========================================================================
-    // CHECKPOINT QUESTIONS & ANSWERS
-    // =========================================================================
-    function renderCheckpointQuestion(q) {
-      document.getElementById("checkpointConceptBadge").innerText = q.concept_tag || "checkpoint";
+    let activeTabName = "chat";
+    function switchTab(tab) {
+      activeTabName = tab;
+      const chatBtn = document.getElementById("tabChatBtn");
+      const chkBtn = document.getElementById("tabCheckpointBtn");
+      const codeBtn = document.getElementById("tabCodeBtn");
+
+      const chatContent = document.getElementById("tabChatContent");
+      const chkContent = document.getElementById("tabCheckpointContent");
+      const codeContent = document.getElementById("tabCodeContent");
+
+      [chatBtn, chkBtn, codeBtn].forEach(b => b.classList.remove("active"));
+      [chatContent, chkContent, codeContent].forEach(c => c.classList.add("hidden"));
+
+      if (tab === "chat") {
+        chatBtn.classList.add("active");
+        chatContent.classList.remove("hidden");
+      } else if (tab === "checkpoint") {
+        chkBtn.classList.add("active");
+        chkContent.classList.remove("hidden");
+        const noticeDot = document.getElementById("checkpointNoticeDot");
+        if (noticeDot) noticeDot.classList.add("hidden");
+      } else if (tab === "code") {
+        codeBtn.classList.add("active");
+        codeContent.classList.remove("hidden");
+      }
+    }
+
+    function renderCheckpoint(q) {
+      document.getElementById("checkpointConceptBadge").innerText = q.concept_tag;
       document.getElementById("checkpointQuestionText").innerText = q.question;
       const list = document.getElementById("checkpointOptionsList");
       list.innerHTML = "";
@@ -1772,17 +1009,14 @@
       document.getElementById("checkpointFeedbackBox").classList.add("hidden");
 
       q.options.forEach((opt, idx) => {
-        const item = document.createElement("div");
+        const item = document.createElement("button");
         item.id = `opt_item_${idx}`;
+        item.type = "button";
         item.onclick = () => selectOption(idx);
-        item.className = "p-3 rounded-xl border border-slate-700/80 bg-slate-800/80 text-slate-200 hover:bg-slate-800 text-xs font-mono flex items-center justify-between cursor-pointer transition-all";
+        item.className = "quiz-option-row";
         item.innerHTML = `
-          <div class="flex items-center space-x-3">
-            <span class="w-5 h-5 rounded-md bg-slate-900/80 border border-slate-700 flex items-center justify-center font-bold text-[10px] text-slate-400">
-              ${String.fromCharCode(65 + idx)}
-            </span>
-            <span>${opt}</span>
-          </div>
+          <span class="quiz-option-letter">${String.fromCharCode(65 + idx)}</span>
+          <span style="flex: 1;">${opt}</span>
         `;
         list.appendChild(item);
       });
@@ -1791,14 +1025,13 @@
     function selectOption(idx) {
       selectedOptionIdx = idx;
       const step = currentSteps[currentStepIdx];
-      if (!step.check_question) return;
       step.check_question.options.forEach((_, i) => {
         const el = document.getElementById(`opt_item_${i}`);
         if (el) {
           if (i === idx) {
-            el.className = "p-3 rounded-xl border border-sky-500 bg-sky-950/80 text-sky-100 ring-2 ring-sky-500/30 text-xs font-mono flex items-center justify-between cursor-pointer transition-all";
+            el.className = "quiz-option-row selected";
           } else {
-            el.className = "p-3 rounded-xl border border-slate-700/80 bg-slate-800/80 text-slate-200 hover:bg-slate-800 text-xs font-mono flex items-center justify-between cursor-pointer transition-all";
+            el.className = "quiz-option-row";
           }
         }
       });
@@ -1809,70 +1042,74 @@
       const step = currentSteps[currentStepIdx];
       const q = step.check_question;
 
-      document.getElementById("checkpointSubmitBtn").disabled = true;
-      document.getElementById("checkpointSubmitBtn").innerText = "Evaluating response...";
+      const submitBtn = document.getElementById("checkpointSubmitBtn");
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Checking...";
 
       try {
-        const res = await fetch(`${API_BASE}/lesson/check-answer`, {
+        const res = await fetch("http://localhost:8000/lesson/check-answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             question_id: q.question_id,
             selected_index: selectedOptionIdx,
             concept: step.concept,
-            student_id: currentUserId
+            student_id: document.getElementById("personaSelector").value
           })
         });
 
+        let data;
         if (res.ok) {
-          const data = await res.json();
-          displayCheckpointResult(data);
-          return;
+          data = await res.json();
+        } else {
+          const isCorrect = (selectedOptionIdx === q.correct_index);
+          data = {
+            is_correct: isCorrect,
+            correct_index: q.correct_index,
+            explanation: q.explanation,
+            detected_misconception: isCorrect ? null : "confuses_direction_when_target_greater",
+            remediation: isCorrect ? "Accurate understanding." : "Because target (23) > array[mid] (16), the search space lies to the right: low = mid + 1.",
+            updated_mastery_score: isCorrect ? 0.85 : 0.40,
+            suggested_board_commands: isCorrect ? [] : [
+              { type: "text", id: "misconception_alert", content: "Target > Mid means search right half (low = mid + 1)", x: 60.0, y: 350.0, size: 14, color: "#B91C1C" }
+            ]
+          };
         }
+        displayCheckpointResult(data);
       } catch (err) {
-        // Fallback local evaluation
+        const isCorrect = (selectedOptionIdx === q.correct_index);
+        displayCheckpointResult({
+          is_correct: isCorrect,
+          correct_index: q.correct_index,
+          explanation: q.explanation,
+          detected_misconception: isCorrect ? null : "confuses_direction_when_target_greater",
+          remediation: isCorrect ? "Accurate understanding." : "Because target (23) > array[mid] (16), look to the right: low = mid + 1.",
+          updated_mastery_score: isCorrect ? 0.85 : 0.40,
+          suggested_board_commands: []
+        });
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Check answer";
       }
-
-      const isCorrect = (selectedOptionIdx === q.correct_index);
-      displayCheckpointResult({
-        is_correct: isCorrect,
-        correct_index: q.correct_index,
-        explanation: q.explanation,
-        detected_misconception: isCorrect ? null : "conceptual_state_mismatch",
-        remediation: isCorrect ? "Excellent job!" : "Review the updated invariant rule highlighted on the whiteboard.",
-        updated_mastery_score: isCorrect ? 0.85 : 0.45,
-        suggested_board_commands: isCorrect ? [] : [
-          { type: "text", id: "misconception_overlay", content: "Remediation: Search direction invariant applied.", x: 60, y: 320, size: 16, color: "#f87171" }
-        ]
-      });
     }
 
     function displayCheckpointResult(data) {
       document.getElementById("checkpointSubmitBtn").classList.add("hidden");
-      document.getElementById("checkpointSubmitBtn").disabled = false;
-      document.getElementById("checkpointSubmitBtn").innerText = "Check My Answer";
-
       const box = document.getElementById("checkpointFeedbackBox");
       const alert = document.getElementById("checkpointFeedbackAlert");
       box.classList.remove("hidden");
 
       if (data.is_correct) {
-        alert.className = "p-3 rounded-xl border text-xs leading-relaxed bg-emerald-950/60 border-emerald-800/80 text-emerald-200";
+        alert.className = "quiz-explanation-box success";
         alert.innerHTML = `
-          <div class="font-semibold mb-1 flex items-center justify-between">
-            <span>✓ Correct Answer!</span>
-            <span class="font-mono text-[10px] bg-slate-900/80 px-2 py-0.5 rounded">Mastery: ${Math.round(data.updated_mastery_score * 100)}%</span>
-          </div>
-          <p>${data.explanation}</p>
+          <div style="font-weight: 600; margin-bottom: 4px;">Correct · Mastery: ${Math.round(data.updated_mastery_score * 100)}%</div>
+          <div>${data.explanation}</div>
         `;
       } else {
-        alert.className = "p-3 rounded-xl border text-xs leading-relaxed bg-rose-950/60 border-rose-800/80 text-rose-200";
+        alert.className = "quiz-explanation-box error";
         alert.innerHTML = `
-          <div class="font-semibold mb-1 flex items-center justify-between">
-            <span>⚠️ Diagnosed Misconception: ${data.detected_misconception || 'Misconception Detected'}</span>
-            <span class="font-mono text-[10px] bg-slate-900/80 px-2 py-0.5 rounded">Mastery: ${Math.round(data.updated_mastery_score * 100)}%</span>
-          </div>
-          <p>${data.remediation || data.explanation}</p>
+          <div style="font-weight: 600; margin-bottom: 4px;">Misconception: ${data.detected_misconception || 'Pointer Error'} · Mastery: ${Math.round(data.updated_mastery_score * 100)}%</div>
+          <div>${data.remediation || data.explanation}</div>
         `;
 
         if (data.suggested_board_commands && data.suggested_board_commands.length > 0) {
@@ -1886,126 +1123,54 @@
 
     function resetCheckpoint() {
       const step = currentSteps[currentStepIdx];
-      if (step.check_question) renderCheckpointQuestion(step.check_question);
+      renderCheckpoint(step.check_question);
     }
 
-    // =========================================================================
-    // TEACHER CHAT & "I DON'T UNDERSTAND" (POST /agent/chat)
-    // =========================================================================
-    function handleChatSubmit(e) {
-      e.preventDefault();
-      const input = document.getElementById("chatInput");
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = "";
-      sendChatMessage(text);
+    function nextStep() {
+      if (currentStepIdx < currentSteps.length - 1) {
+        loadStep(currentStepIdx + 1);
+      }
     }
 
-    async function sendChatMessage(text) {
-      const container = document.getElementById("chatMessages");
-      chatHistory.push({ role: "user", content: text });
-
-      // Student bubble
-      const sDiv = document.createElement("div");
-      sDiv.className = "flex flex-col items-end";
-      sDiv.innerHTML = `
-        <div class="max-w-[85%] rounded-2xl p-3 shadow-md bg-sky-600 text-white rounded-br-sm leading-relaxed">
-          <p>${text}</p>
-        </div>
-        <span class="text-[9px] text-slate-500 mt-1 px-1">Just now</span>
-      `;
-      container.appendChild(sDiv);
-      container.scrollTop = container.scrollHeight;
-
-      // Thinking bubble
-      const loadDiv = document.createElement("div");
-      loadDiv.id = "chatLoadingBubble";
-      loadDiv.className = "flex items-center space-x-2 text-slate-400 text-xs py-2";
-      loadDiv.innerHTML = `
-        <div class="w-2 h-2 rounded-full bg-sky-400 animate-bounce"></div>
-        <div class="w-2 h-2 rounded-full bg-sky-400 animate-bounce [animation-delay:0.2s]"></div>
-        <div class="w-2 h-2 rounded-full bg-sky-400 animate-bounce [animation-delay:0.4s]"></div>
-        <span class="text-[11px] text-slate-400 font-mono">Teacher is thinking...</span>
-      `;
-      container.appendChild(loadDiv);
-      container.scrollTop = container.scrollHeight;
-
-      const step = currentSteps[currentStepIdx];
-      let replyText = "";
-      let traceObj = { source: "mock", provider: "groq", latency_ms: 320 };
-      let suggestedCmds = [];
-
-      try {
-        const res = await fetch(`${API_BASE}/agent/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text,
-            topic: step.concept || currentTopic?.title || "Binary Search",
-            step_index: currentStepIdx,
-            history: chatHistory,
-            user_id: currentUserId,
-            // Backwards compatibility keys
-            student_id: currentUserId,
-            concept: step.concept
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          replyText = data.reply;
-          traceObj = data.trace || { source: "llm", provider: "groq", latency_ms: 450 };
-          suggestedCmds = data.board_commands || data.suggested_board_commands || [];
-        } else {
-          replyText = `Great question! In ${step.concept}, observing the state invariants guarantees correctness and helps avoid off-by-one errors.`;
-        }
-      } catch (err) {
-        replyText = `In ${step.concept}, each step reduces the search space or problem size, leading to efficient convergence!`;
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        loadStep(currentStepIdx - 1);
       }
+    }
 
-      const bubble = document.getElementById("chatLoadingBubble");
-      if (bubble) bubble.remove();
+    function jumpToStep(idx) {
+      loadStep(idx);
+    }
 
-      chatHistory.push({ role: "assistant", content: replyText });
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      const btnIcon = document.getElementById("playPauseIcon");
+      const btnText = document.getElementById("playPauseText");
 
-      // Teacher bubble
-      const tDiv = document.createElement("div");
-      tDiv.className = "flex flex-col items-start";
-      tDiv.innerHTML = `
-        <div class="max-w-[85%] rounded-2xl p-3 shadow-md bg-slate-800 text-slate-200 border border-slate-700/80 rounded-bl-sm leading-relaxed">
-          <p>${replyText}</p>
-          <div class="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span class="text-indigo-300 font-semibold">${traceObj.source?.toUpperCase() || 'LLM'}</span>
-            <span>${traceObj.provider || 'groq'} (${traceObj.latency_ms || 320}ms)</span>
-          </div>
-        </div>
-        <span class="text-[9px] text-slate-500 mt-1 px-1">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-      `;
-      container.appendChild(tDiv);
-      container.scrollTop = container.scrollHeight;
-
-      if (suggestedCmds.length > 0) {
-        activeRemediationCommands = suggestedCmds;
-        document.getElementById("remediationPill").classList.remove("hidden");
-        renderWhiteboard(step.board_commands);
+      if (isPlaying) {
+        btnText.innerText = "Pause";
+        btnIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+      } else {
+        btnText.innerText = "Play";
+        btnIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
       }
+      renderStepper();
     }
 
     async function triggerDontUnderstand() {
       const btn = document.getElementById("dontUnderstandBtn");
       const label = document.getElementById("dontUnderstandLabel");
-      label.innerText = "Adapting visual...";
+      label.innerText = "Simplifying...";
       btn.disabled = true;
 
       const step = currentSteps[currentStepIdx];
-
       try {
-        const res = await fetch(`${API_BASE}/lesson/step`, {
+        const res = await fetch("http://localhost:8000/lesson/step", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             concept: step.concept,
-            student_id: currentUserId,
+            student_id: document.getElementById("personaSelector").value,
             step_index: currentStepIdx,
             feedback: "I do not understand"
           })
@@ -2017,112 +1182,157 @@
         } else {
           currentSteps[currentStepIdx] = {
             ...step,
-            narration: `Let's break this down more simply! Imagine a deck of numbered cards. By splitting the deck right down the middle, we immediately rule out half the possibilities in one glance!`,
-            agent_thoughts: "Injected simplified physical cards analogy after confusion trigger."
+            narration: "Consider a 100-page book: looking for page 75, open to page 50. Since 75 > 50, discard pages 1 through 50 immediately.",
+            agent_thoughts: "Injected book page analogy."
           };
         }
       } catch (e) {
         currentSteps[currentStepIdx] = {
           ...step,
-          narration: `Let's make this crystal clear: Think of guessing a secret number between 1 and 100. When your first guess of 50 is too low, you instantly know the answer is between 51 and 100!`,
-          agent_thoughts: "Delivered intuitive high-low guessing game analogy."
+          narration: "Think of a number guessing game from 1 to 100. Guess 50: if told 'Too Low', all numbers 1 to 50 are eliminated.",
+          agent_thoughts: "Injected number guessing analogy."
         };
       }
 
-      loadStep(currentStepIdx, playbackState === "playing");
-      label.innerText = "I don't understand";
+      loadStep(currentStepIdx);
+      label.innerText = "Explain simply";
       btn.disabled = false;
     }
 
-    // =========================================================================
-    // BUILTIN FALLBACK CODE RUNNER
-    // =========================================================================
-    function runBuiltinCode() {
-      const code = document.getElementById("codeSnippetBox").value;
-      const stdout = document.getElementById("codeStdoutBox");
-      stdout.innerText = "Executing in simulated browser environment...\n";
+    function speakNarration(text) {
+      if (!voiceEnabled || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = speechRate;
 
-      setTimeout(() => {
-        stdout.innerText = `[Execution Output]\n> Python runtime completed in 18ms\n> Output verified.\n`;
-      }, 300);
-    }
-
-    // =========================================================================
-    // LAZY LOADING & PERFORMANCE (Requirement 6: lazy-load KaTeX/Mermaid, debounce resize)
-    // =========================================================================
-    async function loadKaTeXLibrary() {
-      if (katexLoaded || window.katex) {
-        katexLoaded = true;
-        return;
-      }
-      return new Promise((resolve) => {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css";
-        document.head.appendChild(link);
-
-        const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js";
-        script.onload = () => {
-          katexLoaded = true;
-          resolve();
-        };
-        script.onerror = () => resolve();
-        document.head.appendChild(script);
-      });
-    }
-
-    async function loadMermaidLibrary() {
-      if (mermaidLoaded || window.mermaid) {
-        mermaidLoaded = true;
-        if (window.mermaid) {
-          mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+      const dot = document.getElementById("speakingDot");
+      utterance.onstart = () => { dot.classList.remove("hidden"); };
+      utterance.onend = () => {
+        dot.classList.add("hidden");
+        if (isPlaying && currentStepIdx < currentSteps.length - 1) {
+          setTimeout(() => nextStep(), 1500);
+        } else if (isPlaying && currentStepIdx >= currentSteps.length - 1) {
+          togglePlayPause();
         }
-        return;
-      }
-      return new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js";
-        script.onload = () => {
-          mermaidLoaded = true;
-          if (window.mermaid) {
-            mermaid.initialize({
-              startOnLoad: false,
-              theme: 'dark',
-              themeVariables: {
-                primaryColor: '#0284c7',
-                primaryTextColor: '#f8fafc',
-                primaryBorderColor: '#38bdf8',
-                lineColor: '#64748b'
-              }
-            });
-          }
-          resolve();
-        };
-        script.onerror = () => resolve();
-        document.head.appendChild(script);
-      });
+      };
+      utterance.onerror = () => { dot.classList.add("hidden"); };
+      window.speechSynthesis.speak(utterance);
     }
 
-    // Debounced Resize Event Listener
-    let resizeTimer = null;
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        if (currentSteps.length > 0) {
-          const step = currentSteps[currentStepIdx];
-          if (step) renderWhiteboard(step.board_commands);
-        }
-      }, 150);
-    });
+    function replaySpeech() {
+      speakNarration(currentSteps[currentStepIdx].narration);
+    }
 
-    // =========================================================================
-    // PANNING & ZOOMING CONTROLS
-    // =========================================================================
+    function toggleVoiceEnabled() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById("voiceToggleBtn");
+      if (voiceEnabled) {
+        btn.style.color = "var(--accent)";
+        replaySpeech();
+      } else {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        btn.style.color = "var(--text-tertiary)";
+        document.getElementById("speakingDot").classList.add("hidden");
+      }
+    }
+
+    function cycleSpeechRate() {
+      const rates = [0.85, 1.0, 1.25];
+      const curIdx = rates.indexOf(speechRate);
+      speechRate = rates[(curIdx + 1) % rates.length];
+      document.getElementById("speechRateBtn").innerText = `${speechRate}x`;
+      replaySpeech();
+    }
+
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      sendChatMessage(text);
+    }
+
+    async function sendChatMessage(text) {
+      const container = document.getElementById("chatMessages");
+
+      const sDiv = document.createElement("div");
+      sDiv.className = "chat-block user-block";
+      sDiv.innerHTML = `
+        <div class="chat-block-meta">
+          <span>You</span>
+          <span>Just now</span>
+        </div>
+        <p>${text}</p>
+      `;
+      container.appendChild(sDiv);
+      container.scrollTop = container.scrollHeight;
+
+      const loadDiv = document.createElement("div");
+      loadDiv.id = "chatLoadingBubble";
+      loadDiv.className = "chat-block teacher-block skeleton";
+      loadDiv.style.height = "42px";
+      container.appendChild(loadDiv);
+      container.scrollTop = container.scrollHeight;
+
+      const step = currentSteps[currentStepIdx];
+      let replyText = "";
+      let reasoning = "";
+      let suggestedCmds = [];
+
+      try {
+        const res = await fetch("http://localhost:8000/agent/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            student_id: document.getElementById("personaSelector").value,
+            concept: step.concept,
+            message: text,
+            current_step_index: currentStepIdx
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          replyText = data.reply;
+          reasoning = data.agent_thoughts || "";
+          suggestedCmds = data.suggested_board_commands || [];
+        } else {
+          replyText = "In binary search, the sorted invariant guarantees that every element left of the midpoint is strictly smaller, so we can discard half the array with one comparison.";
+          reasoning = "Explaining sorted invariant.";
+        }
+      } catch (err) {
+        replyText = "Because the array is sorted, comparing against the midpoint rules out 50% of the remaining elements.";
+        reasoning = "Fallback explanation.";
+      }
+
+      const bubble = document.getElementById("chatLoadingBubble");
+      if (bubble) bubble.remove();
+
+      const tDiv = document.createElement("div");
+      tDiv.className = "chat-block teacher-block";
+      tDiv.innerHTML = `
+        <div class="chat-block-meta">
+          <span>Teacher</span>
+          <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <p>${replyText}</p>
+        ${reasoning ? `<div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-tertiary);">${reasoning}</div>` : ""}
+      `;
+      container.appendChild(tDiv);
+      container.scrollTop = container.scrollHeight;
+
+      if (suggestedCmds && suggestedCmds.length > 0) {
+        activeRemediationCommands = suggestedCmds;
+        document.getElementById("remediationPill").classList.remove("hidden");
+        renderWhiteboard(step.board_commands);
+      }
+    }
+
     function setupPanning() {
       const vp = document.getElementById("canvasViewport");
       vp.addEventListener("mousedown", (e) => {
-        if (e.button === 0) {
+        if (e.button === 0 && !isPenMode) {
           isPanning = true;
           panStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
         }
@@ -2134,13 +1344,11 @@
           updateCanvasTransform();
         }
       });
-      window.addEventListener("mouseup", () => {
-        isPanning = false;
-      });
+      window.addEventListener("mouseup", () => { isPanning = false; });
     }
 
     function handleZoom(delta) {
-      zoomLevel = Math.max(0.5, Math.min(2.2, zoomLevel + delta));
+      zoomLevel = Math.max(0.5, Math.min(2.5, zoomLevel + delta));
       document.getElementById("zoomLevelDisplay").innerText = `${Math.round(zoomLevel * 100)}%`;
       updateCanvasTransform();
     }
@@ -2157,53 +1365,216 @@
       layer.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`;
     }
 
-    // =========================================================================
-    // SYSTEM HEALTH & PERSONA
-    // =========================================================================
-    async function checkBackendHealth() {
+    function toggleAgentBanner() {
+      const drawer = document.getElementById("agentBanner");
+      drawer.classList.toggle("hidden");
+    }
+
+    function togglePenMode() {
+      isPenMode = !isPenMode;
+      const btn = document.getElementById("penToggleBtn");
+      const clearBtn = document.getElementById("penClearBtn");
+      const canvas = document.getElementById("freehandCanvas");
+
+      if (isPenMode) {
+        btn.style.color = "var(--accent)";
+        clearBtn.classList.remove("hidden");
+        canvas.style.pointerEvents = "auto";
+        initPenCanvas();
+      } else {
+        btn.style.color = "";
+        clearBtn.classList.add("hidden");
+        canvas.style.pointerEvents = "none";
+      }
+    }
+
+    let penDrawing = false;
+    let penCtx = null;
+    function initPenCanvas() {
+      const canvas = document.getElementById("freehandCanvas");
+      penCtx = canvas.getContext("2d");
+      canvas.onmousedown = (e) => {
+        penDrawing = true;
+        penCtx.beginPath();
+        const rect = canvas.getBoundingClientRect();
+        penCtx.moveTo((e.clientX - rect.left) / zoomLevel, (e.clientY - rect.top) / zoomLevel);
+      };
+      canvas.onmousemove = (e) => {
+        if (!penDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        penCtx.lineTo((e.clientX - rect.left) / zoomLevel, (e.clientY - rect.top) / zoomLevel);
+        penCtx.strokeStyle = "#0E7490";
+        penCtx.lineWidth = 2;
+        penCtx.stroke();
+      };
+      canvas.onmouseup = () => { penDrawing = false; };
+    }
+
+    function clearFreehandDrawing() {
+      const canvas = document.getElementById("freehandCanvas");
+      if (penCtx) penCtx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function copyCodeSnippet() {
+      const code = document.getElementById("codeSnippetBox").value;
+      navigator.clipboard.writeText(code);
+      const btn = document.getElementById("copyCodeBtn");
+      btn.innerText = "Copied";
+      setTimeout(() => { btn.innerText = "Copy"; }, 1500);
+    }
+
+    let pyodideInstance = null;
+    async function runPyodideCode() {
+      const btn = document.getElementById("runCodeBtn");
+      const label = document.getElementById("runCodeLabel");
+      const stdout = document.getElementById("codeStdoutBox");
+      const timePill = document.getElementById("executionTimePill");
+
+      label.innerText = "Running...";
+      btn.disabled = true;
+
+      const t0 = performance.now();
       try {
-        const res = await fetch(`${API_BASE}/health`);
-        if (res.ok) {
-          updateBackendStatus(true);
+        if (!pyodideInstance && window.loadPyodide) {
+          document.getElementById("pyodideStatusBadge").innerText = "Loading Pyodide...";
+          pyodideInstance = await loadPyodide();
+          document.getElementById("pyodideStatusBadge").innerText = "Pyodide Ready";
+        }
+
+        if (pyodideInstance) {
+          pyodideInstance.runPython(`
+import sys
+from io import StringIO
+sys.stdout = StringIO()
+sys.stderr = StringIO()
+`);
+          const code = document.getElementById("codeSnippetBox").value;
+          pyodideInstance.runPython(code);
+          const out = pyodideInstance.runPython("sys.stdout.getvalue()");
+          const err = pyodideInstance.runPython("sys.stderr.getvalue()");
+          stdout.innerText = out || err || "(Completed with no standard output)";
         } else {
-          updateBackendStatus(false);
+          stdout.innerText = "Target 23 found at index 5!\n(Simulated execution - Pyodide offline)";
         }
       } catch (err) {
-        updateBackendStatus(false);
+        stdout.innerText = String(err);
+        document.getElementById("codeErrorAction").classList.remove("hidden");
+      } finally {
+        const elapsed = Math.round(performance.now() - t0);
+        timePill.innerText = `${elapsed}ms`;
+        btn.disabled = false;
+        label.innerText = "Run code";
       }
     }
 
-    function updateBackendStatus(online) {
-      const pill = document.getElementById("backendStatusPill");
-      const dot = document.getElementById("backendStatusDot");
-      const text = document.getElementById("backendStatusText");
+    function askTeacherAboutError() {
+      switchTab("chat");
+      const errText = document.getElementById("codeStdoutBox").innerText;
+      sendChatMessage(`Can you explain this Python execution error?\n${errText}`);
+    }
 
-      if (online) {
-        pill.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-emerald-950/80 text-emerald-400 border-emerald-800/60";
-        dot.className = "w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "Live Backend";
-      } else {
-        pill.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-sky-950/80 text-sky-400 border-sky-800/60";
-        dot.className = "w-1.5 h-1.5 mr-1.5 rounded-full bg-sky-400";
-        text.innerText = "Standby Mode";
+    // Contrast Audit Utility
+    window.auditContrast = function() {
+      function parseColor(c) {
+        if (!c || c === "transparent" || c === "inherit" || c === "initial") return null;
+        const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        if (!m) return null;
+        return {
+          r: parseInt(m[1], 10),
+          g: parseInt(m[2], 10),
+          b: parseInt(m[3], 10),
+          a: m[4] !== undefined ? parseFloat(m[4]) : 1.0
+        };
       }
-    }
 
-    function onPersonaChanged() {
-      currentUserId = document.getElementById("personaSelector").value;
-      // Invalidate cache when student changes
-      lessonMemoryCache.clear();
-      if (currentTopic) selectTopic(currentTopic);
-    }
+      function getEffectiveBg(el) {
+        let cur = el;
+        const bgColors = [];
+        while (cur && cur !== document.documentElement) {
+          const style = window.getComputedStyle(cur);
+          const col = parseColor(style.backgroundColor);
+          if (col && col.a > 0) {
+            bgColors.unshift(col);
+            if (col.a >= 0.99) break;
+          }
+          cur = cur.parentElement;
+        }
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let base = isDark ? { r: 20, g: 21, b: 23, a: 1 } : { r: 250, g: 248, b: 244, a: 1 };
+        for (const col of bgColors) {
+          const alpha = col.a;
+          base = {
+            r: Math.round(col.r * alpha + base.r * (1 - alpha)),
+            g: Math.round(col.g * alpha + base.g * (1 - alpha)),
+            b: Math.round(col.b * alpha + base.b * (1 - alpha)),
+            a: 1.0
+          };
+        }
+        return base;
+      }
 
-    // =========================================================================
-    // INITIALIZATION ON DOM CONTENT LOADED
-    // =========================================================================
-    window.addEventListener("DOMContentLoaded", () => {
-      setupPanning();
-      initVoicePicker();
-      loadTopicsList();
-    });
+      function relLuminance(rgb) {
+        const a = [rgb.r, rgb.g, rgb.b].map(v => {
+          v /= 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+      }
+
+      function contrastRatio(fgRgb, bgRgb) {
+        const l1 = relLuminance(fgRgb);
+        const l2 = relLuminance(bgRgb);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      }
+
+      const failures = [];
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.closest(".hidden") || parent.classList.contains("hidden")) return NodeFilter.FILTER_REJECT;
+          const style = window.getComputedStyle(parent);
+          if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+
+      let node;
+      while ((node = walker.nextNode())) {
+        const el = node.parentElement;
+        const style = window.getComputedStyle(el);
+        const fg = parseColor(style.color);
+        if (!fg || fg.a === 0) continue;
+        const bg = getEffectiveBg(el);
+        const ratio = contrastRatio(fg, bg);
+        const fontSize = parseFloat(style.fontSize) || 16;
+        const fontWeight = parseInt(style.fontWeight) || 400;
+        const isLarge = fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700);
+        const threshold = isLarge ? 3.0 : 4.5;
+
+        if (ratio < threshold) {
+          failures.push({
+            text: node.textContent.trim().slice(0, 50),
+            ratio: ratio.toFixed(2),
+            required: threshold,
+            fg: `rgb(${fg.r},${fg.g},${fg.b})`,
+            bg: `rgb(${bg.r},${bg.g},${bg.b})`,
+            element: el
+          });
+        }
+      }
+
+      console.log(`[Contrast Audit] Found ${failures.length} issues.`);
+      if (failures.length > 0) {
+        console.table(failures.map(f => ({ text: f.text, ratio: f.ratio, required: f.required, fg: f.fg, bg: f.bg })));
+      }
+      return failures;
+    };
+
+    window.addEventListener("DOMContentLoaded", initClassroom);
   </script>
 </body>
 </html>

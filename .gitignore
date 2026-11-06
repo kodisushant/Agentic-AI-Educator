@@ -46,7 +46,9 @@ build/
 # Database
 *.sqlite3
 *.db
-backend/learner/*.db
+*.db-shm
+*.db-wal
+backend/learner/*.db*
 
 # IDE & OS
 .vscode/

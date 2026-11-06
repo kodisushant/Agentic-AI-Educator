@@ -119,3 +119,40 @@
   - All 22 tests passing across `backend/tts` (10), `backend/assess` (5), and `backend/learner` (7).
   - Pre-generation script verified with character accounting.
   - Mount request documented in `/docs/REQUESTS.md`.
+
+
+---
+
+## Member 4: Interactive Panels (frontend/classroom/js/*, prefix [panels])
+- **Status:** Complete, Verified & Standalone Tested
+- **Implemented:**
+  1. **Monaco & Pyodide Code Panel (`frontend/classroom/js/code-panel.js`):**
+     - Exposes `window.CodePanel = { mount(el), loadChunk({code, explanation, expected_output}), pause(), resume(), run() }`.
+     - Monaco Editor with Python language syntax highlighting, dark theme, and robust CDN loader.
+     - Pyodide WebAssembly runtime running in an isolated Web Worker with live "loading Python..." status indicator.
+     - 5.0-second execution timeout guard that terminates hanging worker threads (prevents infinite loop UI freezing).
+     - Captured stdout/stderr display with millisecond execution timer and output matching against `expected_output`.
+     - `loadChunk()` with progressive character typing, pause/resume/skip controls, teacher explanation note, and auto-execution.
+     - "Ask teacher about this error" button pre-populating code and error trace directly into `window.ChatPanel`.
+  2. **Interactive Teacher Chat Panel (`frontend/classroom/js/chat-panel.js`):**
+     - Exposes `window.ChatPanel = { mount(el, {apiBase, getContext}), sendMessage(text), sendQuestion(text) }`.
+     - Sends `POST {apiBase}/agent/chat` with `{message, topic, step_index, history, user_id}`.
+     - Formats Markdown and Python code blocks with built-in "Run in editor" (`window.CodePanel.loadChunk`) and "Copy" buttons.
+     - Live typing indicator, auto-scrolling to bottom, and error retry state with re-send button.
+     - Displays `trace.source` badges (`mock`, `llm`, `cache`, `fallback_canned`) with provider and latency.
+  3. **Formative Assessment & Flashcards Panel (`frontend/classroom/js/quiz-panel.js`):**
+     - Exposes `window.QuizPanel = { mount(el, {apiBase, getUserId}), fetchQuiz(), fetchFlashcards() }`.
+     - Fetches adaptive quizzes from `POST /assess/quiz` with a 3.0s timeout guard and retry/fallback state.
+     - Instant formative grading (<1ms) on option click, with immediate green/red visual indicators and explanation callout.
+     - Dispatches background sync to `POST /assess/submit` without delaying client UI.
+     - End-of-quiz mastery scorecard with score percentage, list of weak concept tags, and review pathways.
+     - 3D interactive flip flashcard deck (`POST /assess/flashcards`) with front/back cards, prev/next controls, and hint toggle.
+  4. **Standalone Workbench & Test Page (`frontend/classroom/js/dev.html`):**
+     - Zero npm dependencies, 100% plain HTML/CSS/JS served directly by Python `http.server`.
+     - Interactive controls to trigger `loadChunk`, pause/resume, run code, simulate 5s timeout infinite loop, inject runtime error, ask teacher, and flip flashcards.
+     - Toggleable mock service interceptor for offline isolation or live `http://localhost:8000` testing.
+- **Verification:**
+  - HTTP 200 delivery verified across all new panel assets via Python HTTP server.
+  - Pyodide WebAssembly runner, timeout guard, and fallback handling verified.
+  - End-to-end test suite (`scripts/e2e.py`) 10/10 PASS.
+  - Requested index.html mount point integration in `/docs/REQUESTS.md`.

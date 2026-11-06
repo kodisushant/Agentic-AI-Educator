@@ -45,3 +45,15 @@ Only Person 1 may update `/contracts`.
   - `POST /tts`: Synthesizes speech with local `cache/tts/` caching and automatic browser fallback (`HTTP 503 {"fallback":"browser"}`).
   - `GET /tts/status`: Operational status endpoint reporting key configuration, default model, and cached files count without leaking secrets.
 - **Status:** Open
+
+
+## Request: Mount Interactive Panels in frontend/classroom/index.html
+- **Date:** 2026-11-06
+- **From:** Member 4 (Interactive Panels, [panels])
+- **Target:** /frontend/classroom/index.html
+- **Details:** Member 4 has published the standalone modular panels in `frontend/classroom/js/`:
+  1. `<script src="js/code-panel.js"></script>` -> exposes `window.CodePanel = { mount(el), loadChunk({code, explanation, expected_output}), pause(), resume(), run() }`.
+  2. `<script src="js/chat-panel.js"></script>` -> exposes `window.ChatPanel = { mount(el, {apiBase, getContext}) }`.
+  3. `<script src="js/quiz-panel.js"></script>` -> exposes `window.QuizPanel = { mount(el, {apiBase, getUserId}) }`.
+  Please add the `<script>` tags and corresponding mount point elements (e.g. `<div id="code-panel-mount"></div>`, `<div id="chat-panel-mount"></div>`, `<div id="quiz-panel-mount"></div>`) into `index.html` and invoke `.mount()`. Standalone workbench and integration testing available at `frontend/classroom/js/dev.html`.
+- **Status:** Open

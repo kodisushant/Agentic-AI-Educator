@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classroom Interactive Panels Dev Workbench</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #064e3b;
+      color: #34d399;
+    }
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 16px;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+    }
+    button.btn {
+      padding: 6px 14px;
+      background: #2563eb;
+      color: #ffffff;
+      border: 1px solid #3b82f6;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button.btn:hover {
+      background: #1d4ed8;
+    }
+    button.btn-secondary {
+      background: #1f2937;
+      border-color: #374151;
+      color: #d1d5db;
+    }
+    button.btn-secondary:hover {
+      background: #374151;
+    }
+    .panels-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 600px;
+    }
+    @media (max-width: 1100px) {
+      .panels-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .panel-container {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 680px;
+    }
+    .panel-header {
+      padding: 10px 14px;
+      background: #1f2937;
+      font-size: 12px;
+      font-weight: 600;
+      color: #93c5fd;
+      border-bottom: 1px solid #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-mount {
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dev Header -->
+  <header>
+    <div>
+      <h1 style="font-size: 16px; font-weight: 700; color: #f8fafc;">Member 4: Interactive Panels Workbench</h1>
+      <p style="font-size: 11px; color: #94a3b8;">Testing window.CodePanel, window.ChatPanel, and window.QuizPanel</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="badge" id="backend-status">Mock / Local API Active</span>
+      <label style="font-size: 12px; color: #cbd5e1; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" id="mock-toggle" checked />
+        <span>Enable Service Mock Interceptor</span>
+      </label>
+    </div>
+  </header>
+
+  <!-- Interactive Test Controls -->
+  <div class="controls-bar">
+    <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Test Actions:</span>
+    <button class="btn" id="btn-load-chunk">
+      1. loadChunk({code, explanation, expected_output})
+    </button>
+    <button class="btn btn-secondary" id="btn-pause-resume">
+      Pause / Resume Typing
+    </button>
+    <button class="btn btn-secondary" id="btn-run-code">
+      Run Editor Code
+    </button>
+    <button class="btn btn-secondary" id="btn-infinite-loop" title="Test 5s timeout guard">
+      Test 5s Timeout Guard (Infinite Loop)
+    </button>
+    <button class="btn btn-secondary" id="btn-test-error" title="Test Ask Teacher button">
+      Generate Runtime Error
+    </button>
+    <button class="btn btn-secondary" id="btn-chat-question">
+      Send Chat Question
+    </button>
+    <button class="btn btn-secondary" id="btn-quiz-reload">
+      Reload Quiz / Flashcards
+    </button>
+  </div>
+
+  <!-- Grid of 3 Mount Points -->
+  <div class="panels-grid">
+    <!-- Panel 1: Code Panel -->
+    <div class="panel-container">
+      <div class="panel-header">
+        <span>window.CodePanel (#code-mount)</span>
+        <span style="font-size: 10px; color: #94a3b8;">Monaco + Pyodide</span>
+      </div>
+      <div id="code-mount" class="panel-mount"></div>
+    </div>
+
+    <!-- Panel 2: Chat Panel -->
+    <div class="panel-container">
+      <div class="panel-header">
+        <span>window.ChatPanel (#chat-mount)</span>
+        <span style="font-size: 10px; color: #94a3b8;">POST /agent/chat</span>
+      </div>
+      <div id="chat-mount" class="panel-mount"></div>
+    </div>
+
+    <!-- Panel 3: Quiz Panel -->
+    <div class="panel-container">
+      <div class="panel-header">
+        <span>window.QuizPanel (#quiz-mount)</span>
+        <span style="font-size: 10px; color: #94a3b8;">/assess/quiz &amp; flashcards</span>
+      </div>
+      <div id="quiz-mount" class="panel-mount"></div>
+    </div>
+  </div>
+
+  <!-- Load Panel Scripts -->
+  <script src="code-panel.js"></script>
+  <script src="chat-panel.js"></script>
+  <script src="quiz-panel.js"></script>
+
+  <script>
+    // --- Mock Interceptor for Offline / Independent Dev ---
+    const originalFetch = window.fetch;
+    let mockEnabled = true;
+
+    document.getElementById('mock-toggle').addEventListener('change', (e) => {
+      mockEnabled = e.target.checked;
+      const status = document.getElementById('backend-status');
+      if (mockEnabled) {
+        status.textContent = 'Mock Interceptor Active';
+        status.style.color = '#34d399';
+      } else {
+        status.textContent = 'Live Backend (port 8000)';
+        status.style.color = '#38bdf8';
+      }
+    });
+
+    window.fetch = async function (url, options = {}) {
+      if (!mockEnabled) {
+        return originalFetch(url, options);
+      }
+
+      const urlStr = String(url);
+      console.log('[Dev Mock Interceptor] Request:', options.method || 'GET', urlStr);
+
+      // 1. Mock /agent/chat
+      if (urlStr.includes('/agent/chat')) {
+        await new Promise(r => setTimeout(r, 600)); // simulate 600ms latency
+        const body = options.body ? JSON.parse(options.body) : {};
+        const msg = (body.message || '').toLowerCase();
+
+        let reply = "I understand your question! In Binary Search, the list must be ordered so we can cut the search space in half at each step.";
+        let codeSnippet = null;
+
+        if (msg.includes('error') || msg.includes('traceback') || msg.includes('fix')) {
+          reply = "I see your error! It looks like an `IndexError` or off-by-one condition. In binary search, make sure `high = len(arr) - 1` and update `low = mid + 1` or `high = mid - 1` without going beyond bounds:\n\n```python\ndef safe_binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\nprint(safe_binary_search([10, 20, 30, 40], 30))\n```\n\nTry running this corrected snippet in the live editor!";
+          codeSnippet = "def safe_binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\nprint(safe_binary_search([10, 20, 30, 40], 30))";
+        } else if (msg.includes('mid') || msg.includes('formula')) {
+          reply = "To compute the midpoint safely in Python: `mid = (low + high) // 2`. This performs integer floor division so `mid` is always a valid index.";
+        }
+
+        return new Response(JSON.stringify({
+          reply: reply,
+          code: codeSnippet,
+          trace: {
+            source: 'mock',
+            provider: 'agent-rule-engine',
+            model: 'canned-mock',
+            latency_ms: 600
+          }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      // 2. Mock /assess/quiz
+      if (urlStr.includes('/assess/quiz')) {
+        await new Promise(r => setTimeout(r, 350));
+        return new Response(JSON.stringify({
+          quiz_id: 'mock_quiz_101',
+          topic: 'Binary Search',
+          questions: [
+            {
+              question_id: 'q_dev_1',
+              concept_tag: 'binary_search_precondition',
+              question: 'What is the required state of an array for binary search?',
+              options: [
+                'Sorted in ascending or descending order',
+                'All elements must be prime',
+                'Size must be an even integer',
+                'Stored on SSD'
+              ],
+              correct_index: 0,
+              explanation: 'Monotonic order is required so that each comparison lets us eliminate half the elements.'
+            },
+            {
+              question_id: 'q_dev_2',
+              concept_tag: 'binary_search_bounds_update',
+              question: 'If target > arr[mid], which pointer do we adjust?',
+              options: [
+                'high = mid - 1',
+                'low = mid + 1',
+                'high = mid',
+                'low = mid'
+              ],
+              correct_index: 1,
+              explanation: 'The target must lie to the right of mid, so we set low = mid + 1.'
+            },
+            {
+              question_id: 'q_dev_3',
+              concept_tag: 'binary_search_complexity',
+              question: 'What is the worst-case number of comparisons on n items?',
+              options: [
+                'O(n)',
+                'O(log n)',
+                'O(1)',
+                'O(n log n)'
+              ],
+              correct_index: 1,
+              explanation: 'Each step cuts remaining search elements by 2, yielding logarithmic complexity.'
+            }
+          ]
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      // 3. Mock /assess/submit
+      if (urlStr.includes('/assess/submit')) {
+        await new Promise(r => setTimeout(r, 200));
+        return new Response(JSON.stringify({
+          quiz_id: 'mock_quiz_101',
+          user_id: 'demo_student',
+          score: 1.0,
+          total_questions: 3,
+          correct_count: 3,
+          feedback: []
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      // 4. Mock /assess/flashcards
+      if (urlStr.includes('/assess/flashcards')) {
+        await new Promise(r => setTimeout(r, 300));
+        return new Response(JSON.stringify({
+          topic: 'Binary Search',
+          cards: [
+            {
+              card_id: 'fc_m_1',
+              concept_tag: 'binary_search_precondition',
+              front: 'Why must the array be sorted for Binary Search?',
+              back: 'Because sorting guarantees all items to the left are smaller and items to the right are larger, enabling 50% search space elimination.',
+              hint: 'Consider what would happen if the array was unordered.'
+            },
+            {
+              card_id: 'fc_m_2',
+              concept_tag: 'binary_search_complexity',
+              front: 'How many iterations for 1,000,000 items in worst-case?',
+              back: 'At most 20 iterations (ceil(log2(1,000,000)) = 20).',
+              hint: '2^20 is approximately 1,048,576.'
+            },
+            {
+              card_id: 'fc_m_3',
+              concept_tag: 'binary_search_bounds_update',
+              front: 'Why is low = mid + 1 rather than low = mid?',
+              back: 'Because arr[mid] has already been inspected and is not equal to target. Leaving mid in bounds can cause an infinite loop.',
+              hint: 'Think about two-element arrays where low = 0, high = 1, mid = 0.'
+            }
+          ]
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      return originalFetch(url, options);
+    };
+
+    // --- Mount Panels per Plugin Interface ---
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Mount CodePanel
+      window.CodePanel.mount('#code-mount');
+
+      // 2. Mount ChatPanel
+      window.ChatPanel.mount('#chat-mount', {
+        apiBase: 'http://localhost:8000',
+        getContext: () => ({
+          topic: 'Binary Search',
+          step_index: 1,
+          history: [],
+          user_id: 'demo_student'
+        })
+      });
+
+      // 3. Mount QuizPanel
+      window.QuizPanel.mount('#quiz-mount', {
+        apiBase: 'http://localhost:8000',
+        getUserId: () => 'demo_student'
+      });
+
+      // --- Attach Test Workbench Event Handlers ---
+      let isPaused = false;
+
+      document.getElementById('btn-load-chunk').addEventListener('click', () => {
+        window.CodePanel.loadChunk({
+          code: `# Step 2: Binary Search Implementation
+def binary_search(arr, target):
+    low = 0
+    high = len(arr) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return -1
+
+items = [2, 4, 6, 8, 10, 12]
+print("Index of 10:", binary_search(items, 10))
+`,
+          explanation: "Notice how mid is computed with `// 2`, and boundaries are adjusted with `mid + 1` or `mid - 1`.",
+          expected_output: "Index of 10: 4"
+        });
+        isPaused = false;
+        document.getElementById('btn-pause-resume').textContent = 'Pause Typing';
+      });
+
+      document.getElementById('btn-pause-resume').addEventListener('click', () => {
+        if (!isPaused) {
+          window.CodePanel.pause();
+          isPaused = true;
+          document.getElementById('btn-pause-resume').textContent = 'Resume Typing';
+        } else {
+          window.CodePanel.resume();
+          isPaused = false;
+          document.getElementById('btn-pause-resume').textContent = 'Pause Typing';
+        }
+      });
+
+      document.getElementById('btn-run-code').addEventListener('click', () => {
+        window.CodePanel.run();
+      });
+
+      document.getElementById('btn-infinite-loop').addEventListener('click', () => {
+        window.CodePanel.setCode(`# Infinite Loop Test
+print("Starting loop (should time out safely after 5.0s)...")
+while True:
+    pass
+`);
+        window.CodePanel.run();
+      });
+
+      document.getElementById('btn-test-error').addEventListener('click', () => {
+        window.CodePanel.setCode(`# Intentional Error for Testing
+arr = [1, 2, 3]
+# Calling index out of bounds to trigger IndexError:
+print(arr[99])
+`);
+        window.CodePanel.run();
+      });
+
+      document.getElementById('btn-chat-question').addEventListener('click', () => {
+        window.ChatPanel.sendQuestion("Could you explain why we need `low = mid + 1` instead of `low = mid`?");
+      });
+
+      document.getElementById('btn-quiz-reload').addEventListener('click', () => {
+        window.QuizPanel.fetchQuiz();
+      });
+    });
+  </script>
+</body>
+</html>

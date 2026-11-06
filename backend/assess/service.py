@@ -259,7 +259,8 @@ class AssessmentService:
 
         # Attempt LLM generation if router has live keys and not in mock mode
         if not router.mock_mode and (router.gemini_key or router.groq_key or router.cerebras_key or router.openrouter_key):
-            weak_context = ", ".join(req.weak_concepts) if req.weak_concepts else "general fundamentals"
+            weak_concepts = req.weak_concepts
+            weak_context = ", ".join(weak_concepts) if weak_concepts else "general fundamentals"
             prompt = (
                 f"You are an expert interactive CS instructor. Create a multiple choice quiz on '{req.topic}'.\n"
                 f"Target these student weak concepts: {weak_context}.\n"
@@ -306,7 +307,8 @@ class AssessmentService:
         Uses LLM router when configured, with schema validation and fallback.
         """
         if not router.mock_mode and (router.gemini_key or router.groq_key or router.cerebras_key or router.openrouter_key):
-            weak_context = ", ".join(req.weak_concepts) if req.weak_concepts else "fundamentals"
+            weak_concepts = req.weak_concepts or req.concept_tags
+            weak_context = ", ".join(weak_concepts) if weak_concepts else "fundamentals"
             prompt = (
                 f"Generate {req.count} spaced-repetition flashcards for students learning '{req.topic}'.\n"
                 f"Emphasize weak areas: {weak_context}.\n"

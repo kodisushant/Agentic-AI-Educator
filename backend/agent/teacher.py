@@ -1056,6 +1056,17 @@ class TeacherAgent:
             response_model=LessonStep,
             mock_fallback_factory=fallback
         )
+        if res.step_id != active_steps[idx].step_id:
+            return active_steps[idx].model_copy(update={
+                "trace": AgentTrace(
+                    source=res.trace.source if res.trace else "fallback_canned",
+                    provider=res.trace.provider if res.trace else "internal",
+                    model="canned_lesson",
+                    latency_ms=0,
+                    strategy_chosen="direct_instruction",
+                    provider_used=res.trace.provider_used if res.trace else "internal",
+                )
+            })
         c_tag = req.concept.lower().replace(" ", "_")
         current_m = mastery_profile.concept_scores.get(c_tag, 0.5)
         if res.trace is None:
@@ -1072,7 +1083,10 @@ class TeacherAgent:
             )
         else:
             res.trace.detected_misconception = res.trace.detected_misconception or res.detected_misconception
-            res.trace.strategy_chosen = res.trace.strategy_chosen or "direct_instruction"
+            if res.trace.source == "cache":
+                res.trace.strategy_chosen = "direct_instruction"
+            else:
+                res.trace.strategy_chosen = res.trace.strategy_chosen or "direct_instruction"
             if res.trace.mastery_before is None:
                 res.trace.mastery_before = current_m
             if res.trace.mastery_after is None:

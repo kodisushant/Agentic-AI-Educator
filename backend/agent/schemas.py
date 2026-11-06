@@ -435,6 +435,11 @@ class FlashcardsGenerateRequest(BaseModel):
         description="Specific concept tags",
         examples=["binary_search_complexity", "binary_search_precondition"]
     )
+    weak_concepts: List[str] = Field(
+        default_factory=list,
+        description="Backward-compatible alias for targeted weak concepts",
+        examples=["binary_search_complexity"]
+    )
 
 
 class FlashcardsGenerateResponse(BaseModel):

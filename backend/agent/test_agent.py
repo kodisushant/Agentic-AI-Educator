@@ -237,7 +237,21 @@ def run_unit_tests():
     print("✓ CheckAnswerResponse trace verified", flush=True)
 
     # 15. Verify STRICT_REAL=true behavior
+    saved_strict_mode = router.mock_mode
+    saved_provider_keys = (
+        router.gemini_key,
+        router.groq_key,
+        router.cerebras_key,
+        router.openrouter_key,
+    )
+    saved_reload_keys = router.reload_keys
     router.strict_real = True
+    router.mock_mode = True
+    router.gemini_key = ""
+    router.groq_key = ""
+    router.cerebras_key = ""
+    router.openrouter_key = ""
+    router.reload_keys = lambda: None
     try:
         router.generate_structured_sync("Test strictly", LessonStep)
         assert False, "Expected STRICT_REAL to raise error when keys missing or in mock mode"
@@ -246,6 +260,14 @@ def run_unit_tests():
         print("✓ STRICT_REAL=true correctly raises error instead of silent mock fallback", flush=True)
     finally:
         router.strict_real = os.getenv("STRICT_REAL", "false").lower() in ("true", "1", "yes")
+        router.mock_mode = saved_strict_mode
+        (
+            router.gemini_key,
+            router.groq_key,
+            router.cerebras_key,
+            router.openrouter_key,
+        ) = saved_provider_keys
+        router.reload_keys = saved_reload_keys
 
     # 16. Test Validation Pipeline Rejections (No real LLM called)
     from backend.agent.generator import validate_lesson_plan, get_golden_binary_search_lesson

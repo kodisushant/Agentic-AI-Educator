@@ -496,7 +496,7 @@ class LLMRouter:
         self.reload_keys()
 
         # 1. Check disk cache
-        cached_content = self._read_cache(cache_file)
+        cached_content = None if self.strict_real else self._read_cache(cache_file)
         if cached_content:
             try:
                 validated = response_model.model_validate_json(cached_content)
@@ -629,6 +629,7 @@ class LLMRouter:
         response_model: Type[T],
         system_prompt: Optional[str] = None,
         mock_fallback_factory: Optional[callable] = None,
+        temperature: Optional[float] = None,
     ) -> T:
         return await asyncio.to_thread(
             self.generate_structured_sync,

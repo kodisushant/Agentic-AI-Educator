@@ -13,6 +13,7 @@
      - **May-change (4):** `/lesson/step/stream`, `/tools/execute`, `/demo/seed`, `/demo/reset`
   7. **Single-Command Full Stack Launcher:** Added `start_all.bat` (Windows) and `start_all.sh` (Mac/Linux), plus matching `stop_all.bat` and `stop_all.sh`. Automatically verifies runtimes (Python, Node, npm), creates `.env` with key instructions if missing, supports `mock`/`real` mode flags, installs missing dependencies, launches backend on port 8000 + classroom UI on port 3000 + dashboard UI on port 3001 in separate terminal windows, verifies health, and launches browser. Enhanced gateway CORS and added summary/history pass-through routes for dashboard.
   8. **Teammate Sync & Integration Verification:** Rebased cleanly over Person 2's Pyodide live coding runner and freehand annotation tool commits (`85378e9`, `becce91`). Verified that all contracts, board commands, and endpoints remain 100% compatible.
+  9. **Groq-Powered Chat with Teacher:** Dedicated the Chat with Teacher pipeline to execute strictly via Groq API. Added dynamic `.env` key reloading, outermost JSON extraction for nested code snippets, Cloudflare User-Agent bypass, and active model selection (`openai/gpt-oss-20b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-120b`). Real chat queries verified with live LLM traces.
 - **What is REAL & VERIFIED:**
   - Learner Model, Assessment Engine, Teacher Rule Engine, Whiteboard Commands, FastAPI, all test suites (100% pass), and full-stack multi-service single-command launcher verified across ports 8000, 3000, 3001.
 - **What is MOCK/FALLBACK:**

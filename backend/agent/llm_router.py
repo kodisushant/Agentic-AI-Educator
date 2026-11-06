@@ -23,8 +23,8 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 CALLS_LOG_FILE = LOGS_DIR / "llm_calls.log"
 
 
-def load_env_file():
-    """Load variables from .env if present and not already in os.environ."""
+def load_env_file(override: bool = True):
+    """Load variables from .env if present."""
     env_file = ROOT_DIR / ".env"
     if env_file.exists():
         try:
@@ -34,8 +34,9 @@ def load_env_file():
                     k, v = line.split("=", 1)
                     k = k.strip()
                     v = v.strip().strip('"').strip("'")
-                    if k and k not in os.environ:
-                        os.environ[k] = v
+                    if k:
+                        if override or k not in os.environ:
+                            os.environ[k] = v
         except Exception:
             pass
 
@@ -73,24 +74,32 @@ class RateLimitError(Exception):
 
 class LLMRouter:
     def __init__(self):
-        load_env_file()
+        self.reload_keys()
+        self.timeout_per_provider = float(os.getenv("LLM_TIMEOUT", "10.0"))
+        self.step_latency_cap = float(os.getenv("STEP_LATENCY_CAP", "25.0"))
+
+        # In-memory stats tracker
+        self.stats = {
+            "total_calls": 0,
+            "calls_by_source": {},
+            "calls_by_provider": {},
+            "total_latency_ms": 0,
+            "error_count": 0,
+            "recent_calls": []
+        }
+
+    def reload_keys(self):
+        load_env_file(override=True)
         self.mock_mode = os.getenv("MOCK_MODE", "true").lower() in ("true", "1", "yes")
-        self.strict_real = os.getenv("STRICT_REAL", "false").lower() in ("true", "1", "yes")
-        
-        # Keys
+        if not getattr(self, "strict_real", False):
+            self.strict_real = os.getenv("STRICT_REAL", "false").lower() in ("true", "1", "yes")
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
         self.cerebras_key = os.getenv("CEREBRAS_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-        
-        # Valid active FREE tier model defaults
-        # Gemini: gemini-2.0-flash is Google AI Studio's primary free tier model
         self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
-        # Groq: llama-3.3-70b-versatile or llama-3.1-8b-instant
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
-        # Cerebras: llama3.1-8b
+        self.groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip()
         self.cerebras_model = os.getenv("CEREBRAS_MODEL", "llama3.1-8b").strip()
-        # OpenRouter: free tier model
         self.openrouter_model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free").strip()
 
         self.timeout_per_provider = float(os.getenv("LLM_TIMEOUT", "10.0"))
@@ -252,11 +261,20 @@ class LLMRouter:
             logger.warning(f"Failed to write cache {cache_file}: {e}")
 
     def _extract_json(self, text: str) -> str:
-        """Strip markdown fences if present."""
+        """Strip markdown fences and extract outermost JSON object."""
         text = text.strip()
-        match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
-        if match:
-            return match.group(1).strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            return text[start:end + 1]
         return text
 
     def _http_post(self, url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: float = 10.0) -> Dict[str, Any]:
@@ -308,21 +326,44 @@ class LLMRouter:
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.groq_key}"
+            "Authorization": f"Bearer {self.groq_key}",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Virtual-Teacher/1.0"
         }
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        payload = {
-            "model": self.groq_model,
-            "messages": messages,
-            "temperature": 0.2,
-            "response_format": {"type": "json_object"}
-        }
-        res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
-        return res["choices"][0]["message"]["content"], self.groq_model
+        # Try active models: 20b is fast with higher token limits; 27b and 120b are fallbacks
+        models_to_try = [self.groq_model]
+        for alt in ["openai/gpt-oss-20b", "qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+            if alt not in models_to_try:
+                models_to_try.append(alt)
+
+        last_err = None
+        for model_name in models_to_try:
+            payload = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"}
+            }
+            try:
+                res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
+                self.groq_model = model_name
+                return res["choices"][0]["message"]["content"], model_name
+            except RateLimitError as rle:
+                last_err = rle
+                logger.warning(f"Groq model {model_name} rate limited (429), trying next Groq model: {rle}")
+                continue
+            except RuntimeError as re:
+                if "model_not_found" in str(re) or "404" in str(re) or "decommissioned" in str(re):
+                    last_err = re
+                    continue
+                raise
+        if last_err:
+            raise last_err
+        raise RuntimeError("No Groq model succeeded")
 
     def _call_cerebras_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str]:
         if not self.cerebras_key:
@@ -367,19 +408,26 @@ class LLMRouter:
         res = self._http_post(url, headers, payload, timeout=self.timeout_per_provider)
         return res["choices"][0]["message"]["content"], self.openrouter_model
 
-    def _dispatch_providers_sync(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str, str, int]:
+    def _dispatch_providers_sync(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        only_provider: Optional[str] = None
+    ) -> Tuple[str, str, str, int]:
         """
         Dispatches request through the provider fallback chain synchronously.
-        Fallback order: Groq (fastest) -> Gemini (largest context) -> Cerebras -> OpenRouter.
-        Returns: (raw_response_text, provider_name, model_name, latency_ms)
+        If only_provider is specified (e.g. 'groq'), dispatches strictly to that provider.
         """
-        # Order: Groq first for interactive speed, then Gemini, Cerebras, OpenRouter
-        providers = [
-            ("groq", self._call_groq_sync),
-            ("gemini", self._call_gemini_sync),
-            ("cerebras", self._call_cerebras_sync),
-            ("openrouter", self._call_openrouter_sync),
-        ]
+        self.reload_keys()
+        if only_provider == "groq":
+            providers = [("groq", self._call_groq_sync)]
+        else:
+            providers = [
+                ("groq", self._call_groq_sync),
+                ("gemini", self._call_gemini_sync),
+                ("cerebras", self._call_cerebras_sync),
+                ("openrouter", self._call_openrouter_sync),
+            ]
 
         errors = []
         start_overall = time.time()
@@ -409,8 +457,8 @@ class LLMRouter:
 
         raise RuntimeError(f"All LLM providers failed or timed out: {'; '.join(errors)}")
 
-    async def _dispatch_providers(self, prompt: str, system_prompt: Optional[str] = None) -> Tuple[str, str, str, int]:
-        return await asyncio.to_thread(self._dispatch_providers_sync, prompt, system_prompt)
+    async def _dispatch_providers(self, prompt: str, system_prompt: Optional[str] = None, only_provider: Optional[str] = None) -> Tuple[str, str, str, int]:
+        return await asyncio.to_thread(self._dispatch_providers_sync, prompt, system_prompt, only_provider)
 
     def generate_structured_sync(
         self,
@@ -418,9 +466,11 @@ class LLMRouter:
         response_model: Type[T],
         system_prompt: Optional[str] = None,
         mock_fallback_factory: Optional[callable] = None,
+        only_provider: Optional[str] = None,
     ) -> T:
         schema_name = response_model.__name__
         cache_file = self._get_cache_key(prompt, schema_name)
+        self.reload_keys()
 
         # 1. Check disk cache
         cached_content = self._read_cache(cache_file)
@@ -445,8 +495,11 @@ class LLMRouter:
                 pass
 
         # 2. Check if Mock Mode or no keys configured
-        has_any_key = any([self.gemini_key, self.groq_key, self.cerebras_key, self.openrouter_key])
-        if self.mock_mode or not has_any_key:
+        use_real = (only_provider == "groq" and bool(self.groq_key)) or (
+            not self.mock_mode and any([self.gemini_key, self.groq_key, self.cerebras_key, self.openrouter_key])
+        )
+
+        if not use_real:
             if self.strict_real:
                 err_msg = "STRICT_REAL=true is set, but MOCK_MODE is enabled or no provider API keys are configured."
                 self._record_stat("mock", "none", "none", 0, "error")
@@ -485,7 +538,9 @@ class LLMRouter:
         last_error = None
         for attempt in range(2):
             try:
-                raw_text, provider_name, model_name, latency_ms = self._dispatch_providers_sync(augmented_prompt, system_prompt)
+                raw_text, provider_name, model_name, latency_ms = self._dispatch_providers_sync(
+                    augmented_prompt, system_prompt, only_provider=only_provider
+                )
                 clean_json = self._extract_json(raw_text)
                 validated = response_model.model_validate_json(clean_json)
                 self._record_stat("llm", provider_name, model_name, latency_ms, "ok")

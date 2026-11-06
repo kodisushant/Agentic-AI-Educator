@@ -1159,10 +1159,15 @@ class TeacherAgent:
             f"- agent_thoughts: your concise internal reasoning (visible in the UI thoughts banner)"
         )
 
+        router.reload_keys()
+        # The user requested to strictly use the Groq API key for the Chat with Teacher feature
+        only_prov = "groq" if router.groq_key else None
+
         res = router.generate_structured_sync(
             prompt=prompt,
             response_model=ChatMessageResponse,
-            mock_fallback_factory=fallback
+            mock_fallback_factory=fallback,
+            only_provider=only_prov
         )
         if res.trace is None:
             res.trace = AgentTrace(

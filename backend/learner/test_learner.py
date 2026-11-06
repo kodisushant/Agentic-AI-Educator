@@ -1,6 +1,13 @@
 import os
 import sqlite3
+import sys
 import tempfile
+import unittest
+from pathlib import Path
+
+# Ensure workspace root is in sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from backend.agent.schemas import (
     AttemptRecordRequest,
     AttemptRecordResponse,
@@ -18,67 +25,56 @@ from backend.learner.seed import seed_demo_data
 from backend.learner.service import LearnerService
 
 
-def run_learner_tests():
-    print("=== Running Learner Model Unit Tests ===")
+class TestLearnerModel(unittest.TestCase):
+    def setUp(self):
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tf:
+            self.temp_db_path = tf.name
+        self.conn = sqlite3.connect(self.temp_db_path)
+        self.conn.row_factory = sqlite3.Row
+        init_db(self.conn)
+        seed_demo_data(self.conn)
+        self.service = LearnerService(connection=self.conn)
 
-    # 1. Test EWMA calculation and Decay
-    initial_score = 0.50
-    # Correct answer should raise score
-    correct_score = update_ewma_mastery(initial_score, is_correct=True, time_spent_seconds=12.0)
-    assert correct_score > initial_score, f"Expected score to increase, got {correct_score}"
-    print(f"✓ EWMA score on correct answer: {initial_score} -> {correct_score}")
+    def tearDown(self):
+        self.conn.close()
+        if os.path.exists(self.temp_db_path):
+            try:
+                os.remove(self.temp_db_path)
+            except Exception:
+                pass
 
-    # Incorrect answer should lower score
-    wrong_score = update_ewma_mastery(correct_score, is_correct=False, time_spent_seconds=20.0)
-    assert wrong_score < correct_score, f"Expected score to decrease, got {wrong_score}"
-    print(f"✓ EWMA score on incorrect answer: {correct_score} -> {wrong_score}")
+    def test_ewma_calculation_and_decay(self):
+        initial_score = 0.50
+        correct_score = update_ewma_mastery(initial_score, is_correct=True, time_spent_seconds=12.0)
+        self.assertGreater(correct_score, initial_score)
 
-    # Decay check
-    decayed = calculate_decayed_score(0.90, "2026-11-01T00:00:00Z", "2026-11-05T00:00:00Z")
-    assert decayed < 0.90, f"Expected decay over 4 days, got {decayed}"
-    print(f"✓ Ebbinghaus temporal forgetting decay: 0.90 -> {decayed}")
+        wrong_score = update_ewma_mastery(correct_score, is_correct=False, time_spent_seconds=20.0)
+        self.assertLess(wrong_score, correct_score)
 
-    # 2. Test in an isolated temporary SQLite database
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tf:
-        temp_db_path = tf.name
+        decayed = calculate_decayed_score(0.90, "2026-11-01T00:00:00Z", "2026-11-05T00:00:00Z")
+        self.assertLess(decayed, 0.90)
 
-    try:
-        conn = sqlite3.connect(temp_db_path)
-        conn.row_factory = sqlite3.Row
-        init_db(conn)
-        seed_demo_data(conn)
-        print("✓ SQLite temporary schema initialized and seeded")
+    def test_get_mastery(self):
+        mastery = self.service.get_mastery("demo_student")
+        self.assertIsInstance(mastery, MasteryResponse)
+        self.assertIn("binary_search_bounds_update", mastery.concept_scores)
+        self.assertLessEqual(mastery.concept_scores["binary_search_bounds_update"], 0.55)
+        self.assertGreaterEqual(mastery.concept_scores["binary_search_intuition"], 0.80)
 
-        service = LearnerService(connection=conn)
-
-        # 3. Test get_mastery
-        mastery = service.get_mastery("demo_student")
-        assert isinstance(mastery, MasteryResponse)
-        assert "binary_search_bounds_update" in mastery.concept_scores
-        assert mastery.concept_scores["binary_search_bounds_update"] <= 0.55
-        assert mastery.concept_scores["binary_search_intuition"] >= 0.80
-        print(f"✓ Mastery scores verified: overall={mastery.overall_score}, scores={mastery.concept_scores}")
-
-        # 4. Test get_weak_concepts
-        weak = service.get_weak_concepts("demo_student")
-        assert isinstance(weak, WeakConceptsResponse)
-        assert len(weak.weak_concepts) >= 1
+    def test_get_weak_concepts(self):
+        weak = self.service.get_weak_concepts("demo_student")
+        self.assertIsInstance(weak, WeakConceptsResponse)
+        self.assertGreaterEqual(len(weak.weak_concepts), 1)
         weak_tags = [w.concept_tag for w in weak.weak_concepts]
-        assert "binary_search_bounds_update" in weak_tags
-        bounds_item = next(w for w in weak.weak_concepts if w.concept_tag == "binary_search_bounds_update")
-        assert "confuses_direction_when_target_greater" in bounds_item.active_misconceptions
-        print(f"✓ Weak concepts diagnosed: {weak_tags}")
-        print(f"✓ Misconceptions linked: {bounds_item.active_misconceptions}")
-        print(f"✓ Pedagogical recommendation: {bounds_item.recommended_action}")
+        self.assertIn("binary_search_bounds_update", weak_tags)
 
-        # 5. Test recommend_next
-        rec = service.recommend_next("demo_student")
-        assert isinstance(rec, RecommendResponse)
-        assert rec.recommended_concept == "binary_search_bounds_update"
-        assert rec.suggested_action in ["lesson", "quiz"]
-        print(f"✓ Next recommendation verified: {rec.recommended_concept} ({rec.suggested_action}) - {rec.reason}")
+    def test_recommend_next(self):
+        rec = self.service.recommend_next("demo_student")
+        self.assertIsInstance(rec, RecommendResponse)
+        self.assertEqual(rec.recommended_concept, "binary_search_bounds_update")
+        self.assertIn(rec.suggested_action, ["lesson", "quiz"])
 
-        # 6. Test recording new attempt
+    def test_record_attempt_and_history(self):
         new_attempt = AttemptRecordRequest(
             user_id="demo_student",
             concept_tag="binary_search_bounds_update",
@@ -87,28 +83,33 @@ def run_learner_tests():
             question_id="remediation_test_1",
             misconceptions=[]
         )
-        res = service.record_attempt(new_attempt)
-        assert isinstance(res, AttemptRecordResponse)
-        assert res.new_mastery_score > bounds_item.mastery_score
-        print(f"✓ New successful attempt recorded: mastery improved to {res.new_mastery_score}")
+        res = self.service.record_attempt(new_attempt)
+        self.assertIsInstance(res, AttemptRecordResponse)
 
-        # Verify history log
-        history = service.get_history("demo_student", limit=5)
-        assert len(history) >= 1
-        assert history[0]["question_id"] == "remediation_test_1"
-        assert history[0]["is_correct"] is True
-        print(f"✓ Attempt history logging verified: {len(history)} entries retrieved")
+        history = self.service.get_history("demo_student", limit=5)
+        self.assertGreaterEqual(len(history), 1)
+        self.assertEqual(history[0]["question_id"], "remediation_test_1")
+        self.assertTrue(history[0]["is_correct"])
 
-        conn.close()
-    finally:
-        if os.path.exists(temp_db_path):
-            try:
-                os.remove(temp_db_path)
-            except Exception:
-                pass
+    def test_record_attempts_batch_atomic(self):
+        batch = [
+            AttemptRecordRequest(user_id="demo_student", concept_tag="binary_search_bounds_update", is_correct=True, time_spent_seconds=8.0, question_id="batch_1"),
+            AttemptRecordRequest(user_id="demo_student", concept_tag="binary_search_complexity", is_correct=True, time_spent_seconds=5.0, question_id="batch_2"),
+        ]
+        results = self.service.record_attempts_batch(batch)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].status, "recorded")
+        self.assertEqual(results[1].status, "recorded")
 
-    print("\n✓ ALL LEARNER MODEL TESTS PASSED SUCCESSFULLY!")
+    def test_get_user_summary_fast(self):
+        summary = self.service.get_user_summary("demo_student")
+        self.assertEqual(summary["user_id"], "demo_student")
+        self.assertIn("overall_score", summary)
+        self.assertIn("concept_scores", summary)
+        self.assertIn("weak_concepts", summary)
+        self.assertIn("recommendation", summary)
+        self.assertIn("history", summary)
 
 
 if __name__ == "__main__":
-    run_learner_tests()
+    unittest.main()

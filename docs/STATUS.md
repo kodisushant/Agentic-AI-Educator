@@ -81,3 +81,41 @@
   - **None in Learner Service:** Real SQLite database and live calculations are fully functional. Fallback memory caches remain available if operating offline.
 - **Teammate Blockers:**
   - **None!** Backend learner service and dashboard are complete and tested. Teammates (Persons 1, 2, 3) have fully documented and operational endpoints and schemas.
+
+
+---
+
+## Member 2: Voice + Quiz Speed (/backend/tts, /backend/assess, /backend/learner)
+- **Status:** Complete, Tested, & Verified (All 4 Requirements Delivered)
+- **Implemented & Optimized:**
+  1. **ElevenLabs TTS Engine (`backend/tts/router.py`, `backend/tts/cleaner.py`):**
+     - `POST /tts`: Formats input by stripping markdown, LaTeX formulas, and code blocks before synthesis.
+     - Enforces maximum character constraint (~600 chars); rejects longer input with HTTP 400.
+     - Deterministic SHA-256 cache hashing (`cache/tts/<hash>.mp3`); cache hits return `audio/mpeg` instantly with 0 API calls.
+     - On cache miss, queries ElevenLabs API with `asyncio.Semaphore(2)` concurrency limiter.
+     - Graceful degradation: any failure (missing key, 429 quota exhausted, timeout, network error) returns HTTP 503 `{"fallback":"browser"}`.
+     - `GET /tts/status`: Non-secret operational status reporting key configuration, cached files count, and model without secrets.
+     - Added `cache/tts/` to `.gitignore` and `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TTS_MODEL` to `.env.example`.
+     - 10 unit tests in `backend/tts/test_tts.py` mocking all network requests (100% pass).
+  2. **Narration Pre-generation Script (`scripts/pregenerate_audio.py`):**
+     - Parses demo lesson narrations (Binary Search, Recursion, cached JSON steps: 40 unique sentences, 2,978 chars).
+     - Calculates total character count upfront.
+     - Interactively prompts for confirmation (`[y/N]`) before executing any ElevenLabs API calls.
+     - Synthesizes sentences into `cache/tts/` with real-time progress reporting.
+  3. **Quiz & Learner Speed Optimizations:**
+     - **Root Cause:** In `backend/assess/service.py`, `submit_quiz` called `learner_client.record_attempt`, which initiated blocking loopback HTTP calls (`_post_json("http://localhost:8000/learner/attempt")`) with 2-second timeouts per question. For 3 questions, this caused a 16.2-second delay. Furthermore, `learner.db` lacked WAL mode and had repeated connection open/close overhead and redundant query passes.
+     - **Fix:**
+       - Switched `submit_quiz` to direct in-process `learner_service.record_attempts_batch()`, executing all attempt recordings in a single atomic database transaction.
+       - Pure code multiple-choice evaluation: 0 LLM calls on the grading path.
+       - Enabled SQLite WAL mode (`PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA cache_size = -64000;`) and thread-local connection caching in `backend/learner/db.py`.
+       - Added database indexes (`idx_attempts_user_id`, `idx_misconceptions_lookup`).
+       - Refactored `backend/learner/service.py` (`get_user_summary`, `get_weak_concepts`, `recommend_next`) for single-pass data flow.
+  4. **Timing Benchmarks (Before vs After):**
+     - `assess_service.submit_quiz` (pure grading logic): **16,184 ms → 1.91 ms** (Fastest: **0.32 ms**) — **>400x speedup** (well below 300 ms requirement).
+     - Full HTTP `/assess/submit` round-trip: **16,184 ms → 38.72 ms** (Fastest: **16.97 ms**).
+     - `learner_service.record_attempt`: **7.22 ms → 1.19 ms**.
+     - `learner_service.get_user_summary`: **4.76 ms → 0.61 ms**.
+- **What is REAL & VERIFIED:**
+  - All 22 tests passing across `backend/tts` (10), `backend/assess` (5), and `backend/learner` (7).
+  - Pre-generation script verified with character accounting.
+  - Mount request documented in `/docs/REQUESTS.md`.

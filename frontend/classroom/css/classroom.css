@@ -1,0 +1,158 @@
+/* AI Virtual Teacher Classroom Stylesheet */
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes elementEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.board-element-enter {
+  animation: elementEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.font-handwriting {
+  font-family: 'Architects Daughter', cursive, sans-serif;
+}
+
+.board-grid {
+  background-image: radial-gradient(circle, #38bdf8 0.75px, transparent 0.75px), radial-gradient(circle, #64748b 0.5px, transparent 0.5px);
+  background-size: 32px 32px, 8px 8px;
+}
+
+/* Whiteboard Dynamic Flow Elements */
+.whiteboard-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.whiteboard-auto-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.whiteboard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.whiteboard-box {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border-width: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.whiteboard-box:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.whiteboard-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 48rem;
+  word-wrap: break-word;
+}
+
+.whiteboard-equation {
+  max-width: 44rem;
+  overflow-x: auto;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+.whiteboard-mermaid {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+/* Skeleton Loading Shimmer */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #1e293b;
+}
+.skeleton-shimmer::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.06) 20%,
+    rgba(255, 255, 255, 0.12) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 1.8s infinite;
+  content: '';
+}
+
+/* Audio Waveform Bars */
+.wave-bar {
+  display: inline-block;
+  width: 3px;
+  border-radius: 2px;
+  background-color: #34d399;
+  animation: wave 1s ease-in-out infinite alternate;
+}
+@keyframes wave {
+  0% { height: 4px; }
+  100% { height: 16px; }
+}
+.wave-bar:nth-child(1) { animation-delay: 0.1s; }
+.wave-bar:nth-child(2) { animation-delay: 0.3s; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { animation-delay: 0.4s; }

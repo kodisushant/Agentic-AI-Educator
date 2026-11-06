@@ -22,29 +22,24 @@
 
 ---
 
-## Person 2: Classroom frontend (/frontend/classroom)
-- **Status:** Complete, Tested & Integrated
-- **Implemented:**
-  - **Digital Whiteboard Canvas (`frontend/classroom/WhiteboardCanvas.tsx`):** Animated SVG vector and HTML layer rendering polymorphic board commands (`box`, `arrow`, `text`, `equation` via KaTeX, `mermaid` charts, and `clear`) with interactive zoom/pan controls, reset view, and reactive visual remediation highlights.
-  - **Spoken Narration Panel (`frontend/classroom/NarrationPanel.tsx`):** Spoken teacher audio via browser Web Speech API (`SpeechSynthesisUtterance`) with live sound-wave visualizer, replay button, speed rate adjustment (0.85x, 1.0x, 1.25x), and audio mute/unmute toggle.
-  - **Classroom Playback Controls (`frontend/classroom/ControlsBar.tsx`):** Play, Pause, Next, Previous, and step-jump stepper with prominent "I don't understand" adaptive trigger button calling `POST /lesson/step` to adapt explanations on the fly.
-  - **Agent Reasoning & Misconception Banner (`frontend/classroom/AgentThoughtsBanner.tsx`):** Visible cognitive reasoning traces (`agent_thoughts`), LLM provider/latency metadata pills, and active misconception diagnosis alerts with pedagogical remediation plans.
-  - **Formative Checkpoint Card (`frontend/classroom/CheckQuestionCard.tsx`):** Interactive MCQs syncing with `POST /lesson/check-answer`, providing instant formative feedback, diagnosed misconception tags (`confuses_direction_when_target_greater`), mastery score updates, and direct whiteboard corrective overlays.
-  - **Live Teacher Chat Box (`frontend/classroom/TeacherChat.tsx`):** Conversational chat interface querying `POST /agent/chat`, displaying agent reasoning traces, and applying suggested board annotations directly to the whiteboard canvas.
-  - **Next.js & React Module (`frontend/classroom/ClassroomView.tsx`, `page.tsx`, `index.ts`):** Complete classroom orchestrator with persona selector and offline resilience.
-  - **Standalone Interactive Web Application (`frontend/classroom/index.html`):** Zero-dependency single-file HTML5 app with CDN-hosted Tailwind, KaTeX, and Mermaid, opening instantly in any browser.
-  - **In-Browser Interactive Live Code Runner:** Executable Python code runner inside `frontend/classroom/index.html` and `ClassroomView.tsx` powered by Pyodide WebAssembly with terminal stdout capture, execution timer, copy snippet toggle, and automatic error reporting to teacher chat (`POST /agent/chat`).
-  - **Excalidraw/Whiteboard Freehand Annotation Tool:** Real-time freehand sketching and drawing layer (`freehandCanvas`) on top of vector board elements with toggleable pen tool, warm amber teacher marker, and instant canvas clearing.
-- **Tested:**
-  - Schema compliance against `/contracts/board_commands.json` for all command types.
-  - Integration with `backend/agent/main.py` (`/mock/lesson`, `/lesson/step`, `/lesson/check-answer`, `/agent/chat`).
-  - Offline fallback verification when backend is in standby mode.
-- **Integrated:**
-  - Person 1: `/mock/lesson`, `/lesson/step`, `/lesson/check-answer`, `/agent/chat`.
-  - Person 3: Ready to render `code_action` payloads and link into Pyodide live coding runner.
-  - Person 4: Real-time mastery score display and persona switching.
-- **Blocked:**
-  - None! Classroom frontend is complete and ready for integration.
+## Person 2 / Member 3: Classroom UI (/frontend/classroom)
+- **Status:** Complete, Tested & Verified (All Sprint Tasks 0-7 Implemented)
+- **Implemented & Verified:**
+  - **Task 0 (Plugin Mount Points & Stubs):** Added `<div id="code-panel">`, `<div id="chat-panel">`, `<div id="quiz-panel">` and loaded `js/code-panel.js`, `js/chat-panel.js`, `js/quiz-panel.js`. Created safe initial plugin stubs implementing `mount()`, `loadChunk()`, `pause()`, `resume()`, and `run()`. All calls strictly guarded with `window.CodePanel?.`, `window.ChatPanel?.`, `window.QuizPanel?.`.
+  - **Task 1 (State Machine & Playback Controls):** Built complete 4-state machine (`idle`, `playing`, `paused`, `finished`) with live status badge (`#stateIndicatorBadge`). Pausing halts board animation, audio playback, and invokes `window.CodePanel?.pause()`. Play resumes from exact pause timestamp, and step changing preserves mode state.
+  - **Task 2 (Auto Layout & No Text Overlap):** Created responsive auto-layout flow engine (`whiteboard-auto-flow`, `whiteboard-row`, `whiteboard-equation`, `whiteboard-mermaid`) calculating bounding boxes, text wrapping, and element margins so elements never collide or overlap. Narration is strictly confined to the dedicated Voice Narration Panel below the board.
+  - **Task 3 (Curriculum Topic Picker Home Screen):** Interactive initial home screen fetching cards from `GET /topics` with graceful fallback to curriculum catalog. Added "Type any topic" input box dispatching `POST /lesson/generate` with difficulty selector, animated skeleton loader, and retryable error state.
+  - **Task 4 (Voice Playback & Sentence Prefetching):** Sentence-by-sentence audio narration dispatching `POST /tts` (with `audio/mpeg` HTML Audio playback) and fallback to browser `speechSynthesis` on 503/error. Features Natural English voice selector, LaTeX/markdown stripping, unified pause/resume/mute handling, and asynchronous next-sentence audio prefetching.
+  - **Task 5 (Code Step Synchronization):** When step contains `code_chunks`, dispatches synchronized `window.CodePanel?.loadChunk()` payloads with code, explanation, and expected output.
+  - **Task 6 (Lag & Performance Optimization):** Lazy-loads KaTeX and Mermaid libraries on demand only when equations or diagrams are present. Debounced window resize event (150ms), in-memory lesson JSON caching (`lessonMemoryCache`), and zero re-renders of identical steps.
+  - **Task 7 (Teacher Reasoning & Trace Panel):** Small collapsible panel displaying real metadata trace (`source` labeled as LLM/CACHE/MOCK/FALLBACK_CANNED, `provider`, and `latency_ms`) without fake canned text.
+- **Tested & Verified:**
+  - Verified static HTTP serving via `python -m http.server 3000 --directory frontend/classroom`.
+  - Verified plugin mount points and guarded calls with zero runtime errors.
+  - Verified topic picker, fallback generation, voice playback fallback, and auto-layout styling.
+- **What is REAL & VERIFIED:**
+  - Complete standalone Classroom HTML5 UI (`frontend/classroom/index.html`), stylesheet (`frontend/classroom/css/classroom.css`), and plugin integration stubs (`frontend/classroom/js/*.js`).
+- **Teammate Blockers:** None. Member 4 has ready mount points and stubs to plug into.
 
 ---
 

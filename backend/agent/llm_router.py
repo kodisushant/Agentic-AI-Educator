@@ -98,7 +98,7 @@ class LLMRouter:
         self.cerebras_key = os.getenv("CEREBRAS_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
-        self.groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip()
+        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant").strip()
         self.cerebras_model = os.getenv("CEREBRAS_MODEL", "llama3.1-8b").strip()
         self.openrouter_model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free").strip()
 
@@ -334,9 +334,20 @@ class LLMRouter:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Try active models: 20b is fast with higher token limits; 27b and 120b are fallbacks
-        models_to_try = [self.groq_model]
-        for alt in ["openai/gpt-oss-20b", "qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+        # Try active Groq models in priority order (fast to capable)
+        known_working = [
+            "llama-3.1-8b-instant",
+            "llama3-8b-8192",
+            "llama-3.3-70b-versatile",
+            "llama3-70b-8192",
+            "gemma2-9b-it",
+            "mixtral-8x7b-32768",
+        ]
+        models_to_try = []
+        # Always try configured model first (unless it's one of the broken openai/* ones)
+        if self.groq_model and not self.groq_model.startswith("openai/") and not self.groq_model.startswith("qwen/"):
+            models_to_try.append(self.groq_model)
+        for alt in known_working:
             if alt not in models_to_try:
                 models_to_try.append(alt)
 

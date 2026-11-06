@@ -24,6 +24,9 @@ from backend.agent.schemas import (
     QuizSubmitRequest,
     CheckAnswerRequest,
     CheckAnswerResponse,
+    LessonPlan,
+    CodeChunk,
+    CheckQuestion,
 )
 from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps
 from backend.agent.tools import execute_tool_call
@@ -243,6 +246,84 @@ def run_unit_tests():
         print("✓ STRICT_REAL=true correctly raises error instead of silent mock fallback", flush=True)
     finally:
         router.strict_real = os.getenv("STRICT_REAL", "false").lower() in ("true", "1", "yes")
+
+    # 16. Test Validation Pipeline Rejections (No real LLM called)
+    from backend.agent.generator import validate_lesson_plan, get_golden_binary_search_lesson
+
+    # Test 16a: Pipeline rejects broken code
+    bad_code_lesson = get_golden_binary_search_lesson()
+    bad_code_lesson.steps[1].code_chunks = [
+        CodeChunk(code="def broken_func():\n    return 1 / 0\nbroken_func()\n", explanation="Division by zero")
+    ]
+    res, errors = validate_lesson_plan(bad_code_lesson, check_code=True)
+    assert res is None, "Validation should reject broken code"
+    assert any("failed execution" in err for err in errors), f"Expected code execution error in: {errors}"
+    print("✓ Validation pipeline correctly rejects broken Python code", flush=True)
+
+    # Test 16b: Pipeline rejects bad schema (e.g. only 2 steps instead of 5)
+    bad_schema_dict = {
+        "topic": "Incomplete",
+        "level": "beginner",
+        "steps": [bad_code_lesson.steps[0].model_dump(mode="json"), bad_code_lesson.steps[1].model_dump(mode="json")]
+    }
+    res, errors = validate_lesson_plan(bad_schema_dict, check_code=False)
+    assert res is None, "Validation should reject bad schema"
+    assert any("exactly 5 steps" in err for err in errors), f"Expected step count error in: {errors}"
+    print("✓ Validation pipeline correctly rejects schema with incorrect step count", flush=True)
+
+    # Test 16c: Pipeline rejects invalid check question (wrong option count or out-of-bounds index)
+    bad_question_lesson = get_golden_binary_search_lesson()
+    bad_question_lesson.steps[2].check_question = CheckQuestion(
+        question_id="bad_q",
+        question="Which option is correct?",
+        options=["Option A", "Option B"],  # Only 2 options, requires 4
+        correct_index=0,
+        explanation="Too few options",
+        concept_tag="bad_q_tag"
+    )
+    res, errors = validate_lesson_plan(bad_question_lesson, check_code=False)
+    assert res is None, "Validation should reject check question without 4 options"
+    assert any("exactly 4 options" in err for err in errors), f"Expected 4 options error in: {errors}"
+
+    # Also test invalid correct_index
+    bad_question_lesson.steps[2].check_question = CheckQuestion(
+        question_id="bad_q2",
+        question="Which option is correct?",
+        options=["Option A", "Option B", "Option C", "Option D"],
+        correct_index=5,  # Out of bounds
+        explanation="Invalid index",
+        concept_tag="bad_q_tag"
+    )
+    res, errors = validate_lesson_plan(bad_question_lesson, check_code=False)
+    assert res is None, "Validation should reject out-of-bounds correct_index"
+    assert any("out of bounds" in err for err in errors), f"Expected out of bounds error in: {errors}"
+    print("✓ Validation pipeline correctly rejects check question with invalid options or index", flush=True)
+
+    # Test 16d: Valid golden lesson passes validation with 0 errors
+    valid_lesson = get_golden_binary_search_lesson()
+    res, errors = validate_lesson_plan(valid_lesson, check_code=True)
+    assert res is not None, f"Golden lesson should pass validation: {errors}"
+    assert len(errors) == 0
+    print("✓ Golden lesson passes 100% of validation pipeline checks", flush=True)
+
+    # Test 16e: GET /topics and POST /lesson/generate endpoints
+    from backend.agent.generator import get_available_topics, generate_lesson
+    all_topics = get_available_topics()
+    assert len(all_topics) >= 5
+    topic_ids = [t.id for t in all_topics]
+    assert "binary_search" in topic_ids
+    assert "bubble_sort" in topic_ids
+    assert "two_pointers" in topic_ids
+    assert "gradient_descent" in topic_ids
+    bs_topic = next(t for t in all_topics if t.id == "bubble_sort")
+    assert bs_topic.has_code is True
+    assert bs_topic.source == "ai_generated_reviewed"
+    print("✓ GET /topics returns all 5 topics with has_code=true and source verified", flush=True)
+
+    cached_gen = generate_lesson("Bubble Sort")
+    assert cached_gen.trace["source"] == "cache"
+    assert len(cached_gen.steps) == 5
+    print("✓ POST /lesson/generate serves cached validated lesson with trace.source='cache'", flush=True)
 
     print("\nAll mock unit tests passed successfully!", flush=True)
 

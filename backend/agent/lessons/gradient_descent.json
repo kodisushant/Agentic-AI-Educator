@@ -1,0 +1,361 @@
+{
+  "topic": "Gradient Descent",
+  "level": "advanced",
+  "steps": [
+    {
+      "step_id": "gd_step_0",
+      "step_index": 0,
+      "total_steps": 5,
+      "concept": "Gradient Descent",
+      "narration": "Welcome to Gradient Descent! Imagine you are blindfolded on a foggy hill and want to reach the lowest point in the valley. You feel the slope beneath your feet and take a step downhill. Gradient Descent does exactly that: it calculates the gradient of the loss function and updates model weights in the opposite direction, guaranteeing the fastest local decrease in error!",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_gd_0"
+        },
+        {
+          "type": "text",
+          "id": "title_gd_0",
+          "content": "Gradient Descent: Stepping Downhill",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 24,
+          "color": "#0f172a"
+        },
+        {
+          "type": "text",
+          "id": "lbl_gd_0",
+          "content": "Loss Landscape L(w) with Minimum at w = 2.0",
+          "x": 60.0,
+          "y": 100.0,
+          "size": 16,
+          "color": "#475569"
+        },
+        {
+          "type": "box",
+          "id": "box_start",
+          "label": "w = 0 (Loss: 30.0)",
+          "x": 60.0,
+          "y": 130.0,
+          "width": 140.0,
+          "height": 50.0,
+          "color": "#ef4444",
+          "fill": "#fef2f2"
+        },
+        {
+          "type": "box",
+          "id": "box_step",
+          "label": "w = 1.0 (Loss: 7.5)",
+          "x": 230.0,
+          "y": 130.0,
+          "width": 140.0,
+          "height": 50.0,
+          "color": "#f59e0b",
+          "fill": "#fef3c7"
+        },
+        {
+          "type": "box",
+          "id": "box_opt",
+          "label": "w = 2.0 (Loss: 0.0)",
+          "x": 400.0,
+          "y": 130.0,
+          "width": 140.0,
+          "height": 50.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "arrow",
+          "id": "arr_desc_0",
+          "from_id": null,
+          "to_id": null,
+          "start_x": 200.0,
+          "start_y": 155.0,
+          "end_x": 230.0,
+          "end_y": 155.0,
+          "label": "Negative Gradient Step",
+          "color": "#2563eb"
+        },
+        {
+          "type": "equation",
+          "id": "eq_gd_update_0",
+          "latex": "w_{\\text{new}} = w_{\\text{old}} - \\eta \\cdot \\nabla L(w)",
+          "x": 60.0,
+          "y": 250.0,
+          "label": "Parameter Update Rule"
+        },
+        {
+          "type": "mermaid",
+          "id": "flow_gd_0",
+          "chart": "graph LR\n  A[Compute Prediction y_hat] --> B[Compute MSE Loss]\n  B --> C[Compute Derivative dL/dw]\n  C --> D[Update w = w - lr * grad]\n  D --> E[Repeat until Convergence]",
+          "x": 60.0,
+          "y": 320.0,
+          "title": "Optimization Cycle"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": null,
+      "agent_thoughts": "Introducing Gradient Descent with downhill valley metaphor and loss surface concept.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "gd_step_1",
+      "step_index": 1,
+      "total_steps": 5,
+      "concept": "Gradient Descent",
+      "narration": "Let's compute one single gradient step mathematically. With data X = [1, 2, 3] and true values y = [2, 4, 6], our model is y_hat = w * x. Starting at w = 0, our loss is 18.67, and the derivative is -18.67. With learning rate 0.05, our update is: w_new = 0 - (0.05 * -18.67) = +0.933. Notice how w instantly moves toward the true value 2.0!",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "title_gd_1",
+          "content": "One Parameter Update in Detail",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "equation",
+          "id": "eq_mse_1",
+          "latex": "L(w) = \\frac{1}{N} \\sum_{i=1}^N (w x_i - y_i)^2",
+          "x": 60.0,
+          "y": 100.0,
+          "label": "Mean Squared Error Loss"
+        },
+        {
+          "type": "equation",
+          "id": "eq_deriv_1",
+          "latex": "\\frac{\\partial L}{\\partial w} = \\frac{2}{N} \\sum_{i=1}^N (w x_i - y_i) x_i",
+          "x": 60.0,
+          "y": 170.0,
+          "label": "Analytic Gradient Formula"
+        },
+        {
+          "type": "box",
+          "id": "w_update_box",
+          "label": "w: 0.0 -> 0.933",
+          "x": 60.0,
+          "y": 240.0,
+          "width": 180.0,
+          "height": 45.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "text",
+          "id": "txt_gd_1",
+          "content": "Loss decreases from 18.67 down to 4.54 after just one step!",
+          "x": 60.0,
+          "y": 310.0,
+          "size": 15,
+          "color": "#16a34a"
+        }
+      ],
+      "code_action": {
+        "code": "import numpy as np\n# Single parameter update step\nw = 0.0\nlr = 0.05\nx = np.array([1.0, 2.0, 3.0])\ny = np.array([2.0, 4.0, 6.0])\npred = w * x\nloss = np.mean((pred - y) ** 2)\ngrad = np.mean(2 * (pred - y) * x)\nw_new = w - lr * grad\nprint(f'Initial w: {w:.2f}, Loss: {loss:.3f}, Gradient: {grad:.3f}')\nprint(f'Updated w: {w_new:.3f}')\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "NumPy calculation of MSE loss and gradient."
+      },
+      "code_chunks": [
+        {
+          "code": "import numpy as np\n# Single parameter update step\nw = 0.0\nlr = 0.05\nx = np.array([1.0, 2.0, 3.0])\ny = np.array([2.0, 4.0, 6.0])\npred = w * x\nloss = np.mean((pred - y) ** 2)\ngrad = np.mean(2 * (pred - y) * x)\nw_new = w - lr * grad\nprint(f'Initial w: {w:.2f}, Loss: {loss:.3f}, Gradient: {grad:.3f}')\nprint(f'Updated w: {w_new:.3f}')\n",
+          "explanation": "NumPy calculation of MSE loss and gradient.",
+          "expected_output": "Initial w: 0.00, Loss: 18.667, Gradient: -18.667\nUpdated w: 0.933\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Worked example computing gradient and applying learning rate update.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "gd_step_2",
+      "step_index": 2,
+      "total_steps": 5,
+      "concept": "Gradient Descent",
+      "narration": "Let's test an essential hyperparameter concept. The learning rate (eta) controls step size. What happens if the learning rate is set too large?",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "cq_title_gd_2",
+          "content": "Checkpoint: Learning Rate Dynamics",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 22,
+          "color": "#1e293b"
+        },
+        {
+          "type": "text",
+          "id": "cq_note_gd_2",
+          "content": "Question: Impact of excessively large learning rate (eta)",
+          "x": 60.0,
+          "y": 110.0,
+          "size": 16,
+          "color": "#2563eb"
+        },
+        {
+          "type": "equation",
+          "id": "cq_eq_gd_2",
+          "latex": "\\eta \\gg \\eta_{\\text{optimal}} \\implies \\text{Divergence: } L(w) \\to \\infty",
+          "x": 60.0,
+          "y": 170.0,
+          "label": "Overshoot Phenomenon"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": {
+        "question_id": "gd_check_learning_rate",
+        "question": "What happens if the learning rate in Gradient Descent is set excessively high?",
+        "options": [
+          "The algorithm converges to the minimum instantly in one step",
+          "The updates overshoot the minimum and the loss may diverge to infinity",
+          "The weights get stuck and stop updating completely",
+          "The loss function becomes convex"
+        ],
+        "correct_index": 1,
+        "explanation": "An excessively large learning rate causes the updates to overshoot the valley floor and bounce outward, leading to oscillation or divergence.",
+        "concept_tag": "gradient_descent_learning_rate"
+      },
+      "agent_thoughts": "Checking understanding of learning rate overshoot and divergence.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "gd_step_3",
+      "step_index": 3,
+      "total_steps": 5,
+      "concept": "Gradient Descent",
+      "narration": "Here is the complete Gradient Descent algorithm in Python with NumPy! We run 10 epochs. At each epoch, we compute predictions, calculate MSE loss, derive the gradient, and update w. Watch the console output below: the loss plummets from 30.0 down to near 0, and w converges to 2.000!",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "code_title_gd_3",
+          "content": "10-Epoch NumPy Optimization",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "equation",
+          "id": "eq_epoch_gd_3",
+          "latex": "\\lim_{k \\to \\infty} w_k = 2.0, \\quad \\lim_{k \\to \\infty} L(w_k) = 0",
+          "x": 60.0,
+          "y": 110.0,
+          "label": "Convergence Guarantee"
+        },
+        {
+          "type": "mermaid",
+          "id": "chart_gd_3",
+          "chart": "graph TD\n  E0[Epoch 0: Loss 30.0, w=0.0] --> E1[Epoch 1: Loss 18.6, w=0.93]\n  E1 --> E5[Epoch 5: Loss 0.42, w=1.88]\n  E5 --> E10[Epoch 10: Loss 0.00, w=1.99]\n  E10 --> Opt[Converged to True Target: w = 2.0]",
+          "x": 60.0,
+          "y": 180.0,
+          "title": "Loss Decay & Weight Convergence"
+        }
+      ],
+      "code_action": {
+        "code": "import numpy as np\n\n# Tiny dataset: y = 2 * x (true weight = 2.0)\nX = np.array([1.0, 2.0, 3.0, 4.0])\ny = np.array([2.0, 4.0, 6.0, 8.0])\n\nw = 0.0  # initial weight\nlearning_rate = 0.05\nepochs = 10\n\nprint('Starting Gradient Descent:')\nprint(f'Epoch  0 | Weight: {w:.4f} | Loss: {np.mean((w*X - y)**2):.4f}')\n\nfor epoch in range(1, epochs + 1):\n    y_pred = w * X\n    loss = np.mean((y_pred - y) ** 2)\n    # Gradient of Mean Squared Error with respect to w:\n    gradient = np.mean(2 * (y_pred - y) * X)\n    w = w - learning_rate * gradient\n    print(f'Epoch {epoch:2d} | Weight: {w:.4f} | Loss: {loss:.4f} | Grad: {gradient:.4f}')\n\nprint(f'Final optimized weight: {w:.4f} (True Target: 2.0000)')\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "NumPy Gradient Descent training loop with loss printed at every epoch."
+      },
+      "code_chunks": [
+        {
+          "code": "import numpy as np\n\n# Tiny dataset: y = 2 * x (true weight = 2.0)\nX = np.array([1.0, 2.0, 3.0, 4.0])\ny = np.array([2.0, 4.0, 6.0, 8.0])\n\nw = 0.0  # initial weight\nlearning_rate = 0.05\nepochs = 10\n\nprint('Starting Gradient Descent:')\nprint(f'Epoch  0 | Weight: {w:.4f} | Loss: {np.mean((w*X - y)**2):.4f}')\n\nfor epoch in range(1, epochs + 1):\n    y_pred = w * X\n    loss = np.mean((y_pred - y) ** 2)\n    # Gradient of Mean Squared Error with respect to w:\n    gradient = np.mean(2 * (y_pred - y) * X)\n    w = w - learning_rate * gradient\n    print(f'Epoch {epoch:2d} | Weight: {w:.4f} | Loss: {loss:.4f} | Grad: {gradient:.4f}')\n\nprint(f'Final optimized weight: {w:.4f} (True Target: 2.0000)')\n",
+          "explanation": "NumPy Gradient Descent training loop with loss printed at every epoch.",
+          "expected_output": "Starting Gradient Descent:\nEpoch  0 | Weight: 0.0000 | Loss: 30.0000\nEpoch  1 | Weight: 1.5000 | Loss: 30.0000 | Grad: -30.0000\nEpoch  2 | Weight: 1.8750 | Loss: 1.8750 | Grad: -7.5000\nEpoch  3 | Weight: 1.9688 | Loss: 0.1172 | Grad: -1.8750\nEpoch  4 | Weight: 1.9922 | Loss: 0.0073 | Grad: -0.4688\nEpoch  5 | Weight: 1.9980 | Loss: 0.0005 | Grad: -0.1172\nEpoch  6 | Weight: 1.9995 | Loss: 0.0000 | Grad: -0.0293\nEpoch  7 | Weight: 1.9999 | Loss: 0.0000 | Grad: -0.0073\nEpoch  8 | Weight: 2.0000 | Loss: 0.0000 | Grad: -0.0018\nEpoch  9 | Weight: 2.0000 | Loss: 0.0000 | Grad: -0.0005\nEpoch 10 | Weight: 2.0000 | Loss: 0.0000 | Grad: -0.0001\nFinal optimized weight: 2.0000 (True Target: 2.0000)\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Live coding 10 epochs of linear regression gradient descent with loss printed every iteration.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "gd_step_4",
+      "step_index": 4,
+      "total_steps": 5,
+      "concept": "Gradient Descent",
+      "narration": "Congratulations! You've mastered the foundation of modern Machine Learning optimization. You understand how gradients dictate parameter updates, how learning rates govern convergence, and how MSE loss minimizes. Your mastery score for 'gradient_descent_optimization' is now 85%. Next recommended topic: Stochastic Gradient Descent (SGD) and Momentum.",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_gd_4"
+        },
+        {
+          "type": "text",
+          "id": "comp_title_gd_4",
+          "content": "Lesson Complete: Gradient Descent Mastered",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 24,
+          "color": "#16a34a"
+        },
+        {
+          "type": "box",
+          "id": "mastery_box_gd_4",
+          "label": "Optimization Mastered (+0.35)",
+          "x": 60.0,
+          "y": 110.0,
+          "width": 300.0,
+          "height": 60.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "text",
+          "id": "rec_text_gd_4",
+          "content": "Next recommended practice: Momentum & Adam Optimizer",
+          "x": 60.0,
+          "y": 200.0,
+          "size": 18,
+          "color": "#1e293b"
+        },
+        {
+          "type": "mermaid",
+          "id": "roadmap_gd_4",
+          "chart": "graph LR\n  A[Batch GD (Done)] --> B[Mini-batch SGD]\n  B --> C[Momentum & RMSProp]\n  C --> D[Adam Optimizer]",
+          "x": 60.0,
+          "y": 260.0,
+          "title": "Deep Learning Optimization Roadmap"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": null,
+      "agent_thoughts": "Concluding Gradient Descent lesson with mastery update and machine learning progression roadmap.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": true
+    }
+  ],
+  "trace": {
+    "source": "ai_generated_reviewed",
+    "provider": "curated_engine",
+    "model": "template",
+    "latency_ms": 20
+  }
+}

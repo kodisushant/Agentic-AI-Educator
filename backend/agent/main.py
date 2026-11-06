@@ -28,11 +28,15 @@ from backend.agent.schemas import (
     QuizSubmitResponse,
     CheckAnswerRequest,
     CheckAnswerResponse,
+    TopicItem,
+    LessonPlan,
+    LessonGenerateRequest,
 )
 from backend.agent.teacher import teacher_agent, get_mock_binary_search_steps, get_mock_recursion_steps
 from backend.agent.tools import execute_tool_call
 from backend.agent.llm_router import router
 from backend.agent.client import learner_client, assess_client
+from backend.agent.generator import get_available_topics, generate_lesson
 
 logger = logging.getLogger("agent_service")
 
@@ -119,6 +123,33 @@ async def debug_llm_stats():
 # =====================================================================
 # TEACHER AGENT ENDPOINTS (/backend/agent)
 # =====================================================================
+
+
+@app.get("/topics", response_model=List[TopicItem], tags=["Lesson"])
+async def get_topics():
+    """
+    Returns available lesson topics with difficulty level and code support.
+    Source indicates whether the lesson is 'golden_example' or 'ai_generated_reviewed'.
+    """
+    return get_available_topics()
+
+
+@app.post("/lesson/generate", response_model=LessonPlan, tags=["Lesson"])
+async def generate_lesson_endpoint(req: LessonGenerateRequest):
+    """
+    Generate or retrieve a full 5-step interactive lesson for a topic.
+    Serves from backend/agent/lessons/<slug>.json first (trace.source = 'cache'),
+    otherwise invokes LLM router with multi-stage validation and repair pipeline.
+    """
+    try:
+        topic_name = req.topic or "Binary Search"
+        lesson = generate_lesson(topic=topic_name, level=req.level, user_id=req.user_id or "demo_student")
+        return lesson
+    except ValueError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lesson generation failed: {str(e)}")
+
 
 @app.post("/lesson/step", response_model=LessonStep, tags=["Lesson"])
 async def get_lesson_step(req: LessonStepRequest):

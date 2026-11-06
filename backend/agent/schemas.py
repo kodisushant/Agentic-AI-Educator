@@ -81,6 +81,12 @@ class CodeAction(BaseModel):
     explanation: Optional[str] = Field(default=None, description="Code explanation or comments")
 
 
+class CodeChunk(BaseModel):
+    code: str = Field(..., description="Python code block")
+    explanation: Optional[str] = Field(default=None, description="Explanation of what this code does")
+    expected_output: Optional[str] = Field(default=None, description="Expected stdout from running this code")
+
+
 class CheckQuestion(BaseModel):
     question_id: str = Field(..., description="Unique question identifier")
     question: str = Field(..., description="The multiple choice question")
@@ -160,6 +166,10 @@ class LessonStep(BaseModel):
     code_action: Optional[CodeAction] = Field(
         default=None,
         description="Code to display or execute in Monaco/Pyodide"
+    )
+    code_chunks: List[CodeChunk] = Field(
+        default_factory=list,
+        description="List of code chunks with code, explanation, and expected_output"
     )
     check_question: Optional[CheckQuestion] = Field(
         default=None,
@@ -460,3 +470,25 @@ class QuizSubmitResponse(BaseModel):
     correct_count: int = Field(..., examples=[2])
     feedback: List[QuestionResultFeedback] = Field(..., description="Detailed feedback per question")
 
+
+
+class LessonGenerateRequest(BaseModel):
+    topic: str = Field(default="Binary Search", description="Concept name or topic to teach")
+    level: str = Field(default="beginner", description="Difficulty level")
+    user_id: Optional[str] = Field(default="demo_student", description="Student ID")
+
+
+class TopicItem(BaseModel):
+    id: str = Field(..., description="Unique topic slug")
+    title: str = Field(..., description="Display title")
+    description: str = Field(..., description="Topic description")
+    level: str = Field(default="beginner", description="Difficulty level")
+    has_code: bool = Field(default=True, description="Whether topic has live coding")
+    source: Optional[str] = Field(default="ai_generated_reviewed", description="Lesson source")
+
+
+class LessonPlan(BaseModel):
+    topic: str = Field(..., description="Lesson topic")
+    level: str = Field(default="beginner", description="Difficulty level")
+    steps: List[LessonStep] = Field(..., description="5-step lesson structure")
+    trace: Optional[Dict[str, Any]] = Field(default=None, description="Generation trace")

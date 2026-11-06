@@ -1,0 +1,427 @@
+{
+  "topic": "Recursion & Trees",
+  "level": "intermediate",
+  "steps": [
+    {
+      "step_id": "rec_step_0",
+      "step_index": 0,
+      "total_steps": 5,
+      "concept": "Recursion",
+      "narration": "Welcome to Recursion! Recursion is the art of solving a computational problem by having a function call itself on a strictly smaller subproblem. Think of Russian nesting dolls (Matryoshka): every doll contains an identical, smaller doll inside, until you finally reach the solid, indivisible core\u2014the Base Case!",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_rec_0"
+        },
+        {
+          "type": "text",
+          "id": "rec_title",
+          "content": "Recursion: Self-Similarity & Delegation",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 24,
+          "color": "#0f172a"
+        },
+        {
+          "type": "text",
+          "id": "rec_math_label",
+          "content": "Mathematical Definition: Factorial Function",
+          "x": 60.0,
+          "y": 80.0,
+          "size": 16,
+          "color": "#475569"
+        },
+        {
+          "type": "equation",
+          "id": "rec_eq_1",
+          "latex": "n! = \\begin{cases} 1 & \\text{if } n \\le 1 \\quad \\text{(Base Case)} \\\\ n \\times (n-1)! & \\text{if } n > 1 \\quad \\text{(Recursive Step)} \\end{cases}",
+          "x": 60.0,
+          "y": 110.0,
+          "label": null
+        },
+        {
+          "type": "mermaid",
+          "id": "rec_chain_chart",
+          "chart": "graph TD\n  F4[\"factorial(4)\"] --> F3[\"factorial(3)\"]\n  F3 --> F2[\"factorial(2)\"]\n  F2 --> F1[\"factorial(1) (BASE CASE returns 1)\"]",
+          "x": 60.0,
+          "y": 200.0,
+          "title": "Call Chain: Winding Down to Base Case"
+        }
+      ],
+      "code_action": {
+        "code": "def factorial(n: int) -> int:\n    # Base case: stop the recursive descent\n    if n <= 1:\n        return 1\n    # Recursive case: self-delegation\n    return n * factorial(n - 1)\n\nprint('4! =', factorial(4))  # Output: 24\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "Notice how factorial(4) halts only when factorial(1) hits the base case and returns 1."
+      },
+      "code_chunks": [
+        {
+          "code": "def factorial(n: int) -> int:\n    # Base case: stop the recursive descent\n    if n <= 1:\n        return 1\n    # Recursive case: self-delegation\n    return n * factorial(n - 1)\n\nprint('4! =', factorial(4))  # Output: 24\n",
+          "explanation": "Notice how factorial(4) halts only when factorial(1) hits the base case and returns 1.",
+          "expected_output": "4! = 24\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Goal: Introduce recursion intuition using Russian dolls and factorial call-chain diagram.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "draw_on_board",
+          "parameters": {
+            "element": "recursion_call_chain",
+            "concept": "recursion_intuition"
+          },
+          "result": {
+            "status": "success",
+            "commands_count": 0,
+            "command_types": []
+          }
+        },
+        {
+          "tool_name": "run_code",
+          "parameters": {
+            "language": "python",
+            "snippet": "factorial(4)"
+          },
+          "result": {
+            "status": "prepared_for_live_coding",
+            "language": "python",
+            "code_length": 0
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "rec_step_1",
+      "step_index": 1,
+      "total_steps": 5,
+      "concept": "Recursion",
+      "narration": "The most critical rule in recursive design is the Base Case. Every recursive path MUST have at least one condition that returns directly without a self-call. Without a base case, or if the parameter doesn't converge toward it, calls pile up indefinitely until Python raises RecursionError: maximum recursion depth exceeded!",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "rec_base_title",
+          "content": "The Golden Rule: Mandatory Terminating Base Case",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "box",
+          "id": "base_case_highlight",
+          "label": null,
+          "x": 50.0,
+          "y": 85.0,
+          "width": 680.0,
+          "height": 90.0,
+          "color": "#dc2626",
+          "fill": "#fef2f2"
+        },
+        {
+          "type": "text",
+          "id": "base_case_warning",
+          "content": "WARNING: if n <= 1: return 1\nMissing this condition creates infinite recursion and crashes!",
+          "x": 70.0,
+          "y": 110.0,
+          "size": 16,
+          "color": "#991b1b"
+        },
+        {
+          "type": "equation",
+          "id": "rec_depth_eq",
+          "latex": "\\lim_{k \\to \\infty} \\text{StackDepth}(k) \\implies \\text{RecursionError: Stack Overflow}",
+          "x": 60.0,
+          "y": 200.0,
+          "label": null
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": {
+        "question_id": "rec_check_base_case",
+        "question": "What happens in Python if a recursive function fails to define or reach a valid base case?",
+        "options": [
+          "The function quietly returns None",
+          "A RecursionError / Stack Overflow occurs when memory limit is exceeded",
+          "Python automatically transforms it into an iterative while loop",
+          "The interpreter applies tail-call optimization automatically"
+        ],
+        "correct_index": 1,
+        "explanation": "Without a reachable base case, stack frames consume all allocated call stack memory, triggering a RecursionError.",
+        "concept_tag": "recursion_base_case"
+      },
+      "agent_thoughts": "Goal: Emphasize the mandatory base case to prevent stack overflow errors.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "ask_check_question",
+          "parameters": {
+            "question_id": "rec_check_base_case",
+            "concept": "recursion_base_case"
+          },
+          "result": {
+            "status": "question_created",
+            "question_id": "rec_check_base_case",
+            "concept_tag": "general"
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "rec_step_2",
+      "step_index": 2,
+      "total_steps": 5,
+      "concept": "Recursion",
+      "narration": "How does the computer remember where to return? The Call Stack! Each active call allocates an activation record (frame) holding parameters and local state. Because the stack is Last-In, First-Out (LIFO), the deepest call completes first, then unwinds backwards: factorial(1) -> factorial(2) -> factorial(3) -> factorial(4) = 24!",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_rec_2"
+        },
+        {
+          "type": "text",
+          "id": "stack_title",
+          "content": "The Call Stack: Last-In, First-Out (LIFO) Unwinding",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "mermaid",
+          "id": "unwind_stack_chart",
+          "chart": "graph BT\n  F1[\"factorial(1) = 1 (Bottom resolves first)\"] --> F2[\"factorial(2) = 2 * 1 = 2\"]\n  F2 --> F3[\"factorial(3) = 3 * 2 = 6\"]\n  F3 --> F4[\"factorial(4) = 4 * 6 = 24 (Top resolves last)\"]",
+          "x": 60.0,
+          "y": 90.0,
+          "title": "Stack Unwinding Order (LIFO Return Phase)"
+        },
+        {
+          "type": "equation",
+          "id": "rec_time_eq",
+          "latex": "T(n) = T(n-1) + O(1) = O(n) \\text{ time}, \\quad S(n) = O(n) \\text{ auxiliary call stack space}",
+          "x": 60.0,
+          "y": 260.0,
+          "label": null
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": {
+        "question_id": "rec_check_call_stack",
+        "question": "In what order do suspended recursive stack frames resolve their return values?",
+        "options": [
+          "First-In, First-Out (FIFO)",
+          "Last-In, First-Out (LIFO)",
+          "Random non-deterministic order",
+          "Simultaneously across CPU threads"
+        ],
+        "correct_index": 1,
+        "explanation": "Function calls push onto a call stack (LIFO structure); the most recent frame completes and pops first.",
+        "concept_tag": "recursion_call_stack"
+      },
+      "agent_thoughts": "Goal: Demystify the return phase via LIFO stack unwinding visualization.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "ask_check_question",
+          "parameters": {
+            "question_id": "rec_check_call_stack",
+            "concept": "recursion_call_stack"
+          },
+          "result": {
+            "status": "question_created",
+            "question_id": "rec_check_call_stack",
+            "concept_tag": "general"
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "rec_step_3",
+      "step_index": 3,
+      "total_steps": 5,
+      "concept": "Recursion",
+      "narration": "Recursion truly shines when dealing with branching structures like trees and graphs. In a Binary Search Tree (BST), an In-Order traversal simply says: traverse(left), process(node), traverse(right). Three lines of recursive code do what would require a complex explicit stack in iteration!",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_rec_3"
+        },
+        {
+          "type": "text",
+          "id": "tree_title",
+          "content": "Branching Recursion: Binary Tree Traversal",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "mermaid",
+          "id": "tree_diagram",
+          "chart": "graph TD\n  4[\"4 (Root)\"] --> 2[\"2 (Left)\"]\n  4 --> 6[\"6 (Right)\"]\n  2 --> 1[\"1 (Left)\"]\n  2 --> 3[\"3 (Right)\"]\n  6 --> 5[\"5 (Left)\"]\n  6 --> 7[\"7 (Right)\"]",
+          "x": 60.0,
+          "y": 80.0,
+          "title": "Binary Search Tree Structure"
+        }
+      ],
+      "code_action": {
+        "code": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\ndef inorder_traversal(root: TreeNode) -> list:\n    if not root:  # Base case: empty leaf\n        return []\n    # Left Subtree + Root + Right Subtree\n    return inorder_traversal(root.left) + [root.val] + inorder_traversal(root.right)\n\n# Builds sorted order: [1, 2, 3, 4, 5, 6, 7]\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "In-order recursive traversal visits the left branch, records the value, then visits the right branch."
+      },
+      "code_chunks": [
+        {
+          "code": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\ndef inorder_traversal(root: TreeNode) -> list:\n    if not root:  # Base case: empty leaf\n        return []\n    # Left Subtree + Root + Right Subtree\n    return inorder_traversal(root.left) + [root.val] + inorder_traversal(root.right)\n\n# Builds sorted order: [1, 2, 3, 4, 5, 6, 7]\n",
+          "explanation": "In-order recursive traversal visits the left branch, records the value, then visits the right branch.",
+          "expected_output": ""
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Goal: Show why recursion is natural for trees via in-order traversal.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "run_code",
+          "parameters": {
+            "language": "python",
+            "snippet": "inorder_traversal(tree_root)"
+          },
+          "result": {
+            "status": "prepared_for_live_coding",
+            "language": "python",
+            "code_length": 0
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "rec_step_4",
+      "step_index": 4,
+      "total_steps": 5,
+      "concept": "Recursion",
+      "narration": "Mastering recursion means knowing when to use it! Recursion is elegant and intuitive for hierarchical data (trees, graphs, divide-and-conquer). However, each call costs memory on the stack: O(h) space where h is maximum recursion depth. Congratulations! You now understand Base Cases, Call Stacks, and Tree Traversal!",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_rec_4"
+        },
+        {
+          "type": "text",
+          "id": "summary_title",
+          "content": "Recursion Mastery: Tradeoffs & Space Complexity",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "box",
+          "id": "summary_box",
+          "label": null,
+          "x": 50.0,
+          "y": 80.0,
+          "width": 680.0,
+          "height": 130.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "text",
+          "id": "summary_checklist",
+          "content": "\u2713 Base Case: Halts recursive descent, prevents stack overflow\n\u2713 Call Stack (LIFO): Suspends frames and unwinds from deepest call\n\u2713 Auxiliary Space: O(h) stack depth memory overhead\n\u2713 Ideal Applications: Trees, Divide-and-Conquer, Graph DFS",
+          "x": 70.0,
+          "y": 105.0,
+          "size": 15,
+          "color": "#14532d"
+        },
+        {
+          "type": "equation",
+          "id": "rec_space_eq",
+          "latex": "\\text{Call Stack Overhead} = O(\\text{max depth } h) \\quad \\text{vs Iteration } O(1)",
+          "x": 60.0,
+          "y": 230.0,
+          "label": null
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": {
+        "question_id": "rec_check_complexity",
+        "question": "What is the primary auxiliary memory cost of recursion compared to iteration?",
+        "options": [
+          "Zero memory overhead",
+          "O(h) call stack memory where h is maximum recursion depth",
+          "O(2^n) exponential heap memory always",
+          "CPU register spills"
+        ],
+        "correct_index": 1,
+        "explanation": "Each pending recursive invocation retains an activation frame on the call stack until returned, costing O(depth) memory.",
+        "concept_tag": "recursion_space_complexity"
+      },
+      "agent_thoughts": "Goal: Synthesize tradeoffs between recursion and iteration, update student mastery.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "update_mastery",
+          "parameters": {
+            "student_id": "demo_student",
+            "concept": "recursion_fundamentals",
+            "score_delta": 0.35
+          },
+          "result": {
+            "status": "recorded",
+            "user_id": "demo_student",
+            "concept_tag": "recursion_fundamentals",
+            "new_mastery_score": 0.97,
+            "updated_at": "2026-11-06T07:00:29Z"
+          }
+        },
+        {
+          "tool_name": "recommend_next",
+          "parameters": {
+            "student_id": "demo_student",
+            "weak_concepts": [
+              "recursion_memoization",
+              "tail_recursion"
+            ]
+          },
+          "result": {
+            "user_id": "demo_student",
+            "recommended_concept": "binary_search_complexity",
+            "reason": "Priority practice: lowest mastery (0.34) with active misconceptions.",
+            "suggested_action": "lesson"
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": true
+    }
+  ],
+  "trace": {
+    "source": "golden_example",
+    "provider": "teacher_template",
+    "model": "recursion_slice",
+    "latency_ms": 0
+  }
+}

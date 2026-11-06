@@ -1,0 +1,684 @@
+{
+  "topic": "Recursion & Trees",
+  "level": "beginner",
+  "steps": [
+    {
+      "step_id": "bs_step_0",
+      "step_index": 0,
+      "total_steps": 5,
+      "concept": "Recursion & Trees",
+      "narration": "Welcome to Binary Search! Imagine searching for a contact in a phonebook of 1,000 pages. Instead of reading page by page, you flip straight to the middle. Depending on alphabetical order, you instantly eliminate 500 pages. Binary search repeatedly cuts our search space in half with every single check, turning an O(n) scan into an ultrafast O(log n) search!",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_0"
+        },
+        {
+          "type": "text",
+          "id": "title_text",
+          "content": "Binary Search: Divide & Conquer",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 24,
+          "color": "#0f172a"
+        },
+        {
+          "type": "text",
+          "id": "array_label",
+          "content": "Sorted Array (n = 10):",
+          "x": 60.0,
+          "y": 100.0,
+          "size": 16,
+          "color": "#475569"
+        },
+        {
+          "type": "box",
+          "id": "box_0",
+          "label": "2",
+          "x": 60.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_1",
+          "label": "5",
+          "x": 125.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_2",
+          "label": "8",
+          "x": 190.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_3",
+          "label": "12",
+          "x": 255.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_4",
+          "label": "16",
+          "x": 320.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_5",
+          "label": "23",
+          "x": 385.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_6",
+          "label": "38",
+          "x": 450.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_7",
+          "label": "56",
+          "x": 515.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_8",
+          "label": "72",
+          "x": 580.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_9",
+          "label": "91",
+          "x": 645.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "arrow",
+          "id": "arr_low",
+          "from_id": null,
+          "to_id": null,
+          "start_x": 87.0,
+          "start_y": 230.0,
+          "end_x": 87.0,
+          "end_y": 190.0,
+          "label": "low = 0",
+          "color": "#16a34a"
+        },
+        {
+          "type": "arrow",
+          "id": "arr_high",
+          "from_id": null,
+          "to_id": null,
+          "start_x": 672.0,
+          "start_y": 230.0,
+          "end_x": 672.0,
+          "end_y": 190.0,
+          "label": "high = 9",
+          "color": "#dc2626"
+        },
+        {
+          "type": "equation",
+          "id": "eq_complexity",
+          "latex": "\\mathcal{O}(\\log_2 n) \\ll \\mathcal{O}(n)",
+          "x": 60.0,
+          "y": 270.0,
+          "label": "Logarithmic vs Linear Time Complexity"
+        },
+        {
+          "type": "mermaid",
+          "id": "flow_overview",
+          "chart": "graph LR\n  A[Sorted Array] --> B[Check Midpoint]\n  B -->|Target == Mid| C[Found!]\n  B -->|Target < Mid| D[Search Left Half]\n  B -->|Target > Mid| E[Search Right Half]",
+          "x": 60.0,
+          "y": 340.0,
+          "title": "Binary Search Flowchart"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": null,
+      "agent_thoughts": "Goal: Introduce intuition of divide-and-conquer using visual phonebook/array metaphor.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "draw_on_board",
+          "parameters": {
+            "commands": [
+              "title_text",
+              "boxes_0_9",
+              "eq_complexity",
+              "flow_overview"
+            ]
+          },
+          "result": {
+            "status": "success",
+            "commands_count": 4,
+            "command_types": [
+              "unknown",
+              "unknown",
+              "unknown",
+              "unknown"
+            ]
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bs_step_1",
+      "step_index": 1,
+      "total_steps": 5,
+      "concept": "Recursion & Trees",
+      "narration": "Now let's find the midpoint. With low = 0 and high = 9, our formula is mid = (0 + 9) // 2 = 4. Looking at index 4, the value is 16. Suppose our target is 23. Because 23 is greater than 16 and the array is strictly sorted, 23 CANNOT exist anywhere in indices 0 through 4! We discard the entire left half in one operation.",
+      "board_commands": [
+        {
+          "type": "box",
+          "id": "box_0",
+          "label": "2",
+          "x": 60.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#cbd5e1",
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "box",
+          "id": "box_1",
+          "label": "5",
+          "x": 125.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#cbd5e1",
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "box",
+          "id": "box_2",
+          "label": "8",
+          "x": 190.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#cbd5e1",
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "box",
+          "id": "box_3",
+          "label": "12",
+          "x": 255.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#cbd5e1",
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "box",
+          "id": "box_4",
+          "label": "16",
+          "x": 320.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#d97706",
+          "fill": "#fef3c7"
+        },
+        {
+          "type": "box",
+          "id": "box_5",
+          "label": "23",
+          "x": 385.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#2563eb",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_6",
+          "label": "38",
+          "x": 450.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#2563eb",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_7",
+          "label": "56",
+          "x": 515.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#2563eb",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_8",
+          "label": "72",
+          "x": 580.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#2563eb",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_9",
+          "label": "91",
+          "x": 645.0,
+          "y": 130.0,
+          "width": 55.0,
+          "height": 50.0,
+          "color": "#2563eb",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "arrow",
+          "id": "arr_mid",
+          "from_id": null,
+          "to_id": null,
+          "start_x": 347.0,
+          "start_y": 230.0,
+          "end_x": 347.0,
+          "end_y": 190.0,
+          "label": "mid = 4 (val: 16)",
+          "color": "#d97706"
+        },
+        {
+          "type": "equation",
+          "id": "eq_mid",
+          "latex": "mid = \\lfloor \\frac{low + high}{2} \\rfloor = \\lfloor \\frac{0 + 9}{2} \\rfloor = 4",
+          "x": 60.0,
+          "y": 270.0,
+          "label": "Midpoint Formula"
+        },
+        {
+          "type": "text",
+          "id": "discard_label",
+          "content": "Discarded elements: 2, 5, 8, 12, 16 (since 23 > 16)",
+          "x": 60.0,
+          "y": 330.0,
+          "size": 16,
+          "color": "#dc2626"
+        }
+      ],
+      "code_action": {
+        "code": "# Calculating midpoint in Python\nlow = 0\nhigh = 9\nmid = (low + high) // 2\nprint(f'low: {low}, high: {high} -> mid index: {mid}')\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "Integer division (//) safely computes the floor of the midpoint."
+      },
+      "code_chunks": [
+        {
+          "code": "# Calculating midpoint in Python\nlow = 0\nhigh = 9\nmid = (low + high) // 2\nprint(f'low: {low}, high: {high} -> mid index: {mid}')\n",
+          "explanation": "Integer division (//) safely computes the floor of the midpoint.",
+          "expected_output": "low: 0, high: 9 -> mid index: 4\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Highlighting index 4 (mid). Target is 23. Explaining why elements <= 16 can be discarded.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "draw_on_board",
+          "parameters": {
+            "commands": [
+              "box_highlight",
+              "arr_mid",
+              "eq_mid"
+            ]
+          },
+          "result": {
+            "status": "success",
+            "commands_count": 3,
+            "command_types": [
+              "unknown",
+              "unknown",
+              "unknown"
+            ]
+          }
+        },
+        {
+          "tool_name": "run_code",
+          "parameters": {
+            "code": "mid = (low + high) // 2",
+            "language": "python"
+          },
+          "result": {
+            "status": "prepared_for_live_coding",
+            "language": "python",
+            "code_length": 23
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bs_step_2",
+      "step_index": 2,
+      "total_steps": 5,
+      "concept": "Recursion & Trees",
+      "narration": "Let's make sure we have this down before writing the full loop. Since our target is 23 and array[mid] is 16 (so target > array[mid]), how must we update our search bounds for the next round?",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "checkpoint_title",
+          "content": "Checkpoint: Updating Search Bounds",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 22,
+          "color": "#1e293b"
+        },
+        {
+          "type": "text",
+          "id": "checkpoint_rule",
+          "content": "Rule: If target > array[mid], target is in the right half.",
+          "x": 60.0,
+          "y": 100.0,
+          "size": 16,
+          "color": "#2563eb"
+        },
+        {
+          "type": "equation",
+          "id": "eq_rule",
+          "latex": "\\text{target} > \\text{array}[mid] \\implies low = mid + 1",
+          "x": 60.0,
+          "y": 150.0,
+          "label": "Bound Update Formula"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": {
+        "question_id": "bs_check_bounds",
+        "question": "When target (23) is greater than array[mid] (16), what is the correct update?",
+        "options": [
+          "high = mid - 1",
+          "low = mid + 1",
+          "low = mid",
+          "high = mid"
+        ],
+        "correct_index": 1,
+        "explanation": "Because array[mid] was already checked and is too small, we set low = mid + 1 to inspect only elements to its right.",
+        "concept_tag": "binary_search_bounds_update"
+      },
+      "agent_thoughts": "Checking if student understands adjusting the lower bound: low = mid + 1.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "ask_check_question",
+          "parameters": {
+            "question_id": "bs_check_bounds",
+            "question": "When target (23) is greater than array[mid] (16), what is the correct update?",
+            "options": [
+              "high = mid - 1",
+              "low = mid + 1",
+              "low = mid",
+              "high = mid"
+            ],
+            "correct_index": 1,
+            "explanation": "We set low = mid + 1.",
+            "concept_tag": "binary_search_bounds_update"
+          },
+          "result": {
+            "status": "question_created",
+            "question_id": "bs_check_bounds",
+            "concept_tag": "binary_search_bounds_update"
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bs_step_3",
+      "step_index": 3,
+      "total_steps": 5,
+      "concept": "Recursion & Trees",
+      "narration": "Spot on! Now let's assemble the complete Python algorithm. Notice our loop condition: while low <= high. Inside, we compute mid, check for match, and shift low or high. Let's run the code live in our browser Python runtime to see every step printed out!",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "algo_title",
+          "content": "Full Binary Search Algorithm",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "equation",
+          "id": "eq_recurrence",
+          "latex": "T(n) = T\\left(\\frac{n}{2}\\right) + \\mathcal{O}(1) = \\mathcal{O}(\\log n)",
+          "x": 60.0,
+          "y": 110.0,
+          "label": "Recurrence Relation"
+        },
+        {
+          "type": "mermaid",
+          "id": "chart_steps",
+          "chart": "graph TD\n  Start[low=0, high=9] --> Step1[mid=4, val=16 < 23]\n  Step1 --> Step2[low=5, high=9, mid=7, val=56 > 23]\n  Step2 --> Step3[low=5, high=6, mid=5, val=23 == 23]\n  Step3 --> Found[Target Found at Index 5!]",
+          "x": 60.0,
+          "y": 180.0,
+          "title": "Execution Path for Target 23"
+        }
+      ],
+      "code_action": {
+        "code": "def binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n    \n    while low <= high:\n        mid = (low + high) // 2\n        val = arr[mid]\n        print(f'Checking range [{low}..{high}], mid={mid}, val={val}')\n        \n        if val == target:\n            return mid\n        elif val < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n            \n    return -1\n\n# Demo run\nnumbers = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]\ntarget = 23\nidx = binary_search(numbers, target)\nprint(f'Target {target} located at index: {idx}')\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "Iterative Binary Search with time complexity O(log n) and space complexity O(1)."
+      },
+      "code_chunks": [
+        {
+          "code": "def binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n    \n    while low <= high:\n        mid = (low + high) // 2\n        val = arr[mid]\n        print(f'Checking range [{low}..{high}], mid={mid}, val={val}')\n        \n        if val == target:\n            return mid\n        elif val < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n            \n    return -1\n\n# Demo run\nnumbers = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]\ntarget = 23\nidx = binary_search(numbers, target)\nprint(f'Target {target} located at index: {idx}')\n",
+          "explanation": "Iterative Binary Search with time complexity O(log n) and space complexity O(1).",
+          "expected_output": "Checking range [0..9], mid=4, val=16\nChecking range [5..9], mid=7, val=56\nChecking range [5..6], mid=5, val=23\nTarget 23 located at index: 5\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Live coding step. Monaco editor populated with binary_search and executed via Pyodide.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "draw_on_board",
+          "parameters": {
+            "commands": [
+              "algo_title",
+              "eq_recurrence",
+              "chart_steps"
+            ]
+          },
+          "result": {
+            "status": "success",
+            "commands_count": 3,
+            "command_types": [
+              "unknown",
+              "unknown",
+              "unknown"
+            ]
+          }
+        },
+        {
+          "tool_name": "run_code",
+          "parameters": {
+            "code": "def binary_search...",
+            "language": "python"
+          },
+          "result": {
+            "status": "prepared_for_live_coding",
+            "language": "python",
+            "code_length": 20
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bs_step_4",
+      "step_index": 4,
+      "total_steps": 5,
+      "concept": "Recursion & Trees",
+      "narration": "Fantastic progress! You've learned how Binary Search divides the search space in half, how to update the search bounds, and how to implement the loop in Python. I've updated your mastery score for 'binary_search_basics' to 85%. Next up: handling duplicate elements and edge cases like integer overflow in other languages.",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_end"
+        },
+        {
+          "type": "text",
+          "id": "finish_title",
+          "content": "Lesson Complete: Binary Search Mastery",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 24,
+          "color": "#16a34a"
+        },
+        {
+          "type": "box",
+          "id": "badge_box",
+          "label": "Binary Search Mastered (+0.35)",
+          "x": 60.0,
+          "y": 110.0,
+          "width": 280.0,
+          "height": 60.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "text",
+          "id": "recommend_text",
+          "content": "Next recommended practice: Binary Search on Rotated Sorted Arrays",
+          "x": 60.0,
+          "y": 200.0,
+          "size": 18,
+          "color": "#1e293b"
+        },
+        {
+          "type": "mermaid",
+          "id": "roadmap",
+          "chart": "graph LR\n  A[Binary Search Basics (Done)] --> B[Duplicate Elements]\n  B --> C[Rotated Arrays]\n  C --> D[Binary Search on Answer Range]",
+          "x": 60.0,
+          "y": 260.0,
+          "title": "Mastery Roadmap"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": null,
+      "agent_thoughts": "Concluding lesson. Calling update_mastery tool and recommend_next tool.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [
+        {
+          "tool_name": "update_mastery",
+          "parameters": {
+            "student_id": "demo_student",
+            "concept": "binary_search_basics",
+            "score_delta": 0.35
+          },
+          "result": {
+            "status": "recorded",
+            "user_id": "demo_student",
+            "concept_tag": "binary_search_basics",
+            "new_mastery_score": 0.97,
+            "updated_at": "2026-11-06T07:09:10Z"
+          }
+        },
+        {
+          "tool_name": "recommend_next",
+          "parameters": {
+            "student_id": "demo_student",
+            "weak_concepts": [
+              "binary_search_duplicates",
+              "rotated_array_search"
+            ]
+          },
+          "result": {
+            "user_id": "demo_student",
+            "recommended_concept": "binary_search_complexity",
+            "reason": "Priority practice: lowest mastery (0.28) with active misconceptions.",
+            "suggested_action": "lesson"
+          }
+        }
+      ],
+      "trace": null,
+      "is_final_step": true
+    }
+  ],
+  "trace": {
+    "source": "golden_example",
+    "provider": "teacher_template",
+    "model": "rule_based_golden",
+    "latency_ms": 0
+  }
+}

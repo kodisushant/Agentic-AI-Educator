@@ -15,10 +15,21 @@
   8. **Teammate Sync & Integration Verification:** Rebased cleanly over Person 2's Pyodide live coding runner and freehand annotation tool commits (`85378e9`, `becce91`). Verified that all contracts, board commands, and endpoints remain 100% compatible.
   9. **Groq-Powered Chat with Teacher:** Dedicated the Chat with Teacher pipeline to execute strictly via Groq API. Added dynamic `.env` key reloading, outermost JSON extraction for nested code snippets, Cloudflare User-Agent bypass, and active model selection (`openai/gpt-oss-20b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-120b`). Real chat queries verified with live LLM traces.
   10. **Full Codebase Sync & TTS Integration:** Verified and synced all teammate code (panels, WAL-mode SQLite, ElevenLabs TTS). Mounted ElevenLabs `tts_router` on `/tts` in `backend/agent/main.py` with local caching and browser fallback. Loaded panel scripts in classroom frontend. Verified 100% test pass on agent (17/17), learner (7/7), assess (5/5), tts (10/10), and full e2e integration (10/10).
+  11. **Lesson Generator & Validation Pipeline (`backend/agent/generator.py`):**
+     - Golden Binary Search lesson few-shot template with strict 5-step pedagogical flow (intuition, worked example, check question, live code, mastery update).
+     - Validation pipeline: Pydantic schema check, subprocess Python execution with 5s timeout & real stdout capture, whiteboard command integrity check, and check question verification.
+     - Single repair loop on validation errors (STRICT_REAL behavior, no canned fallback on real error).
+     - File-based lesson caching to `backend/agent/lessons/<slug>.json` served first with `trace.source = "cache"`.
+     - Generated and validated 3 demo lessons: **Bubble Sort**, **Two Pointers**, and **Gradient Descent** (NumPy 10-epoch linear regression optimization).
+     - Mounted `GET /topics` and `POST /lesson/generate` in `backend/agent/main.py`. Exported updated contracts in `contracts/`.
+     - Added generation & audit script `scripts/generate_demo_lessons.py` and automated test suite in `backend/agent/test_agent.py` testing rejection of broken code, bad schema, and invalid questions.
+- **What is REAL & VERIFIED:**
 - **What is REAL & VERIFIED:**
   - Learner Model, Assessment Engine, ElevenLabs TTS with caching, Teacher Rule Engine, Groq Live Chat, Whiteboard Commands, FastAPI, all test suites (100% pass across all 4 services), and full-stack multi-service launcher verified across ports 8000, 3000, 3001.
+- **What is REAL & VERIFIED:**
+  - Full lesson generation & validation pipeline, subprocess code execution, all 5 cached lesson files (`binary_search.json`, `recursion.json`, `bubble_sort.json`, `two_pointers.json`, `gradient_descent.json`), 100% pass on all test suites (`test_agent.py`, `test_learner.py`, `test_assess.py`, `test_tts.py`, `e2e.py`).
 - **What is MOCK/FALLBACK:**
-  - Cloud LLM calls (API keys blank in `.env`). Falls back safely to deterministic rule-based engine.
+  - Cloud LLM fallback if offline (Groq active when key present in `.env`).
 - **What is BROKEN:** None.
 - **Teammate Blockers:** None.
 

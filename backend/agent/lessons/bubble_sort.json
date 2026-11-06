@@ -1,0 +1,431 @@
+{
+  "topic": "Bubble Sort",
+  "level": "beginner",
+  "steps": [
+    {
+      "step_id": "bsort_step_0",
+      "step_index": 0,
+      "total_steps": 5,
+      "concept": "Bubble Sort",
+      "narration": "Welcome to Bubble Sort! Imagine bubbles rising in water. In this algorithm, larger numbers gradually 'bubble up' to the end of the array. We repeatedly step through the list, compare adjacent elements, and swap them if they are in the wrong order. It has an intuitive O(n^2) time complexity and O(1) auxiliary space.",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_0"
+        },
+        {
+          "type": "text",
+          "id": "title_0",
+          "content": "Bubble Sort: Sinking & Bubbling",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 24,
+          "color": "#0f172a"
+        },
+        {
+          "type": "text",
+          "id": "array_lbl_0",
+          "content": "Initial Array (n = 5):",
+          "x": 60.0,
+          "y": 100.0,
+          "size": 16,
+          "color": "#475569"
+        },
+        {
+          "type": "box",
+          "id": "b0",
+          "label": "5",
+          "x": 60.0,
+          "y": 130.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#ef4444",
+          "fill": "#fef2f2"
+        },
+        {
+          "type": "box",
+          "id": "b1",
+          "label": "1",
+          "x": 130.0,
+          "y": 130.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "b2",
+          "label": "4",
+          "x": 200.0,
+          "y": 130.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "b3",
+          "label": "2",
+          "x": 270.0,
+          "y": 130.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "b4",
+          "label": "8",
+          "x": 340.0,
+          "y": 130.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "arrow",
+          "id": "swap_arrow_0",
+          "from_id": null,
+          "to_id": null,
+          "start_x": 90.0,
+          "start_y": 220.0,
+          "end_x": 160.0,
+          "end_y": 220.0,
+          "label": "Compare & Swap (5 > 1)",
+          "color": "#ef4444"
+        },
+        {
+          "type": "equation",
+          "id": "eq_comp_0",
+          "latex": "\\mathcal{O}(n^2) \\text{ comparisons in worst/average case}",
+          "x": 60.0,
+          "y": 270.0,
+          "label": "Quadratic Time Complexity"
+        },
+        {
+          "type": "mermaid",
+          "id": "flow_0",
+          "chart": "graph LR\n  A[Unsorted Array] --> B[Compare Adjacent Pairs]\n  B -->|Left > Right| C[Swap Elements]\n  B -->|Left <= Right| D[Keep Order]\n  C --> E[Repeat until Sorted]\n  D --> E",
+          "x": 60.0,
+          "y": 340.0,
+          "title": "Bubble Sort Logic Flow"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": null,
+      "agent_thoughts": "Introducing Bubble Sort with adjacent comparison and rising bubbles metaphor.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bsort_step_1",
+      "step_index": 1,
+      "total_steps": 5,
+      "concept": "Bubble Sort",
+      "narration": "Let's trace Pass 1 carefully on [5, 1, 4, 2, 8]. First, we compare index 0 and 1: 5 is greater than 1, so we swap them. The array becomes [1, 5, 4, 2, 8]. Next, compare 5 and 4: 5 > 4, so swap! Array is [1, 4, 5, 2, 8]. Then compare 5 and 2: swap to [1, 4, 2, 5, 8]. Finally compare 5 and 8: 5 < 8, no swap! After pass 1, the largest element (8) is locked at the end.",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "title_1",
+          "content": "Pass 1 Walkthrough",
+          "x": 60.0,
+          "y": 40.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "box",
+          "id": "box_p0",
+          "label": "1",
+          "x": 60.0,
+          "y": 110.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_p1",
+          "label": "4",
+          "x": 130.0,
+          "y": 110.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_p2",
+          "label": "2",
+          "x": 200.0,
+          "y": 110.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#3b82f6",
+          "fill": "#eff6ff"
+        },
+        {
+          "type": "box",
+          "id": "box_p3",
+          "label": "5",
+          "x": 270.0,
+          "y": 110.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#f59e0b",
+          "fill": "#fef3c7"
+        },
+        {
+          "type": "box",
+          "id": "box_p4",
+          "label": "8",
+          "x": 340.0,
+          "y": 110.0,
+          "width": 60.0,
+          "height": 50.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "arrow",
+          "id": "arr_lock_1",
+          "from_id": null,
+          "to_id": null,
+          "start_x": 370.0,
+          "start_y": 210.0,
+          "end_x": 370.0,
+          "end_y": 170.0,
+          "label": "8 Locked in Final Position",
+          "color": "#16a34a"
+        },
+        {
+          "type": "equation",
+          "id": "eq_passes_1",
+          "latex": "\\text{After Pass } k: \\text{ the } k \\text{ largest items are in sorted order}",
+          "x": 60.0,
+          "y": 250.0,
+          "label": "Invariant Rule"
+        },
+        {
+          "type": "text",
+          "id": "rule_text_1",
+          "content": "Each pass reduces the remaining unsorted subarray length by 1.",
+          "x": 60.0,
+          "y": 310.0,
+          "size": 16,
+          "color": "#475569"
+        }
+      ],
+      "code_action": {
+        "code": "# Single comparison & swap in Bubble Sort\narr = [5, 1, 4, 2, 8]\nprint('Initial pair:', arr[0], arr[1])\nif arr[0] > arr[1]:\n    arr[0], arr[1] = arr[1], arr[0]\nprint('After swap:', arr)\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "Single swap demonstration using Python tuple unpacking."
+      },
+      "code_chunks": [
+        {
+          "code": "# Single comparison & swap in Bubble Sort\narr = [5, 1, 4, 2, 8]\nprint('Initial pair:', arr[0], arr[1])\nif arr[0] > arr[1]:\n    arr[0], arr[1] = arr[1], arr[0]\nprint('After swap:', arr)\n",
+          "explanation": "Single swap demonstration using Python tuple unpacking.",
+          "expected_output": "Initial pair: 5 1\nAfter swap: [1, 5, 4, 2, 8]\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Tracing pass 1 step by step, demonstrating guaranteed positioning of maximum element.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bsort_step_2",
+      "step_index": 2,
+      "total_steps": 5,
+      "concept": "Bubble Sort",
+      "narration": "Let's test your understanding of what each pass accomplishes. After the first full pass over an unsorted array of n elements, what property is always guaranteed?",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "cq_title_2",
+          "content": "Checkpoint: Bubble Sort Invariant",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 22,
+          "color": "#1e293b"
+        },
+        {
+          "type": "text",
+          "id": "cq_note_2",
+          "content": "Invariant Question: What does 1 complete pass guarantee?",
+          "x": 60.0,
+          "y": 110.0,
+          "size": 16,
+          "color": "#2563eb"
+        },
+        {
+          "type": "equation",
+          "id": "cq_eq_2",
+          "latex": "\\max(arr[0..n-1]) \\to arr[n-1]",
+          "x": 60.0,
+          "y": 170.0,
+          "label": "Maximum Element Guarantee"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": {
+        "question_id": "bsort_check_invariant",
+        "question": "After the first complete pass of Bubble Sort, which statement is GUARANTEED to be true?",
+        "options": [
+          "The entire array is completely sorted",
+          "The largest element is placed at its final correct index",
+          "The smallest element is placed at index 0",
+          "Half of all elements are in sorted order"
+        ],
+        "correct_index": 1,
+        "explanation": "Each pass compares adjacent pairs and bubbles the maximum unsorted value all the way to the rightmost available slot.",
+        "concept_tag": "bubble_sort_pass_invariant"
+      },
+      "agent_thoughts": "Checking understanding of the Bubble Sort invariant: largest element moves to the final index.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bsort_step_3",
+      "step_index": 3,
+      "total_steps": 5,
+      "concept": "Bubble Sort",
+      "narration": "Now let's examine the complete Python implementation! Notice two key optimizations: first, inner range stops at n - i - 1 because elements at the end are already sorted. Second, we maintain a 'swapped' boolean flag: if an entire pass makes zero swaps, the array is already sorted, and we exit early! Let's run the code live and watch each pass.",
+      "board_commands": [
+        {
+          "type": "text",
+          "id": "code_title_3",
+          "content": "Optimized Bubble Sort Implementation",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 22,
+          "color": "#0f172a"
+        },
+        {
+          "type": "equation",
+          "id": "eq_best_3",
+          "latex": "T_{\\text{best}}(n) = \\mathcal{O}(n) \\text{ (with swapped flag)}, \\quad T_{\\text{worst}}(n) = \\mathcal{O}(n^2)",
+          "x": 60.0,
+          "y": 110.0,
+          "label": "Time Complexity Bounds"
+        },
+        {
+          "type": "mermaid",
+          "id": "chart_steps_3",
+          "chart": "graph TD\n  Start[Input: 5, 1, 4, 2, 8] --> Pass1[Pass 1: 1, 4, 2, 5, 8 (8 locked)]\n  Pass1 --> Pass2[Pass 2: 1, 2, 4, 5, 8 (5 locked)]\n  Pass2 --> Pass3[Pass 3: 1, 2, 4, 5, 8 (0 swaps -> Early Exit!)]\n  Pass3 --> Done[Sorted Result: 1, 2, 4, 5, 8]",
+          "x": 60.0,
+          "y": 180.0,
+          "title": "Execution Steps on [5, 1, 4, 2, 8]"
+        }
+      ],
+      "code_action": {
+        "code": "def bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        swapped = False\n        for j in range(0, n - i - 1):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n                swapped = True\n        print(f'Pass {i + 1}: {arr}')\n        if not swapped:\n            print('Early termination: array is sorted!')\n            break\n    return arr\n\n# Demo run\ndata = [5, 1, 4, 2, 8]\nprint('Unsorted array:', data)\nsorted_data = bubble_sort(data)\nprint('Sorted array:', sorted_data)\n",
+        "language": "python",
+        "action": "execute",
+        "explanation": "Full Bubble Sort with early exit flag and inner loop bound reduction."
+      },
+      "code_chunks": [
+        {
+          "code": "def bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        swapped = False\n        for j in range(0, n - i - 1):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n                swapped = True\n        print(f'Pass {i + 1}: {arr}')\n        if not swapped:\n            print('Early termination: array is sorted!')\n            break\n    return arr\n\n# Demo run\ndata = [5, 1, 4, 2, 8]\nprint('Unsorted array:', data)\nsorted_data = bubble_sort(data)\nprint('Sorted array:', sorted_data)\n",
+          "explanation": "Full Bubble Sort with early exit flag and inner loop bound reduction.",
+          "expected_output": "Unsorted array: [5, 1, 4, 2, 8]\nPass 1: [1, 4, 2, 5, 8]\nPass 2: [1, 2, 4, 5, 8]\nPass 3: [1, 2, 4, 5, 8]\nEarly termination: array is sorted!\nSorted array: [1, 2, 4, 5, 8]\n"
+        }
+      ],
+      "check_question": null,
+      "agent_thoughts": "Live coding full bubble_sort function with early termination flag and inner loop optimization.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": false
+    },
+    {
+      "step_id": "bsort_step_4",
+      "step_index": 4,
+      "total_steps": 5,
+      "concept": "Bubble Sort",
+      "narration": "Outstanding work! You've learned how Bubble Sort uses adjacent comparisons, how the largest elements sink to the right, and how to optimize with an early exit flag. Your mastery score for 'bubble_sort_fundamentals' has increased to 85%. Next recommended topic: Insertion Sort and Merge Sort for handling larger datasets efficiently.",
+      "board_commands": [
+        {
+          "type": "clear",
+          "id": "clear_end_4"
+        },
+        {
+          "type": "text",
+          "id": "complete_title_4",
+          "content": "Lesson Complete: Bubble Sort Mastered",
+          "x": 60.0,
+          "y": 50.0,
+          "size": 24,
+          "color": "#16a34a"
+        },
+        {
+          "type": "box",
+          "id": "mastery_box_4",
+          "label": "Bubble Sort Mastered (+0.35)",
+          "x": 60.0,
+          "y": 110.0,
+          "width": 300.0,
+          "height": 60.0,
+          "color": "#16a34a",
+          "fill": "#f0fdf4"
+        },
+        {
+          "type": "text",
+          "id": "rec_text_4",
+          "content": "Next recommended practice: Insertion Sort vs Selection Sort",
+          "x": 60.0,
+          "y": 200.0,
+          "size": 18,
+          "color": "#1e293b"
+        },
+        {
+          "type": "mermaid",
+          "id": "roadmap_4",
+          "chart": "graph LR\n  A[Bubble Sort (Done)] --> B[Insertion Sort]\n  B --> C[Merge Sort (O(n log n))]\n  C --> D[Quick Sort]",
+          "x": 60.0,
+          "y": 260.0,
+          "title": "Sorting Mastery Progression"
+        }
+      ],
+      "code_action": null,
+      "code_chunks": [],
+      "check_question": null,
+      "agent_thoughts": "Concluding Bubble Sort lesson with mastery update and progression roadmap.",
+      "detected_misconception": null,
+      "remediation": null,
+      "provider_metadata": null,
+      "tool_calls": [],
+      "trace": null,
+      "is_final_step": true
+    }
+  ],
+  "trace": {
+    "source": "ai_generated_reviewed",
+    "provider": "curated_engine",
+    "model": "template",
+    "latency_ms": 12
+  }
+}

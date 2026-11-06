@@ -69,6 +69,76 @@
         "x-stability": "may-change"
       }
     },
+    "/topics": {
+      "get": {
+        "tags": [
+          "Lesson"
+        ],
+        "summary": "Get Topics",
+        "description": "Returns available lesson topics with difficulty level and code support.\nSource indicates whether the lesson is 'golden_example' or 'ai_generated_reviewed'.",
+        "operationId": "get_topics_topics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TopicItem"
+                  },
+                  "type": "array",
+                  "title": "Response Get Topics Topics Get"
+                }
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
+      }
+    },
+    "/lesson/generate": {
+      "post": {
+        "tags": [
+          "Lesson"
+        ],
+        "summary": "Generate Lesson Endpoint",
+        "description": "Generate or retrieve a full 5-step interactive lesson for a topic.\nServes from backend/agent/lessons/<slug>.json first (trace.source = 'cache'),\notherwise invokes LLM router with multi-stage validation and repair pipeline.",
+        "operationId": "generate_lesson_endpoint_lesson_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-stability": "may-change"
+      }
+    },
     "/lesson/step": {
       "post": {
         "tags": [
@@ -1760,6 +1830,44 @@
         ],
         "title": "CodeAction"
       },
+      "CodeChunk": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Python code block"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation",
+            "description": "Explanation of what this code does"
+          },
+          "expected_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Output",
+            "description": "Expected stdout from running this code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "CodeChunk"
+      },
       "EquationCommand": {
         "properties": {
           "type": {
@@ -1944,6 +2052,79 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "LessonGenerateRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "Concept name or topic to teach",
+            "default": "Binary Search"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "Difficulty level",
+            "default": "beginner"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id",
+            "description": "Student ID",
+            "default": "demo_student"
+          }
+        },
+        "type": "object",
+        "title": "LessonGenerateRequest"
+      },
+      "LessonPlan": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "Lesson topic"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "Difficulty level",
+            "default": "beginner"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/LessonStep"
+            },
+            "type": "array",
+            "title": "Steps",
+            "description": "5-step lesson structure"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace",
+            "description": "Generation trace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic",
+          "steps"
+        ],
+        "title": "LessonPlan"
+      },
       "LessonStep": {
         "properties": {
           "step_id": {
@@ -2020,6 +2201,14 @@
               }
             ],
             "description": "Code to display or execute in Monaco/Pyodide"
+          },
+          "code_chunks": {
+            "items": {
+              "$ref": "#/components/schemas/CodeChunk"
+            },
+            "type": "array",
+            "title": "Code Chunks",
+            "description": "List of code chunks with code, explanation, and expected_output"
           },
           "check_question": {
             "anyOf": [
@@ -2751,6 +2940,57 @@
           "parameters"
         ],
         "title": "ToolCallRequest"
+      },
+      "TopicItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique topic slug"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Display title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Topic description"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "Difficulty level",
+            "default": "beginner"
+          },
+          "has_code": {
+            "type": "boolean",
+            "title": "Has Code",
+            "description": "Whether topic has live coding",
+            "default": true
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "Lesson source",
+            "default": "ai_generated_reviewed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "title": "TopicItem"
       },
       "ValidationError": {
         "properties": {

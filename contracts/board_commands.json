@@ -937,6 +937,46 @@
           "title": "CodeAction",
           "type": "object"
         },
+        "CodeChunk": {
+          "properties": {
+            "code": {
+              "description": "Python code block",
+              "title": "Code",
+              "type": "string"
+            },
+            "explanation": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Explanation of what this code does",
+              "title": "Explanation"
+            },
+            "expected_output": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Expected stdout from running this code",
+              "title": "Expected Output"
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "title": "CodeChunk",
+          "type": "object"
+        },
         "EquationCommand": {
           "properties": {
             "type": {
@@ -1211,6 +1251,14 @@
           ],
           "default": null,
           "description": "Code to display or execute in Monaco/Pyodide"
+        },
+        "code_chunks": {
+          "description": "List of code chunks with code, explanation, and expected_output",
+          "items": {
+            "$ref": "#/$defs/CodeChunk"
+          },
+          "title": "Code Chunks",
+          "type": "array"
         },
         "check_question": {
           "anyOf": [
@@ -2998,6 +3046,46 @@
           "title": "CodeAction",
           "type": "object"
         },
+        "CodeChunk": {
+          "properties": {
+            "code": {
+              "description": "Python code block",
+              "title": "Code",
+              "type": "string"
+            },
+            "explanation": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Explanation of what this code does",
+              "title": "Explanation"
+            },
+            "expected_output": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Expected stdout from running this code",
+              "title": "Expected Output"
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "title": "CodeChunk",
+          "type": "object"
+        },
         "EquationCommand": {
           "properties": {
             "type": {
@@ -3272,6 +3360,14 @@
           ],
           "default": null,
           "description": "Code to display or execute in Monaco/Pyodide"
+        },
+        "code_chunks": {
+          "description": "List of code chunks with code, explanation, and expected_output",
+          "items": {
+            "$ref": "#/$defs/CodeChunk"
+          },
+          "title": "Code Chunks",
+          "type": "array"
         },
         "check_question": {
           "anyOf": [

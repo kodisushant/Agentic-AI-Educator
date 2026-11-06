@@ -56,3 +56,7 @@ Thumbs.db
 *.log
 *.pid
 logs/
+
+# TTS Audio Cache
+cache/tts/
+cache/tts

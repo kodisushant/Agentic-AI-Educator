@@ -28,3 +28,20 @@ Only Person 1 may update `/contracts`.
 - **Target:** /frontend/dashboard/package.json
 - **Details:** The standalone `frontend/dashboard/index.html` runs cleanly on port 3001 with zero build step. However, `package.json` specifies `"dev": "next dev"` while `"next"` is omitted from `"dependencies"`. If Next.js SSR is intended, please add `"next": "^14.2.0"` (or similar) to `package.json`.
 - **Status:** Open
+
+
+## Request: Mount tts_router in backend/agent/main.py
+- **Date:** 2026-11-06
+- **From:** Member 2 (/backend/tts, /backend/assess, /backend/learner)
+- **Target:** /backend/agent/main.py
+- **Details:** Add ElevenLabs TTS router to the main backend application gateway.
+  Exact lines for Member 1 to add in `backend/agent/main.py`:
+  ```python
+  from backend.tts.router import tts_router
+
+  app.include_router(tts_router)
+  ```
+  This exposes:
+  - `POST /tts`: Synthesizes speech with local `cache/tts/` caching and automatic browser fallback (`HTTP 503 {"fallback":"browser"}`).
+  - `GET /tts/status`: Operational status endpoint reporting key configuration, default model, and cached files count without leaking secrets.
+- **Status:** Open
